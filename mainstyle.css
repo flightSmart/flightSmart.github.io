@@ -17,8 +17,14 @@ button {
   margin: 2px;
 
 
+  font-family:'Helvetica';
 }
 
+#aircraftTypeDropdown, #aircraftLoadInput{
+  font-family:'Helvetica';
+  letter-spacing: .5px;
+  font-size: 14px;
+}
 
 label {
   font-size: 12px;
