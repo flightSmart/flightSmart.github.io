@@ -73,4 +73,29 @@ tr {
 .dataHeader {
   font-family: Helvetica, sans-serif;
   font-weight: bold;
+  font-size: 12px;
+}
+
+.myCredit {
+  padding: 15px;
+  font-family: Helvetica, sans-serif;
+  font-size: 12px;
+  color: rgb(224,225,226); 
+
+  text-decoration-line: underline;
+  font-size: 12px;
+}
+
+#versionElement {
+  font-family: Helvetica, sans-serif;
+  font-size: 12px;
+  padding-left: 15px;
+
+  color: rgb(224,225,226); 
+}
+
+.dataHeader, .versionElement {
+  font-family: Helvetica, sans-serif;
+  font-weight: bold;
+  font-size: 12px;
 }

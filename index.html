@@ -53,6 +53,9 @@
 
 
 </table>
+<a href="https://community.infiniteflight.com/t/the-unofficial-infinite-aircraft-calculator-using-community-data/869648" target="_blank" class="myCredit">app by darkeyes</a>
+<div id="versionElement"> </div>
+
 
 <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script>
@@ -387,6 +390,32 @@ function fetchAndDisplayCreditData(sheetName, row) {
             document.getElementById('output').innerHTML = 'Error fetching data.';
         });
 }
+
+
+fetch('IFAircraftData.xlsx')
+    .then(response => response.arrayBuffer())
+    .then(data => {
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets['main'];
+        if (sheet) {
+            // Extract version number from a specific cell
+            var versionCell = sheet['C1']; // Change 'A1' to the cell containing the version number
+            var versionNumber = versionCell ? versionCell.v : '';
+
+            // Push version number to an existing element with ID 'versionElement'
+            var versionElement = document.getElementById('versionElement');
+            if (versionElement) {
+                versionElement.textContent = 'v' + versionNumber;
+            } else {
+                console.error('Element with ID "versionElement" not found.');
+            }
+        } else {
+            console.error('Sheet not found.');
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching data:', error);
+    });
 
 </script> <!-- Include your JavaScript file -->
 </body>
