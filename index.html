@@ -1,1 +1,393 @@
-<h1> Hello World! </h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="/images/flightSmartLogoTransparent.png">
+<title>flightSmart</title>
+<link href='https://fonts.googleapis.com/css?family=B612 Mono' rel='stylesheet'>
+<link rel="stylesheet"  href="mainstyle.css" type="text/css" />
+</head>
+<body>
+
+<table id="main">
+
+
+<tr> <td>
+<img src="images/flightSmartTitleOG.png"  width="250" alt="flightSmart">
+<br><br>
+<div id="manufacturerButtons">
+  <button id="airbusButton">Airbus</button>
+  <button id="boeingButton">Boeing</button>
+  <button id="bombardierButton">Bombardier</button>
+  <button id="embraerButton">Embraer</button>
+  <button id="McDonnellDouglasButton">McDonnell Douglas</button>
+
+</div>
+
+<!-- Aircraft Type dropdown -->
+<div id="aircraftTypeDropdown">
+  <label for="aircraftType">Aircraft Type:</label>
+  <select id="aircraftType">
+      <!-- Default options -->
+      <option value="" disabled selected>Select Manufacturer</option>
+  </select>
+</div>
+
+<!-- Aircraft Load input -->
+<div id="aircraftLoadInput">
+  <label for="aircraftLoad">Aircraft Load (1-100):</label>
+  <input type="number" id="aircraftLoad" min="1" max="100" required>
+  <button id="submitButton">Submit</button>
+</div>
+</td></tr>
+
+
+
+<tr><td id="outputTakeoffData"></td></tr>
+<tr><td id="outputLandingData"></td></tr>
+<tr><td id="outputFuelBurnData"></td></tr>
+<tr><td id="outputOtherData"></td></tr>
+<tr><td id="output"></td></tr>
+
+
+
+</table>
+
+<script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script>
+document.getElementById('airbusButton').addEventListener('click', function() {
+    updateAircraftDropdown(['A220', 'A318', 'A319', 'A320', 'A321', 'A346', 'A359', 'A388']);
+});
+
+document.getElementById('boeingButton').addEventListener('click', function() {
+    updateAircraftDropdown(['B712', 'B737', 'B738', 'B739', 'B742', 'B744', 'B748', 'B752', 'B763', 'B772', 'B77L', 'B77W', 'B77F', 'B788', 'B789', 'B78X']);
+});
+
+document.getElementById('bombardierButton').addEventListener('click', function() {
+    updateAircraftDropdown(['CL350', 'CRJ2', 'CRJ7', 'CRJ9', 'CRJX', 'DH8D']);
+});
+
+document.getElementById('embraerButton').addEventListener('click', function() {
+    updateAircraftDropdown(['E175', 'E190']);
+});
+
+document.getElementById('McDonnellDouglasButton').addEventListener('click', function() {
+    updateAircraftDropdown(['DC10', 'DC1F', 'MD11', 'MD1F']);
+});
+
+document.getElementById('submitButton').addEventListener('click', function() {
+
+  var selectedAircraftType = document.getElementById('aircraftType').value;
+    var aircraftLoad = document.getElementById('aircraftLoad').value;
+    
+    console.log('Aircraft Type:', selectedAircraftType);
+    console.log('Aircraft Load:', aircraftLoad);
+    
+    // Call functions to fetch and display data
+    if (selectedAircraftType && aircraftLoad) {
+        var row = determineRow(aircraftLoad);
+        
+        if (row !== null) {
+            var sheetName = selectedAircraftType; // Assuming sheet name is the same as aircraft type
+            fetchAndDisplayTakeoffData(sheetName, row, selectedAircraftType);
+            fetchAndDisplayLandingData(sheetName, row);
+            fetchAndDisplayFuelBurnData(sheetName, row);
+            fetchAndDisplayOtherData(sheetName, row);
+            fetchAndDisplayCreditData(sheetName, row);
+        } else {
+            document.getElementById('output').innerHTML = 'Invalid input.';
+        }
+    } else {
+        document.getElementById('output').innerHTML = 'Please fill out all fields.';
+    }
+});
+
+function updateAircraftDropdown(options) {
+    var select = document.getElementById('aircraftType');
+    select.innerHTML = ''; // Clear previous options
+    options.forEach(function(option) {
+        var optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option;
+        select.appendChild(optionElement);
+    });
+}
+
+function round_nrst_10(number) {
+    return Math.round(number / 10) * 10;
+}
+
+
+function determineRow(acLoad) {
+    acLoad = parseInt(acLoad);
+    let row;
+    if (acLoad === 23 || acLoad === 24 || acLoad === 25 || acLoad === 26 || acLoad === 27) {
+        row = 10;
+    } else if (acLoad === 73 || acLoad === 74 || acLoad === 75 || acLoad === 76 || acLoad === 77) {
+        row = 4;
+    } else {
+        acLoad = round_nrst_10(acLoad); // Assuming round_nrst_10 is a function defined elsewhere
+        if (acLoad === 0 || acLoad === 10) {
+            row = 11;
+        } else if (acLoad === 20) {
+            row = 10;
+        } else if (acLoad === 30) {
+            row = 9;
+        } else if (acLoad === 40) {
+            row = 8;
+        } else if (acLoad === 50) {
+            row = 7;
+        } else if (acLoad === 60) {
+            row = 6;
+        } else if (acLoad === 70) {
+            row = 5;
+        } else if (acLoad === 80) {
+            row = 4;
+        } else if (acLoad === 90) {
+            row = 3;
+        } else if (acLoad === 100) {
+            row = 2;
+        }
+    }
+    return (row - 1);
+}
+    // Function to fetch and display data
+function fetchAndDisplayTakeoffData(sheetName, row, aircraftType) {
+// Fetch the .xlsx file and read data
+fetch('IFAircraftData.xlsx')
+    .then(response => response.arrayBuffer())
+    .then(data => {
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[sheetName];
+        if (sheet) {
+            var rowData = [];
+            rowData.push('<span class="dataHeader">' + 'Takeoff Data:' + '</span>');
+            rowData.push( 'Row: ' + row);
+            // Specify the column indexes you want to display
+            var columnsToDisplay = [1, 2, 3, 4]; // F, G, H
+            
+            columnsToDisplay.forEach(function(colIndex) {
+                var cellAddress = { c: colIndex, r: row };
+                var cellRef = XLSX.utils.encode_cell(cellAddress);
+                var cell = sheet[cellRef];
+                var cellValue = cell ? cell.v : '';
+                
+                // Add labels based on column index
+                switch (colIndex) {
+                    case 1:
+                        rowData.push('Takeoff Power: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 2:
+                        rowData.push('Takeoff Flaps: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 3:
+                        rowData.push('Rotate: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 4:
+                        rowData.push('Airborne by ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    default:
+                        rowData.push('<span class="data">' + cellValue + '</span>');
+                }
+            });
+
+            // If aircraft type is CL35, add special data
+            if (aircraftType === 'CL350') {
+                var specialCell = sheet['I14'];
+                var specialCellValue = specialCell ? specialCell.v : '';
+                rowData.push('Takeoff Power: <pre style="white-space: pre-line;"><span class="data">' + specialCellValue + '</span></pre>');
+            }
+
+            document.getElementById('outputTakeoffData').innerHTML = rowData.join('<br>');
+        } else {
+            document.getElementById('outputTakeoffData').innerHTML = 'Sheet not found.';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching data:', error);
+        document.getElementById('outputTakeoffData').innerHTML = 'Error fetching data.';
+    });
+}
+function fetchAndDisplayLandingData(sheetName, row) {
+// Fetch the .xlsx file and read data
+fetch('IFAircraftData.xlsx')
+    .then(response => response.arrayBuffer())
+    .then(data => {
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[sheetName];
+        if (sheet) {
+            var rowData = [];
+            rowData.push('<span class="dataHeader">' + 'Landing Data:' + '</span>');
+            
+            // Specify the column indexes you want to display
+            var columnsToDisplay = [5, 6, 7]; // F, G, H
+            
+            columnsToDisplay.forEach(function(colIndex) {
+                var cellAddress = { c: colIndex, r: row };
+                var cellRef = XLSX.utils.encode_cell(cellAddress);
+                var cell = sheet[cellRef];
+                var cellValue = cell ? cell.v : '';
+                
+                // Add labels based on column index
+                switch (colIndex) {
+                    case 5:
+                        rowData.push('Landing Flaps: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 6:
+                        rowData.push('Final Approach: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 7:
+                        rowData.push('Flare: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    default:
+                        rowData.push('<span class="data">' + cellValue + '</span>');
+                      }
+                
+              });
+            var cellA14 = sheet['A14'];
+            var cellA14Value = cellA14 ? cellA14.v : '';
+            rowData.push('Flap Speeds:<pre style="white-space: pre-line;"><span class="data">' + cellA14Value + '</span></pre>');
+            document.getElementById('outputLandingData').innerHTML = rowData.join('<br>');
+        } else {
+            document.getElementById('outputLandingData').innerHTML = 'Sheet not found.';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching data:', error);
+        document.getElementById('outputLandingData').innerHTML = 'Error fetching data.';
+    });
+}
+function fetchAndDisplayFuelBurnData(sheetName, row) {
+// Fetch the .xlsx file and read data
+fetch('IFAircraftData.xlsx')
+    .then(response => response.arrayBuffer())
+    .then(data => {
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[sheetName];
+        if (sheet) {
+            var rowData = [];
+            rowData.push('<span class="dataHeader">' + 'Fuel Burn Data:' + '</span>');
+            // Specify the column indexes you want to display
+            var columnsToDisplay = [8, 9, 10]; // F, G, H
+            
+            columnsToDisplay.forEach(function(colIndex) {
+                var cellAddress = { c: colIndex, r: row };
+                var cellRef = XLSX.utils.encode_cell(cellAddress);
+                var cell = sheet[cellRef];
+                var cellValue = cell ? cell.v : '';
+                
+                // Add labels based on column index
+                switch (colIndex) {
+                    case 8:
+                        rowData.push('West / Even: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 9:
+                        rowData.push('East / Odd: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    case 10:
+                        rowData.push('High Burn: ' + '<span class="data">' + cellValue + '</span>');
+                        break;
+                    default:
+                        rowData.push(cellValue);
+                      }
+                
+              });
+            var cellE14 = sheet['E14'];
+            var cellE14Value = cellE14 ? cellE14.v : '';
+            rowData.push('Rec Step Climb West / Even: ' + '<span class="data">' + cellE14Value + '</span>');
+            var cellF14 = sheet['F14'];
+            var cellF14Value = cellF14 ? cellF14.v : '';
+            rowData.push('Rec Step Climb East / Odd: ' + '<span class="data">' + cellF14Value + '</span>');
+            document.getElementById('outputFuelBurnData').innerHTML = rowData.join('<br>');
+        } else {
+            document.getElementById('outputFuelBurnData').innerHTML = 'Sheet not found.';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching data:', error);
+        document.getElementById('outputFuelBurnData').innerHTML = 'Error fetching data.';
+    });
+}
+function fetchAndDisplayOtherData(sheetName, row) {
+// Fetch the .xlsx file and read data
+fetch('IFAircraftData.xlsx')
+    .then(response => response.arrayBuffer())
+    .then(data => {
+        var workbook = XLSX.read(data, { type: 'array' });
+        var sheet = workbook.Sheets[sheetName];
+        if (sheet) {
+
+            var rowData = [];
+            rowData.push('<span class="dataHeader">' + 'Misc Data:' + '</span>');
+            var cellA13 = sheet['A13'];
+            var cellA13Value = cellA13 ? cellA13.v : '';
+            rowData.push('Normal Range: ' + '<span class="data">' + cellA13Value + '</span>');
+            var cellB14 = sheet['B14'];
+            var cellB14Value = cellB14 ? cellB14.v : '';
+            rowData.push('Cruise Speed: ' + '<span class="data">' + cellB14Value + '</span>');
+            var cellC14 = sheet['C14'];
+            var cellC14Value = cellC14 ? cellC14.v : '';
+            rowData.push('Cruise Speed: ' + '<span class="data">' + cellC14Value + '</span>');
+            var cellD14 = sheet['D14'];
+            var cellD14Value = cellD14 ? cellD14.v : '';
+            rowData.push('MMO Speed: ' + '<span class="data">' + cellD14Value + '</span>');
+
+            document.getElementById('outputOtherData').innerHTML = rowData.join('<br>');
+        } else {
+            document.getElementById('outputOtherData').innerHTML = 'Sheet not found.';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching data:', error);
+        document.getElementById('outputOtherData').innerHTML = 'Error fetching data.';
+    });
+}
+function fetchAndDisplayCreditData(sheetName, row) {
+    // Fetch the .xlsx file and read data
+    fetch('IFAircraftData.xlsx')
+        .then(response => response.arrayBuffer())
+        .then(data => {
+            var workbook = XLSX.read(data, { type: 'array' });
+            var sheet = workbook.Sheets[sheetName];
+            var rowData = [];
+            rowData.push('<span class="dataHeader">' + 'Credits & Data Source:' + '</span>');
+            var linkCell1 = sheet['A17']; // Assuming the link is in cell A1
+            var titleCell1 = sheet['D17']; // Assuming the title is in cell B1
+            var linkUrl1 = linkCell1 ? linkCell1.v : '';
+            var title1 = titleCell1 ? titleCell1.v : '';
+  
+            rowData.push('Takeoff/Landing Data: <a href="' + linkUrl1 + '" target="_blank"><span class="link">' + title1 + '</span></a>');
+            document.getElementById('output').innerHTML = rowData.join('<br>');
+
+
+            var linkCell2 = sheet['A18']; // Assuming the link is in cell A1
+            var titleCell2 = sheet['D18']; // Assuming the title is in cell B1
+            var linkUrl2 = linkCell2 ? linkCell2.v : '';
+            var title2 = titleCell2 ? titleCell2.v : '';
+
+            rowData.push('Fuel Burn Data: <a href="' + linkUrl2 + '" target="_blank"> <span class="link">' + title2 + '</span></a>');
+            document.getElementById('output').innerHTML = rowData.join('<br>');
+
+
+            var linkCell3 = sheet['A19']; // Assuming the link is in cell A1
+            var titleCell3 = sheet['D19']; // Assuming the title is in cell B1
+            var linkUrl3 = linkCell3 ? linkCell3.v : '';
+            var title3 = 'AndrewWu (Aircraft Specific)';
+            rowData.push('<a href="' + linkUrl3 + '" target="_blank"> <span class="link">' + title3 + '</span></a>');
+            
+            var linkUrl4 = 'https://www.helpathand.nl/janpolet/infinite-flight-aircraft-information/'
+            var title4 = 'Jan'
+            
+            rowData.push('Misc Data: <a href="' + linkUrl4 + '" target="_blank"> <span class="link">' + title4 + '</span></a>');
+            document.getElementById('output').innerHTML = rowData.join('<br>');
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+            document.getElementById('output').innerHTML = 'Error fetching data.';
+        });
+}
+
+</script> <!-- Include your JavaScript file -->
+</body>
+</html>

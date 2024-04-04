@@ -1,0 +1,76 @@
+body {
+  background-color:rgb(26, 29, 29) ;
+  font-family:'B612 Mono';
+  color:rgb(224,225,226)
+}
+
+button {
+  background-color: rgb(48, 49, 50);
+  border: 1px solid rgb(131, 131, 131);
+  color:rgb(224,225,226);
+  padding: 3px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  font-family:'B612 Mono';
+  margin: 2px;
+
+
+}
+
+
+label {
+  font-size: 12px;
+}
+
+input[type=number] {
+  color:rgb(224,225,226);
+  background-color:rgb(48, 49, 50);
+}
+
+select {
+  color:rgb(224,225,226);
+  background-color:rgb(48, 49, 50);
+  margin-top: 5px;
+}
+
+table {
+  border: none;
+  color:rgb(224,225,226);
+  font-size: 12px;
+  background-color: rgb(26, 29, 29);
+  border-spacing: 10px;
+}
+
+td {
+  background-color: rgb(44, 44, 44);
+  padding: 15px;
+  border-radius: 12px;
+}
+
+tr {
+  padding-bottom: 5px;
+}
+
+.data {
+  color: rgb(100,196,154); 
+  font-size: 12px;
+  font-family:'B612 Mono';
+}
+
+.link,
+.link:link,
+.link:visited {
+  color: rgb(224,225,226); 
+  font-style: italic;
+  text-decoration-line: underline;
+  font-size: 12px;
+  font-family:'B612 Mono';
+}
+
+
+.dataHeader {
+  font-family: Helvetica, sans-serif;
+  font-weight: bold;
+}
