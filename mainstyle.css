@@ -100,3 +100,7 @@ tr {
   font-weight: bold;
   font-size: 12px;
 }
+
+hr {
+  border-color:rgb(224,225,226, 0.5);
+}

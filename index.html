@@ -14,8 +14,8 @@
 
 
 <tr> <td>
-<img src="images/flightSmartTitleOG.png"  width="250" alt="flightSmart">
-<br><br>
+<img src="images/flightSmartTitleOG.png"  width="200" alt="flightSmart">
+<br><hr>
 <div id="manufacturerButtons">
   <button id="airbusButton">Airbus</button>
   <button id="boeingButton">Boeing</button>
@@ -282,13 +282,13 @@ fetch('IFAircraftData.xlsx')
                 // Add labels based on column index
                 switch (colIndex) {
                     case 8:
-                        rowData.push('West / Even: ' + '<span class="data">' + cellValue + '</span>');
+                        rowData.push('West/Even Cruise: ' + '<span class="data">' + cellValue + '</span>');
                         break;
                     case 9:
-                        rowData.push('East / Odd: ' + '<span class="data">' + cellValue + '</span>');
+                        rowData.push('East/Odd Cruise: ' + '<span class="data">' + cellValue + '</span>');
                         break;
                     case 10:
-                        rowData.push('High Burn: ' + '<span class="data">' + cellValue + '</span>');
+                        rowData.push('High Fuel Cruise: ' + '<span class="data">' + cellValue + '</span>');
                         break;
                     default:
                         rowData.push(cellValue);
@@ -297,10 +297,10 @@ fetch('IFAircraftData.xlsx')
               });
             var cellE14 = sheet['E14'];
             var cellE14Value = cellE14 ? cellE14.v : '';
-            rowData.push('Rec Step Climb West / Even: ' + '<span class="data">' + cellE14Value + '</span>');
+            rowData.push('Step Climb West/Even: ' + '<span class="data">' + cellE14Value + '</span>');
             var cellF14 = sheet['F14'];
             var cellF14Value = cellF14 ? cellF14.v : '';
-            rowData.push('Rec Step Climb East / Odd: ' + '<span class="data">' + cellF14Value + '</span>');
+            rowData.push('Step Climb East/Odd: ' + '<span class="data">' + cellF14Value + '</span>');
             document.getElementById('outputFuelBurnData').innerHTML = rowData.join('<br>');
         } else {
             document.getElementById('outputFuelBurnData').innerHTML = 'Sheet not found.';
