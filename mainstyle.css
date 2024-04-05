@@ -4,7 +4,7 @@ body {
   color:rgb(224,225,226)
 }
 
-button {
+button, select {
   background-color: rgb(48, 49, 50);
   border: 1px solid rgb(131, 131, 131);
   color:rgb(224,225,226);
@@ -15,8 +15,8 @@ button {
   font-size: 12px;
   font-family:'B612 Mono';
   margin: 2px;
+  font-size: 12px
 }
-
 
 label {
   font-size: 12px;
@@ -25,6 +25,9 @@ label {
 input[type=number] {
   color:rgb(224,225,226);
   background-color:rgb(48, 49, 50);
+  font-size: 12px;
+  font-family:'B612 Mono';
+  font-size: 12px
 }
 
 select {

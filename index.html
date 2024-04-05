@@ -36,7 +36,7 @@
 
 <!-- Aircraft Load input -->
 <div id="aircraftLoadInput">
-  <label for="aircraftLoad">Aircraft Load (1-100):</label>
+  <label for="aircraftLoad">Aircraft Load % (1-100):</label>
   <input type="number" id="aircraftLoad" min="1" max="100" required>
   <button id="submitButton">Submit</button>
 </div>
@@ -166,7 +166,6 @@ fetch('IFAircraftData.xlsx')
         if (sheet) {
             var rowData = [];
             rowData.push('<span class="dataHeader">' + 'Takeoff Data:' + '</span>');
-            rowData.push( 'Row: ' + row);
             // Specify the column indexes you want to display
             var columnsToDisplay = [1, 2, 3, 4]; // F, G, H
             
