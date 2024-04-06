@@ -36,7 +36,7 @@
 
 <!-- Aircraft Load input -->
 <div id="aircraftLoadInput">
-  <label for="aircraftLoad">Aircraft Load % (1-100):</label>
+  <label for="aircraftLoad">Aircraft Load %:</label>
   <input type="number" id="aircraftLoad" min="1" max="100" required>
   <button id="submitButton">Submit</button>
 </div>
@@ -129,6 +129,8 @@ function determineRow(acLoad) {
         row = 10;
     } else if (acLoad === 73 || acLoad === 74 || acLoad === 75 || acLoad === 76 || acLoad === 77) {
         row = 4;
+    } else if (acLoad > 100) {
+        row = 2;
     } else {
         acLoad = round_nrst_10(acLoad); // Assuming round_nrst_10 is a function defined elsewhere
         if (acLoad === 0 || acLoad === 10) {
@@ -376,8 +378,12 @@ function fetchAndDisplayCreditData(sheetName, row) {
             var titleCell3 = sheet['D19']; // Assuming the title is in cell B1
             var linkUrl3 = linkCell3 ? linkCell3.v : '';
             var title3 = 'AndrewWu (Aircraft Specific)';
-            rowData.push('<a href="' + linkUrl3 + '" target="_blank"> <span class="link">' + title3 + '</span></a>');
-            
+            if (linkUrl3 !== 'none') {
+                rowData.push('<a href="' + linkUrl3 + '" target="_blank"> <span class="link">' + title3 + '</span></a>');
+            }
+
+
+
             var linkUrl4 = 'https://www.helpathand.nl/janpolet/infinite-flight-aircraft-information/'
             var title4 = 'Jan'
             
