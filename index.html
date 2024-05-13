@@ -10,12 +10,23 @@
 </head>
 <body>
 
-<table id="main">
 
 
+
+<div class=ldgDIV style="display: flex; flex-direction: column;">
+    <a href="/landing.html"><img  src="images/flightSmartTitleOG.png"  width="200" alt="flightSmart"></a>
+    <!-- <a class="ldgBtton" href="/fpl.html" title="Simbrief Flight Plan -> Infinite Flight"> Flight Plan Generator (via Simbrief), new!</a> -->
+    <a class="ldgBttonSelected" href="/index.html" title="Aircraft Calulator"> Aircraft Calculator (using Community Data!)</a>
+</div>
+    
+
+
+
+
+<table class="flightData">
 <tr> <td>
-<img src="images/flightSmartTitleOG.png"  width="200" alt="flightSmart">
-<br><hr>
+
+
 <div id="manufacturerButtons">
   <button id="airbusButton">Airbus</button>
   <button id="boeingButton">Boeing</button>
@@ -29,7 +40,6 @@
 <div id="aircraftTypeDropdown">
   <label for="aircraftType">Aircraft Type:</label>
   <select id="aircraftType">
-      <!-- Default options -->
       <option value="" disabled selected>Select Manufacturer</option>
   </select>
 </div>
@@ -38,7 +48,7 @@
 <div id="aircraftLoadInput">
   <label for="aircraftLoad">Aircraft Load %:</label>
   <input type="number" id="aircraftLoad" min="1" max="100" required>
-  <button id="submitButton">Submit</button>
+  <button id="submitButton"> --Submit-- </button>
 </div>
 </td></tr>
 
@@ -53,8 +63,17 @@
 
 
 </table>
-<a href="https://community.infiniteflight.com/t/the-unofficial-infinite-aircraft-calculator-using-community-data/869648" target="_blank" class="myCredit">app by darkeyes</a>
-<div id="versionElement"> </div>
+
+
+<div class="WebsiteCredits">
+    <br>
+    <a href="https://community.infiniteflight.com/t/the-unofficial-infinite-aircraft-calculator-using-community-data/869648" target="_blank" class="myCredit">app by darkeyes ↗</a>
+
+</div>
+
+
+</div>
+
 
 
 <script lang="javascript" src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
@@ -102,7 +121,7 @@ document.getElementById('submitButton').addEventListener('click', function() {
             document.getElementById('output').innerHTML = 'Invalid input.';
         }
     } else {
-        document.getElementById('output').innerHTML = 'Please fill out all fields.';
+        document.getElementById('outputTakeoffData').innerHTML = 'Please fill out all fields.';
     }
 });
 
@@ -361,7 +380,7 @@ function fetchAndDisplayCreditData(sheetName, row) {
             var linkUrl1 = linkCell1 ? linkCell1.v : '';
             var title1 = titleCell1 ? titleCell1.v : '';
   
-            rowData.push('Takeoff/Landing Data: <a href="' + linkUrl1 + '" target="_blank"><span class="link">' + title1 + '</span></a>');
+            rowData.push('Takeoff + Landing Data: <a href="' + linkUrl1 + '" target="_blank"><span class="link">' + title1 + '</span></a>');
             document.getElementById('output').innerHTML = rowData.join('<br>');
 
 

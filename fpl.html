@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="/images/flightSmartLogoTransparent.png">
+<title>flightSmart</title>
+<link href='https://fonts.googleapis.com/css?family=B612 Mono' rel='stylesheet'>
+<link rel="stylesheet"  href="mainstyle.css" type="text/css" />
+
+<script type="text/javascript" src="/simbrief.apiv1.js"></script>
+
+</head>
+<body>
+
+
+
+
+<div class=ldgDIV style="display: flex; flex-direction: column;">
+    <a href="/landing.html"><img  src="images/flightSmartTitleOG.png"  width="200" alt="flightSmart"></a>
+    <a class="ldgBttonSelected" href="/fpl.html" title="Simbrief Flight Plan -> Infinite Flight"> Flight Plan Generator (via Simbrief), new!</a>
+    <a class="ldgBtton" href="/index.html" title="Aircraft Calulator"> Aircraft Calculator (using Community Data!)</a>
+</div>
+    
+
+
+
+
+<table class="flightData">
+<tr> <td>
+
+
+<form id="sbapiform">
+    Orig: <input > <br>
+    Dest: <input > <br>
+    Type: <input > <br>
+    <input type="button" onclick="simbriefsubmit('https://fligthsmart.info/fploutput.html');" />
+
+</td></tr>
+</table>
+
+
+<div class="WebsiteCredits">
+    <br>
+    <a href="https://community.infiniteflight.com/t/the-unofficial-infinite-aircraft-calculator-using-community-data/869648" target="_blank" class="myCredit">app by darkeyes ↗</a>
+</div>
+
+
+</div>
+
+
+
+
+<script>
+        function updateAircraftDropdown(options) {
+    var select = document.getElementById('aircraftType');
+    select.innerHTML = ''; // Clear previous options
+    options.forEach(function(option) {
+        var optionElement = document.createElement('option');
+        optionElement.value = option;
+        optionElement.textContent = option;
+        select.appendChild(optionElement);
+    });
+}
+
+
+    document.getElementById('airbusButton').addEventListener('click', function() {
+        updateAircraftDropdown(['A220', 'A318', 'A319', 'A320', 'A321', 'A333', 'A339','A346', 'A359', 'A388']);
+    });
+    
+    document.getElementById('boeingButton').addEventListener('click', function() {
+        updateAircraftDropdown(['B712', 'B737', 'B738', 'B739', 'B742', 'B744', 'B748', 'B752', 'B763', 'B772', 'B77L', 'B77W', 'B77F', 'B788', 'B789', 'B78X']);
+    });
+    
+    document.getElementById('bombardierButton').addEventListener('click', function() {
+        updateAircraftDropdown(['CL350', 'CRJ2', 'CRJ7', 'CRJ9', 'CRJX', 'DH8D']);
+    });
+    
+    document.getElementById('embraerButton').addEventListener('click', function() {
+        updateAircraftDropdown(['E175', 'E190']);
+    });
+    
+    document.getElementById('McDonnellDouglasButton').addEventListener('click', function() {
+        updateAircraftDropdown(['DC10', 'DC1F', 'MD11', 'MD1F']);
+    });
+
+
+
+</script> 
+</body>
+</html>
