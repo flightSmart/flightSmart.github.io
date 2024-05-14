@@ -8,22 +8,11 @@
 
 <script>
 
-const username = 'UuiQOC3fqrvM6c0uTovc5ITMNoAa0wvqDOJ2tvia';
-const password = ''; // password is empty in this case
+const xhr = new XMLHttpRequest();
+xhr.open('GET', 'https://reqres.in/api/users');
+xhr.send();
 
-const url = 'https://api.flightplandatabase.com/';
 
-fetch(url, {
-  method: 'GET',
-  headers: {
-    'Authorization': 'Basic ' + btoa(username + ":" + password)
-  }
-})
-.then(response => response.json())
-.then(data => console.log(data))
-.catch((error) => {
-  console.error('Error:', error);
-});
 
 </script>
 
