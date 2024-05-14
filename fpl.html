@@ -3,18 +3,36 @@
 <body>
 
 <h2>API Data:</h2>
-2
+
 
 <div id="apiData"></div>
 
 <script>
 
-const xhr = new XMLHttpRequest();
-xhr.open('GET', 'https://reqres.in/api/users');
-xhr.onload = function() {
-    console.log(xhr.response)
+var depICAO = 'KJFK'
+var arrICAO = 'KIAD'
+    
+
+
+const sendHttpRequest = (method, url, fromICAO, toICAO, username) => {
+    const xhr = new XMLHttpRequest();
+    const newUrl = 'https://corsproxy.io/?' + encodeURIComponent(url);
+    xhr.open(method, newUrl);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    xhr.setRequestHeader("Authorization", "Basic " + btoa(username));
+    xhr.onload = function() {
+        const data = xhr.response;
+        console.log(data);
+    }
+    const requestData = JSON.stringify({ fromICAO: fromICAO, toICAO: toICAO });
+    xhr.send(requestData);
 }
-xhr.send();
+
+// Example usage:
+const departureICAO = "EHAM"; // Amsterdam Airport Schiphol
+const arrivalICAO = "KJFK";   // John F. Kennedy International Airport
+sendHttpRequest('GET', 'https://api.flightplandatabase.com')
+sendHttpRequest('POST', 'https://api.flightplandatabase.com/auto/generate', departureICAO, arrivalICAO, 'UuiQOC3fqrvM6c0uTovc5ITMNoAa0wvqDOJ2tvia');
 
 
 
@@ -22,3 +40,4 @@ xhr.send();
 
 </body>
 </html>
+
