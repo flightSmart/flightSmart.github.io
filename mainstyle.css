@@ -14,7 +14,7 @@ button, select {
   display: inline-block;
   font-size: 12px;
   font-family:'B612 Mono';
-  margin: 2px;
+
   font-size: 12px
 }
 
@@ -27,12 +27,30 @@ button:focus{
   color: rgb(30,30,30)
 }
 
-
 label {
   font-size: 12px;
 }
 
 input[type=number] {
+  color:rgb(224,225,226);
+  background-color:rgb(50, 50, 50);
+  font-size: 12px;
+  font-family:'B612 Mono';
+  font-size: 12px
+}
+
+input[type=file] {
+  color:rgb(224,225,226);
+  background-color:rgb(30, 30, 30);
+  font-size: 12px;
+  font-family:'B612 Mono';
+  font-size: 12px
+}
+
+
+
+
+textarea {
   color:rgb(224,225,226);
   background-color:rgb(50, 50, 50);
   font-size: 12px;
@@ -172,9 +190,89 @@ hr {
 }
 
 
+.textOutput {
+  color:rgb(224,225,226);
+  background-color:rgb(50 50 50);
+  font-family:'B612 Mono';
+  font-size: 10px;
+  padding: .3em;
+}
+
+.start-label, .end-label {
+  background-color: rgba(0,0,0,0.0);
+  border: 2px solid rgba(0,0,0,0.5);
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-family:'B612 Mono';
+}
+
+
+.leaflet-layer,
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out,
+.leaflet-control-attribution {
+  filter:  brightness(90%) contrast(75%) saturate(100%);
+}
+
 .WebsiteCredits {
   text-align: center;
 }
+
+.invis {
+  border: none;
+  border-collapse: collapse;
+}
+
+.invis td,
+.invis th {
+  border: none;
+  outline: none;
+  background: transparent;
+}
+
+
+.mainButton{
+  border: 1px solid rgb(100, 195, 153);
+  color: rgb(100, 195, 153);
+}
+
+
+
+
+.custom-file-input {
+  color: rgb(224, 225, 226);
+  background-color: rgb(50, 50, 50);
+  font-family: 'B612 Mono', monospace;
+  font-size: 12px;
+  padding: 8px 15px;
+  border: 1px solid rgb(100, 100, 100);
+  border-radius: 3px;
+  cursor: pointer;
+  display: inline-block;
+  transition: background-color 0.3s;
+}
+
+.custom-file-input:hover {
+  background-color: rgb(50, 50, 50);
+}
+
+.custom-file-input:active {
+  background-color: rgb(40, 40, 40);
+}
+
+#kmlFileInput {
+  display: none;
+}
+
+.file-name {
+  margin-left: 10px;
+  color: rgb(150, 150, 150);
+  font-family: 'B612 Mono', monospace;
+  font-size: 12px;
+}
+
+
 
 @media screen and (max-width: 600px) {
   .flightData {
