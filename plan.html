@@ -39,8 +39,7 @@
 </div>
 
 <script>
-    // YOUR SETTINGS
-    const MY_API_KEY = "8a1ASgWFRkAtaVAaRJtENheTFJq7oCqa"; // Put your SimBrief API key here
+    const MY_API_KEY = "8a1ASgWFRkAtaVAaRJtENheTFJq7oCqa"; 
 
     function generateFlightPlan() {
         const form = document.getElementById('sbapiform');
@@ -48,22 +47,21 @@
         const dest = form.dest.value.toUpperCase();
         const type = form.type.value.toUpperCase();
 
-        // SimBrief requires an MD5 hash of: APIKEY + ORIGIN + DESTINATION + TYPE
-        // This is why you were getting errors—the request wasn't "signed"
+        // Generate the hash
         const apiCode = md5(MY_API_KEY + orig + dest + type);
 
-        // This triggers the SimBrief Popup
         simbrief_submit({
             orig: orig,
             dest: dest,
             type: type,
             apicode: apiCode,
-            // The callback tells SimBrief where to send data after it's done
+            // REQUIRED FOR STATIC SITES:
+            skip_auth: '1', 
+            static_id: '1',
             callback: "https://flightsmart-github-io.vercel.app/plan.html" 
         });
     }
 
-    // This function is automatically called by simbrief.apiv1.js when the plan is ready
     function simbriefproccess(data) {
         document.getElementById('output').style.display = 'block';
         document.getElementById('status-text').innerText = "Route: " + data.general.route;
