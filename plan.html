@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FlightSmart | Flight Planner</title>
+    <script type="text/javascript" src="js/simbrief.apiv1.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f7f6; padding: 40px; }
+        .planner-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
+        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        #results { margin-top: 20px; display: none; background: #e9ecef; padding: 15px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+<div class="planner-card">
+    <h2>Generate Flight Plan</h2>
+    <form id="sbapiform">
+        <input type="text" name="orig" placeholder="Departure ICAO (e.g. KJFK)" required>
+        <input type="text" name="dest" placeholder="Arrival ICAO (e.g. EGLL)" required>
+        <input type="text" name="type" placeholder="Aircraft Type (e.g. A320)" required>
+        
+        <button type="button" onclick="simbrief_submit({outputfile: 'https://flightsmart.vercel.app/callback.html'});">
+            Generate Plan
+        </button>
+    </form>
+
+    <div id="results">
+        <h3>Plan Generated!</h3>
+        <p id="route-display"></p>
+        <a id="ofp-link" target="_blank">View Full Briefing (PDF)</a>
+    </div>
+</div>
+
+<script>
+    // This function handles the data SimBrief sends back to your site
+    function simbriefproccess(data) {
+        document.getElementById('results').style.display = 'block';
+        document.getElementById('route-display').innerText = "Route: " + data.general.route;
+        document.getElementById('ofp-link').href = data.files.pdf.link;
+    }
+</script>
+
+</body>
+</html>
