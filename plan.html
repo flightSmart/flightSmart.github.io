@@ -39,33 +39,36 @@
 </div>
 
 <script>
-    const MY_API_KEY = "8a1ASgWFRkAtaVAaRJtENheTFJq7oCqa"; 
-
     function generateFlightPlan() {
         const form = document.getElementById('sbapiform');
         const orig = form.orig.value.toUpperCase();
         const dest = form.dest.value.toUpperCase();
         const type = form.type.value.toUpperCase();
 
-        // Generate the hash
-        const apiCode = md5(MY_API_KEY + orig + dest + type);
+        // 1. Your API Key
+        const apiKey = "8a1ASgWFRkAtaVAaRJtENheTFJq7oCqa";
+        
+        // 2. SimBrief requires a "Unix Timestamp" for security
+        const timestamp = Math.floor(Date.now() / 1000);
+        
+        // 3. This is where you want the user to end up
+        const callbackUrl = "https://flightsmart-github-io.vercel.app/plan.html";
 
-        simbrief_submit({
-            orig: orig,
-            dest: dest,
-            type: type,
-            apicode: apiCode,
-            // REQUIRED FOR STATIC SITES:
-            skip_auth: '1', 
-            static_id: '1',
-            callback: "https://flightsmart-github-io.vercel.app/callback.html" 
-        });
-    }
+        // 4. Generate the MD5 Hash (Matches SimBrief's strict security requirements)
+        // Format: API_KEY + ORIGIN + DESTINATION + TYPE + TIMESTAMP + CALLBACK_URL
+        const hash = md5(apiKey + orig + dest + type + timestamp + callbackUrl);
 
-    function simbriefproccess(data) {
-        document.getElementById('output').style.display = 'block';
-        document.getElementById('status-text').innerText = "Route: " + data.general.route;
-        document.getElementById('pdf-link').href = data.files.pdf.link;
+        // 5. Construct the Direct API URL
+        const simbriefURL = `https://www.simbrief.com/ofp/ofp.loader.api.php?` +
+            `orig=${orig}&` +
+            `dest=${dest}&` +
+            `type=${type}&` +
+            `timestamp=${timestamp}&` +
+            `outputpage=${encodeURIComponent(callbackUrl)}&` +
+            `apicode=${hash}`;
+
+        // 6. Open SimBrief in a popup (This starts the generation process)
+        window.open(simbriefURL, "simbrief_popup", "width=500,height=700");
     }
 </script>
 
