@@ -9,215 +9,250 @@
   <link rel="stylesheet" href="mainstyle.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    #map { height: 500px; margin-top: 0px; }
+    #map { height: 500px; margin-top: 10px; }
+
+    /* --- LAYOUT & UI --- */
+    .input-flex-container {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch; 
+      gap: 20px;
+      margin: 1px 0;
+      width: 100%;
+    }
+
+    .vertical-separator {
+        width: 1px;
+        background-color: rgba(224, 225, 226, 0.3); 
+        margin-top: 10px;
+        margin-bottom: 5px;
+    }
+
+    .input-section:first-child { flex: 0 0 auto; }
+    .input-section:last-child { flex: 1; }
+    #inputData { width: 100%; box-sizing: border-box; resize: none; }
+    .custom-file-input { border-radius: 0px !important; }
+
+    /* Info Icon & Action Row */
+    .action-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .info-icon {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgb(100, 195, 153);
+      color: rgb(100, 195, 153);
+      font-family: serif;
+      font-size: 12px;
+      transition: 0.3s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .info-icon:hover { background-color: rgba(100, 195, 153, 0.2); }
+
+    #instructionText {
+      display: none;
+      margin-top: 10px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: rgba(50, 50, 50, 0.5);
+      border-left: 2px solid rgb(100, 195, 153);
+    }
+
+    /* --- ANIMATIONS & OUTPUT --- */
+    @keyframes sharp-blink {
+        50% { visibility: hidden; }
+    }
+    .blink-animation {
+        animation: sharp-blink 0.8s step-end infinite;
+    }
+
+    #outputRow { display: table-row; } /* Always visible box */
+    #errorDisplay { display: none; color: rgb(255, 100, 100); font-weight: bold; }
+    #successContent { display: none; }
   </style>
 </head>
 <body>
 
 <div class="ldgDIV" style="display: flex; flex-direction: column;">
-  <a href="/landing.html"><img src="images/flightSmartTitleOG.png" width="200" alt="flightSmart" /></a>
-  <a class="ldgBtton" href="/index.html">Aircraft Calculator (using Community Data!)</a>
-  <a class="ldgBttonSelected" href="/kmlToIF.html" title="KML to IF coordinates">KML -> IF Coordinates</a>
+    <a href="/index.html"><img src="images/flightSmartTitleOG.png" width="200" alt="flightSmart"></a>
+    <a class="ldgBtton" href="/aircraftCalculator.html" title="Aircraft Calculator">Aircraft Calculator (using Community Data!)</a>
+    <a class="ldgBttonSelected" href="/kmlToIF.html" title="KML to IF coordinates">KML -> IF Coordinates</a> 
+    <a class="ldgBtton" href="/descent.html" title="Descent Calculator">Descent Calculator</a>
 </div>
 
 <table class="flightData">
   <tr><td>
-    <p class="dataHeader"> Convert KML flight plans into IF coordinates, which you can directly paste into Infinite Flight. Paste coordinates from a KML file, or upload the KML file directly. 
-      <a class="link" style="font-family: Helvetica;" target="_blank"href="https://community.infiniteflight.com/t/sketch-any-shapes-texts-on-the-globe-and-insert-it-to-infinite-flight/172032?">↗ Read more</a> about getting the KML file. </p>  
-<br>   
-          <!-- <input type="file" id="kmlFileInput" accept=".kml" style="margin-top: 10px;"> -->
-          <label for="kmlFileInput" class="custom-file-input">
-            Upload KML File ↗
-            <input type="file" id="kmlFileInput" accept=".kml">
-          </label>
-          <span class="file-name"></span>
-
-
-        <p style="font-size: 11px;">Or Paste KML coordinates manually:<br> <br> 
-          <textarea id="inputData" placeholder="115.47581,-8.65251,0 115.48532,-8.55603,0 ..." rows="4" cols="25"></textarea>        <br> </p>
-
-    
-    <button class="mainButton" onclick="sendData()">--Convert--</button> <br> <br>
-    <p id="loadingMessage" style="display:none; color: rgb(100, 195, 153);">Converting...</p>
-  </td></tr>
-  <tr><td>
-      <p class="dataHeader"> Output:</p>
-      Converted IF coordinates:<br>
-      <div class="textOutput">
-      
-      <p ><span id="result"></span></p>
+    <div class="input-flex-container">
+      <div class="input-section">
+        <p style="font-size: 11px; font-weight: bold;">Option 1: Upload File</p>
+        <label for="kmlFileInput" class="custom-file-input" title="Upload KML File">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" class="file-icon-only">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <polyline points="9 15 12 12 15 15"></polyline>
+          </svg>
+          <input type="file" id="kmlFileInput" accept=".kml">
+        </label>
+        <div class="file-name" style="font-size: 10px; margin-top: 5px;"></div>
       </div>
 
-      <button class="button" onclick="copyResult()">Copy to Clipboard</button>
-      <span id="copyConfirmation" style="display: none; color: rgb(100,196,154); margin-left: 10px;">Copied!</span>
+      <div class="vertical-separator"></div>
 
+      <div class="input-section">
+        <p style="font-size: 11px; font-weight: bold;">Option 2: Paste Coordinates</p>
+        <textarea id="inputData" placeholder="115.47581,-8.65251,0 115.48532,-8.55603,0 ..." rows="4"></textarea> 
+      </div>
+    </div>
 
-      <br><br>
-      Map:
-      <div id="map"></div>
+    <div class="action-row">
+        <button class="mainButton" onclick="sendData()">--Convert--</button>
+        <div class="info-icon" onclick="toggleInfo()" title="Click for instructions">i</div>
+    </div>
+
+    <div id="instructionText">
+      <p class="dataHeader" style="margin: 0; font-size: 13px; font-weight:350;"> 
+        Convert KML flight plans into IF coordinates, which you can directly paste into Infinite Flight. Paste coordinates from a KML file, or upload the KML file directly. 
+      <a class="link" style="font-family: Helvetica;" target="_blank"href="https://community.infiniteflight.com/t/sketch-any-shapes-texts-on-the-globe-and-insert-it-to-infinite-flight/172032?">↗ Read more</a> about getting the KML file.
+      </p>
+    </div>
+
+    <p id="loadingMessage" class="blink-animation" style="display:none; color: rgb(224, 225, 226);">Converting...</p>
+  </td></tr>
+
+  <tr id="outputRow"><td>
+      <div id="errorDisplay"></div>
+
+      <div id="successContent">
+          <p class="dataHeader"> Converted IF coordinates:</p>
+          
+          <div class="textOutput">
+            <p><span id="result"></span></p>
+          </div>
+          <button class="button" onclick="copyResult()">Copy to Clipboard</button>
+          <span id="copyConfirmation" style="display: none; color: rgb(100,196,154); margin-left: 10px;">Copied!</span>
+
+          <div id="map"></div>
+      </div>
   </td></tr>
 </table>
-
 
 <div class="WebsiteCredits">
     <br>
     <a href="https://community.infiniteflight.com/t/the-unofficial-infinite-aircraft-calculator-using-community-data/869648" target="_blank" class="myCredit">website by darkeyes ↗</a>
-
 </div>
 
-<!-- Libraries -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<!-- Add this after Leaflet script -->
-<script src="https://unpkg.com/leaflet.polylinedecorator@1.6.0/dist/leaflet.polylinedecorator.js"></script>
-
-
 <script>
+const map = L.map('map', { zoomSnap: 0.1, maxZoom: 10 }).setView([0, 0], 2);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-const map = L.map('map').setView([0, 0], 2);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    maxZoom: 19,
-}).addTo(map);
+var startIcon = L.icon({ iconUrl: 'images/start-icon.svg', iconSize: [15, 15] });
+var endIcon = L.icon({ iconUrl: 'images/end-icon.svg', iconSize: [15, 15] });
 
-var startIcon = L.icon({
-    iconUrl: 'images/start-icon.svg',
-    iconSize:     [15, 15], // size of the icon
-    shadowSize:   [0, 0], // size of the shadow
-    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
-});
+let polylineLayer = null, startMarker = null, endMarker = null;   
 
-var endIcon = L.icon({
-    iconUrl: 'images/end-icon.svg',
-    iconSize:     [15, 15], // size of the icon
-    shadowSize:   [0, 0], // size of the shadow
-    popupAnchor:  [-3, -76] // point from which the popup should open relative to the iconAnchor
-});
-
-  let polylineLayer = null;
-  let startMarker = null;  // New variable
-  let endMarker = null;    // New variable
-
-  function parseIFCoord(coord) {
+function parseIFCoord(coord) {
     const [latRaw, lonRaw] = coord.split('/');
-    const latDeg = parseInt(latRaw.slice(0, latRaw.length - 3));
-    const latMin = parseInt(latRaw.slice(-3, -1));
-    const latDir = latRaw.slice(-1);
-    const lonDeg = parseInt(lonRaw.slice(0, lonRaw.length - 3));
-    const lonMin = parseInt(lonRaw.slice(-3, -1));
-    const lonDir = lonRaw.slice(-1);
-    let lat = latDeg + latMin / 60;
-    let lon = lonDeg + lonMin / 60;
-    if (latDir === 'S') lat *= -1;
-    if (lonDir === 'W') lon *= -1;
+    let lat = parseInt(latRaw.slice(0, -3)) + parseInt(latRaw.slice(-3, -1)) / 60;
+    let lon = parseInt(lonRaw.slice(0, -3)) + parseInt(lonRaw.slice(-3, -1)) / 60;
+    if (latRaw.endsWith('S')) lat *= -1;
+    if (lonRaw.endsWith('W')) lon *= -1;
     return [lat, lon];
-  }
+}
 
-  function drawPolylineFromIF(text) {
-
-    
+function drawPolylineFromIF(text) {
     const coords = text.match(/\d+[NS]\/\d+[EW]/g);
-    if (!coords || coords.length === 0) {
-        alert("No valid IF coordinates found.");
-        return;
-    }
+    if (!coords) return;
     const points = coords.map(parseIFCoord);
     
-    // Clear previous layers and markers
     if (polylineLayer) map.removeLayer(polylineLayer);
     if (startMarker) map.removeLayer(startMarker);
     if (endMarker) map.removeLayer(endMarker);
 
-    // Create new polyline
-    polylineLayer = L.polyline(points, {
-        color: 'rgb(100, 195, 153)',
-        weight: 2,
-        opacity: 1.0
-    }).addTo(map);
+    polylineLayer = L.polyline(points, {color: 'rgb(100, 195, 153)', weight: 2}).addTo(map);
+    startMarker = L.marker(points[0], {icon: startIcon}).addTo(map);
+    endMarker = L.marker(points[points.length - 1], {icon: endIcon}).addTo(map);
+    
+    map.fitBounds(polylineLayer.getBounds(), { padding: [150, 150], maxZoom: 8 });
+}
 
-    // Add START/END markers with labels
-    if (points.length > 0) {
-        startMarker = L.marker((points[0]), {icon: startIcon}).addTo(map)
-        endMarker = L.marker((points[points.length - 1]), {icon: endIcon}).addTo(map)
+async function sendData() {
+    const input = document.getElementById("inputData").value.trim();
+    const fileInput = document.getElementById("kmlFileInput");
+    const successContent = document.getElementById("successContent");
+    const errorDisplay = document.getElementById("errorDisplay");
+    const resultSpan = document.getElementById("result");
+    const loadingMsg = document.getElementById("loadingMessage");
+
+    if (!input && fileInput.files.length === 0) {
+        successContent.style.display = "none";
+        errorDisplay.style.display = "block";
+        errorDisplay.textContent = "⚠️ Error: No Input";
+        return;
     }
 
-    map.fitBounds(polylineLayer.getBounds(), { padding: [50, 50] });
+    loadingMsg.style.display = "inline";
+    errorDisplay.style.display = "none";
+    successContent.style.display = "none";
+
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbw_-yklZ318gqUY-B_Rc6h-mgPGAlY2pmEAVjz3oR2RsBBZNRAm2hUCJTR_qJt2cxcc/exec";
+    const formData = new FormData();
+    formData.append("input", input);
+
+    try {
+        const response = await fetch(webAppUrl, { method: "POST", body: formData });
+        const text = await response.text();
+        resultSpan.textContent = text;
+        successContent.style.display = "block";
+        drawPolylineFromIF(text);
+        setTimeout(() => map.invalidateSize(), 100);
+    } catch (err) {
+        successContent.style.display = "none";
+        errorDisplay.style.display = "block";
+        errorDisplay.textContent = "⚠️ Connection Error";
+    } finally {
+        loadingMsg.style.display = "none";
+    }
 }
-  async function sendData() {
-  const input = document.getElementById("inputData").value;
-  const loadingMsg = document.getElementById("loadingMessage");
-  const resultSpan = document.getElementById("result");
 
-  // Show loading
-  loadingMsg.style.display = "inline";
-  resultSpan.textContent = "";
+function toggleInfo() {
+  const infoBlock = document.getElementById("instructionText");
+  infoBlock.style.display = (infoBlock.style.display === "none" || infoBlock.style.display === "") ? "block" : "none";
+}
 
-  const webAppUrl = "https://script.google.com/macros/s/AKfycbw_-yklZ318gqUY-B_Rc6h-mgPGAlY2pmEAVjz3oR2RsBBZNRAm2hUCJTR_qJt2cxcc/exec";
-
-  const formData = new FormData();
-  formData.append("input", input);
-
-  try {
-    const response = await fetch(webAppUrl, {
-      method: "POST",
-      body: formData
+function copyResult() {
+    const resultText = document.getElementById("result").textContent;
+    navigator.clipboard.writeText(resultText).then(() => {
+        document.getElementById("copyConfirmation").style.display = "inline";
+        setTimeout(() => { document.getElementById("copyConfirmation").style.display = "none"; }, 2000);
     });
-    const text = await response.text();
-
-    resultSpan.textContent = text;
-    drawPolylineFromIF(text);
-  } finally {
-    // Hide loading
-    loadingMsg.style.display = "none";
-  }
 }
 
 document.getElementById('kmlFileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
-
+    document.querySelector('.file-name').textContent = "Selected: " + file.name;
     const reader = new FileReader();
     reader.onload = function(e) {
-        try {
-            const parser = new DOMParser();
-            const kmlDoc = parser.parseFromString(e.target.result, "text/xml");
-            const coordinates = kmlDoc.querySelector('coordinates');
-            
-            if (coordinates) {
-                // Clean up whitespace and set textarea value
-                const coordText = coordinates.textContent
-                    .trim()
-                    .replace(/\n/g, ' ')
-                    .replace(/\s+/g, ' ');
-                
-                document.getElementById('inputData').value = coordText;
-            } else {
-                alert('No coordinates found in KML file!');
-            }
-        } catch (error) {
-            alert('Error reading KML file: ' + error.message);
-        }
+        const parser = new DOMParser();
+        const kmlDoc = parser.parseFromString(e.target.result, "text/xml");
+        const coords = kmlDoc.querySelector('coordinates');
+        if (coords) document.getElementById('inputData').value = coords.textContent.trim().replace(/\s+/g, ' ');
     };
     reader.readAsText(file);
 });
-function copyResult() {
-  const resultText = document.getElementById("result").textContent;
-  const confirmation = document.getElementById("copyConfirmation");
-  
-  if (!resultText) {
-    alert("No coordinates to copy!");
-    return;
-  }
-
-  navigator.clipboard.writeText(resultText).then(() => {
-    confirmation.style.display = "inline";
-    setTimeout(() => {
-      confirmation.style.display = "none";
-    }, 2000);
-  }).catch(err => {
-    alert("Failed to copy text: " + err);
-  });
-}
-
 </script>
 </body>
 </html>

@@ -4,6 +4,45 @@ body {
   color:rgb(224,225,226);
 }
 
+
+/* Container to align button and info icon */
+.action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+/* Updated info-icon styles */
+.info-icon {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; /* Slightly larger for better clicking */
+  height: 18px;
+  border-radius: 50%;
+  border: 1px solid rgb(100, 195, 153);
+  color: rgb(100, 195, 153);
+  font-family: serif;
+  font-size: 12px;
+  transition: 0.3s;
+  
+  /* Prevent highlighting */
+  user-select: none; 
+  -webkit-user-select: none; /* Safari */
+  -moz-user-select: none;    /* Firefox */
+  -ms-user-select: none;     /* IE/Edge */
+}
+
+.info-icon:hover {
+  background-color: rgba(100, 195, 153, 0.2);
+}
+
+
+
+
 button, select {
   background-color: rgb(50, 50, 50);
   border: 1px solid rgb(131, 131, 131);
@@ -170,8 +209,8 @@ hr {
 }
 
 .ldgBtton:hover {
-  color: rgb(50, 50, 50);
-  background-color:rgb(224,225,226);
+  color:rgb(50,50,50);;
+  background-color:rgba(224,225,226, 1);
 }
 
 
@@ -188,6 +227,7 @@ hr {
   margin: 2px;
   font-size: 12px
 }
+
 
 
 .textOutput {
@@ -237,25 +277,44 @@ hr {
   color: rgb(100, 195, 153);
 }
 
-
-
-
+/* Consolidated & Fixed Size for the Upload Box */
 .custom-file-input {
   color: rgb(224, 225, 226);
   background-color: rgb(50, 50, 50);
-  font-family: 'B612 Mono', monospace;
-  font-size: 12px;
-  padding: 8px 15px;
-  border: 1px solid rgb(100, 100, 100);
-  border-radius: 3px;
+  border: 1px solid rgb(118 118 118);
+  border-radius: 0px !important; /* Sharp corners */
   cursor: pointer;
-  display: inline-block;
+  
+  /* Use flex to center the icon inside the box */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Restores the original size */
+  width: 155px;  
+  height: 64px; /* Matches the vertical height from your 23px padding */
+  
+  box-sizing: border-box;
   transition: background-color 0.3s;
 }
 
 .custom-file-input:hover {
-  background-color: rgb(50, 50, 50);
+  background-color: rgb(60, 60, 60);
 }
+
+/* Ensure the icon color matches your 'grey' preference */
+.file-icon-only {
+  color: rgb(117 117 117); 
+  width: 28px;
+  height: 28px;
+  display: block;
+}
+
+/* Keep icon grey on hover too, or slightly brighten it */
+.custom-file-input:hover .file-icon-only {
+  color: rgb(224, 225, 226);
+}
+
 
 .custom-file-input:active {
   background-color: rgb(40, 40, 40);
@@ -270,7 +329,7 @@ hr {
   color: rgb(150, 150, 150);
   font-family: 'B612 Mono', monospace;
   font-size: 12px;
-}
+} 
 
 
 

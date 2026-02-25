@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/x-icon" href="/images/flightSmartLogoTransparent.png">
+<title>flightSmart - Descent Calculator</title>
+<link href='https://fonts.googleapis.com/css?family=B612+Mono' rel='stylesheet'>
+<link rel="stylesheet" href="mainstyle.css" type="text/css" />
+<style>
+    /* Sharp blinking without fading - 3 times */
+    @keyframes sharp-blink {
+        50% { visibility: hidden; }
+    }
+    .blink-animation {
+        animation: sharp-blink 0.3s step-end 3;
+    }
+
+    .secondaryButton {
+        background-color: rgb(50, 50, 50);
+        border: 1px solid rgb(131, 131, 131);
+        color: rgb(224, 225, 226);
+    }
+
+    /* Style for the placeholders to look like your KML example grey */
+    input::placeholder {
+        color: rgba(224, 225, 226, 0.5);
+        opacity: 1; 
+    }
+
+    /* Default input state */
+    input[type=number] {
+        transition: color 0.2s ease;
+    }
+    
+    .mode-toggle-container {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 15px;
+    }
+
+    /* Custom Mode Button Styles */
+    .mode-btn {
+        flex: 1;
+        cursor: pointer;
+        font-size: 11px;
+        background-color: rgb(50, 50, 50);
+        border: 1px solid rgb(131, 131, 131); /* Grey border instead of green */
+        color: rgb(224, 225, 226);
+        padding: 5px 2px;
+    }
+
+    /* Soft lit-up state for the active mode */
+    .mode-btn-active {
+        background-color: rgba(224,225,226, 1);
+        color: rgb(30, 30, 30);
+        border: 1px solid rgb(131, 131, 131);
+    }
+
+    /* --- INFO ICON & INSTRUCTION STYLING --- */
+    .action-row {
+      display: flex;
+      justify-content: space-between; /* This pushes the icon to the far right */
+      align-items: center;
+      margin-top: 15px;
+      width: 100%; /* Ensure it spans the full width of the container */
+    }
+
+    .info-icon {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 1px solid rgb(100, 195, 153);
+      color: rgb(100, 195, 153);
+      font-family: serif;
+      font-size: 12px;
+      transition: 0.3s;
+      user-select: none;
+    }
+    .info-icon:hover { background-color: rgba(100, 195, 153, 0.2); }
+
+    #instructionText {
+      display: none;
+      margin-top: 15px;
+      margin-bottom: 15px;
+      padding: 10px;
+      background-color: rgba(50, 50, 50, 0.5);
+      border-left: 2px solid rgb(100, 195, 153);
+    }
+</style>
+</head>
+<body>
+
+<div class="ldgDIV" style="display: flex; flex-direction: column;">
+    <a href="/index.html"><img src="images/flightSmartTitleOG.png" width="200" alt="flightSmart"></a>
+    <a class="ldgBtton" href="/aircraftCalculator.html" title="Aircraft Calculator">Aircraft Calculator (using Community Data!)</a>
+    <a class="ldgBtton" href="/kmlToIF.html" title="KML to IF coordinates">KML -> IF Coordinates</a> 
+    <a class="ldgBttonSelected" href="/descent.html" title="Descent Calculator">Descent Calculator</a>
+</div>
+
+<table class="flightData">
+    <tr> 
+        <td>
+            <div class="mode-toggle-container">
+                <button id="btnDist" class="mode-btn mode-btn-active" onclick="setMode('dist')">Output Miles from Target</button>
+                <button id="btnFpm" class="mode-btn" onclick="setMode('fpm')">Output Vertical Speed</button>
+            </div>
+            
+            <input type="hidden" id="calcMode" value="dist">
+
+            <div style="margin-bottom: 5px;">
+                <input type="number" id="currentAlt" placeholder="18000" onfocus="this.placeholder=''" onblur="this.placeholder='18000'" style="width: 100px; margin-right: 10px;">
+                <label for="currentAlt">Current Altitude (ft)</label>
+            </div>
+
+            <div style="margin-bottom: 5px;">
+                <input type="number" id="targetAlt" placeholder="3000" onfocus="this.placeholder=''" onblur="this.placeholder='3000'" style="width: 100px; margin-right: 10px;">
+                <label for="targetAlt">Target Altitude (ft)</label>
+            </div>
+
+            <div style="margin-bottom: 5px; display: flex; align-items: center;">
+                <input type="number" id="gsHigh" placeholder="280" onfocus="this.placeholder=''" onblur="this.placeholder='280'" style="width: 43px; margin-right: 5px;">
+                <input type="number" id="gsLow" placeholder="250" onfocus="this.placeholder=''" onblur="this.placeholder='250'" style="width: 44px; margin-right: 18px;">
+                <label> GS above / below FL100 (kt)</label>
+            </div>
+
+            <div id="vsInputRow" style="margin-bottom: 15px;">
+                <input type="number" id="descentRate" placeholder="1800" onfocus="this.placeholder=''" onblur="this.placeholder='1800'" style="width: 100px; margin-right: 10px;">
+                <label for="descentRate">Target Descent Rate (fpm)</label>
+            </div>
+
+            <div id="distInputRow" style="margin-bottom: 15px; display: none;">
+                <input type="number" id="inputDist" placeholder="50" onfocus="this.placeholder=''" onblur="this.placeholder='50'" style="width: 100px; margin-right: 10px;">
+                <label for="inputDist">Distance to Target (NM)</label>
+            </div>
+
+            <div class="action-row">
+                <div>
+                    <button class="mainButton" id="calculateButton" onclick="calculate()">--Calculate--</button>
+                    <button class="secondaryButton" id="resetButton" style="margin-left: 5px;" onclick="resetForm()">--Reset--</button>
+                </div>
+                <div class="info-icon" onclick="toggleInfo()" title="Click for instructions">i</div>
+            </div>
+
+            <div id="instructionText">
+                <p class="dataHeader" style="margin: 0; font-size: 13px; font-weight:350;"> 
+                    Plan your descent by calculating either the required distance to start your descent or the vertical speed needed to hit a target.
+                    <br><br>
+                    <strong>Output Miles from Target:</strong> Calculates when to start descending based on a fixed FPM. Includes a buffer for deceleration at FL100.
+                    <br><br>
+                    <strong>Output Vertical Speed:</strong> Calculates the constant descent rate required based on your current distance from the target.
+                </p>
+            </div>
+        </td>
+    </tr>
+    <tr>
+        <td id="outputData">
+            <span class="dataHeader" style="color: rgb(224,225,226);"> </span>
+        </td>
+    </tr>
+</table>
+
+<div class="WebsiteCredits">
+    <br>
+    <a href="https://community.infiniteflight.com/t/the-unofficial-infinite-aircraft-calculator-using-community-data/869648" target="_blank" class="myCredit">website by darkeyes ↗</a>
+</div>
+
+<script>
+    function toggleInfo() {
+      const infoBlock = document.getElementById("instructionText");
+      infoBlock.style.display = (infoBlock.style.display === "none" || infoBlock.style.display === "") ? "block" : "none";
+    }
+
+    function setMode(mode) {
+        document.getElementById('calcMode').value = mode;
+        
+        if (mode === 'dist') {
+            document.getElementById('btnDist').className = 'mode-btn mode-btn-active';
+            document.getElementById('btnFpm').className = 'mode-btn';
+            document.getElementById('distInputRow').style.display = 'none';
+            document.getElementById('vsInputRow').style.display = 'block';
+        } else {
+            document.getElementById('btnDist').className = 'mode-btn';
+            document.getElementById('btnFpm').className = 'mode-btn mode-btn-active';
+            document.getElementById('distInputRow').style.display = 'block';
+            document.getElementById('vsInputRow').style.display = 'none';
+        }
+        
+        document.getElementById('outputData').innerHTML = '';
+        resetInputColors();
+    }
+
+    function resetInputColors() {
+        const allInputs = document.querySelectorAll('input[type=number]');
+        allInputs.forEach(input => {
+            input.style.color = 'rgb(224, 225, 226)';
+        });
+    }
+
+    function calculate() {
+        const mode = document.getElementById('calcMode').value;
+        const allInputs = document.querySelectorAll('input[type=number]');
+        allInputs.forEach(input => {
+            input.style.color = 'rgb(255, 255, 255)';
+        });
+
+        const currentAlt = parseFloat(document.getElementById('currentAlt').value || document.getElementById('currentAlt').placeholder);
+        const targetAlt = parseFloat(document.getElementById('targetAlt').value || document.getElementById('targetAlt').placeholder);
+        const gsHigh = parseFloat(document.getElementById('gsHigh').value || document.getElementById('gsHigh').placeholder);
+        const gsLow = parseFloat(document.getElementById('gsLow').value || document.getElementById('gsLow').placeholder);
+        
+        const transitionAlt = 10000;
+        const outputDiv = document.getElementById('outputData');
+
+        if (targetAlt >= currentAlt) {
+            outputDiv.innerHTML = `<span class="dataHeader" style="color: rgb(255, 100, 100);">⚠️ Error: Target Altitude must be lower.</span>`;
+            return;
+        }
+
+        let outputHTML = "";
+
+        if (mode === 'dist') {
+            const vSpeed = parseFloat(document.getElementById('descentRate').value || document.getElementById('descentRate').placeholder);
+            let alt1 = Math.max(0, currentAlt - transitionAlt);
+            let dist1 = (alt1 / vSpeed) * (gsHigh / 60);
+            let alt2 = Math.max(0, (currentAlt < transitionAlt ? currentAlt : transitionAlt) - targetAlt);
+            let dist2 = (alt2 / vSpeed) * (gsLow / 60);
+            let buffer = (gsHigh > gsLow && currentAlt > transitionAlt) ? (gsHigh - gsLow) / 10 : 0;
+            let total = dist1 + dist2 + buffer;
+
+            outputHTML = `
+                <span class="dataHeader" style="color: rgb(224,225,226);">Descent Profile:</span><br><br>
+                ${currentAlt > transitionAlt ? `<span style="color: rgb(224,225,226); font-size: 12px;">Distance (above FL100): </span><span class="data">${dist1.toFixed(1)} NM</span><br>` : ''}
+                <span style="color: rgb(224,225,226); font-size: 12px;">Distance (below FL100): </span><span class="data">${dist2.toFixed(1)} NM</span><br>
+                ${buffer > 0 ? `<span style="color: rgb(224,225,226); font-size: 12px;">Decel Buffer: </span><span class="data">${buffer.toFixed(1)} NM</span><br>` : ''}
+                <br><span style="font-weight: bold;"><span class="data">Total Distance Out: </span><span class="data blink-animation">${total.toFixed(1)} NM</span></span>
+            `;
+        } else {
+            const distTotal = parseFloat(document.getElementById('inputDist').value || document.getElementById('inputDist').placeholder);
+            let buffer = (gsHigh > gsLow && currentAlt > transitionAlt) ? (gsHigh - gsLow) / 10 : 0;
+            let availableDist = Math.max(0.1, distTotal - buffer);
+            let altTotal = currentAlt - targetAlt;
+            let alt1 = Math.max(0, currentAlt - transitionAlt);
+            let alt2 = altTotal - alt1;
+            let requiredVS = ((alt1 * (gsHigh / 60)) + (alt2 * (gsLow / 60))) / availableDist;
+
+            outputHTML = `
+                <span class="dataHeader" style="color: rgb(224,225,226);">Required Rate:</span><br><br>
+                <span style="color: rgb(224,225,226); font-size: 12px;">Altitude to Lose: </span><span class="data">${altTotal} ft</span><br>
+                ${buffer > 0 ? `<span style="color: rgb(224,225,226); font-size: 12px;">Decel Buffer: </span><span class="data">${buffer.toFixed(1)} NM</span><br>` : ''}
+                <br><span style="font-weight: bold;"><span class="data">Target Vertical Speed: </span><span class="data blink-animation">-${Math.round(requiredVS)} FPM</span></span>
+            `;
+        }
+
+        outputDiv.innerHTML = outputHTML;
+    }
+
+    function resetForm() {
+        document.getElementById('currentAlt').value = "";
+        document.getElementById('targetAlt').value = "";
+        document.getElementById('gsHigh').value = "";
+        document.getElementById('gsLow').value = "";
+        document.getElementById('descentRate').value = "";
+        document.getElementById('inputDist').value = "";
+        document.getElementById('outputData').innerHTML = '';
+        resetInputColors();
+    }
+</script>
+
+</body>
+</html>
