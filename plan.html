@@ -4,41 +4,70 @@
     <meta charset="UTF-8">
     <title>FlightSmart | Flight Planner</title>
     <script type="text/javascript" src="js/simbrief.apiv1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/blueimp-md5/2.19.0/js/md5.min.js"></script>
+    
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 40px; }
-        .planner-card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; }
-        button { width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        #results { margin-top: 20px; display: none; background: #e9ecef; padding: 15px; border-radius: 4px; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a1a; color: white; padding: 40px; }
+        .container { max-width: 600px; margin: auto; background: #2a2a2a; padding: 30px; border-radius: 12px; }
+        input { width: 100%; padding: 12px; margin: 10px 0; border: none; border-radius: 5px; background: #333; color: white; box-sizing: border-box;}
+        button { width: 100%; padding: 15px; background: #0070f3; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        button:hover { background: #0056b3; }
+        #output { margin-top: 20px; display: none; border-top: 1px solid #444; padding-top: 20px; }
     </style>
 </head>
 <body>
 
-<div class="planner-card">
-    <h2>Generate Flight Plan</h2>
+<div class="container">
+    <h2>Flight Planner</h2>
     <form id="sbapiform">
-        <input type="text" name="orig" placeholder="Departure ICAO (e.g. KJFK)" required>
-        <input type="text" name="dest" placeholder="Arrival ICAO (e.g. EGLL)" required>
-        <input type="text" name="type" placeholder="Aircraft Type (e.g. A320)" required>
+        <label>Departure ICAO</label>
+        <input type="text" name="orig" placeholder="e.g. KJFK" required>
         
-        <button type="button" onclick="simbrief_submit({outputfile: 'https://flightsmart.vercel.app/callback.html'});">
-            Generate Plan
-        </button>
+        <label>Arrival ICAO</label>
+        <input type="text" name="dest" placeholder="e.g. EGLL" required>
+        
+        <label>Aircraft Type</label>
+        <input type="text" name="type" placeholder="e.g. A320" required>
+
+        <button type="button" onclick="generateFlightPlan()">Generate Plan</button>
     </form>
 
-    <div id="results">
-        <h3>Plan Generated!</h3>
-        <p id="route-display"></p>
-        <a id="ofp-link" target="_blank">View Full Briefing (PDF)</a>
+    <div id="output">
+        <p id="status-text">Generating...</p>
+        <a id="pdf-link" target="_blank" style="color: #0070f3; text-decoration: none;">View Briefing Document (PDF)</a>
     </div>
 </div>
 
 <script>
-    // This function handles the data SimBrief sends back to your site
+    // YOUR SETTINGS
+    const MY_API_KEY = "8a1ASgWFRkAtaVAaRJtENheTFJq7oCqa"; // Put your SimBrief API key here
+
+    function generateFlightPlan() {
+        const form = document.getElementById('sbapiform');
+        const orig = form.orig.value.toUpperCase();
+        const dest = form.dest.value.toUpperCase();
+        const type = form.type.value.toUpperCase();
+
+        // SimBrief requires an MD5 hash of: APIKEY + ORIGIN + DESTINATION + TYPE
+        // This is why you were getting errors—the request wasn't "signed"
+        const apiCode = md5(MY_API_KEY + orig + dest + type);
+
+        // This triggers the SimBrief Popup
+        simbrief_submit({
+            orig: orig,
+            dest: dest,
+            type: type,
+            apicode: apiCode,
+            // The callback tells SimBrief where to send data after it's done
+            callback: "https://flightsmart-github-io.vercel.app/plan.html" 
+        });
+    }
+
+    // This function is automatically called by simbrief.apiv1.js when the plan is ready
     function simbriefproccess(data) {
-        document.getElementById('results').style.display = 'block';
-        document.getElementById('route-display').innerText = "Route: " + data.general.route;
-        document.getElementById('ofp-link').href = data.files.pdf.link;
+        document.getElementById('output').style.display = 'block';
+        document.getElementById('status-text').innerText = "Route: " + data.general.route;
+        document.getElementById('pdf-link').href = data.files.pdf.link;
     }
 </script>
 
