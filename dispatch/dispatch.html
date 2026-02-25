@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>FlightSmart Dispatch</title>
+    <script type="text/javascript" src="https://www.simbrief.com/api/simbrief.apiv1.js"></script>
+    <link rel="stylesheet" href="../mainstyle.css"> </head>
+<body>
+    <h1>SimBrief Flight Dispatch</h1>
+
+    <div id="input-section">
+        <form id="sbapiform">
+            <label>Departure (ICAO):</label>
+            <input type="text" name="orig" maxlength="4" required placeholder="e.g. KJFK"><br><br>
+
+            <label>Arrival (ICAO):</label>
+            <input type="text" name="dest" maxlength="4" required placeholder="e.g. KLAX"><br><br>
+
+            <label>Aircraft Type:</label>
+            <input type="text" name="type" required placeholder="e.g. B738"><br><br>
+
+            <input type="button" 
+                   onclick="simbriefsubmit('https://26test.vercel.app/dispatch');" 
+                   value="Generate Flight Plan">
+        </form>
+    </div>
+
+    <hr>
+
+    <div id="output-section" style="display:none; border: 1px solid #ccc; padding: 20px;">
+        <h2>Your Flight Plan is Ready</h2>
+        <div id="ofp-data">Checking for latest flight...</div>
+    </div>
+
+    <script>
+        async function checkAndLoadOFP() {
+            // We use your Vercel proxy to get the data
+            // Tip: Replace 'YOUR_USERNAME' with your actual SimBrief username
+            const USERNAME = "YOUR_USERNAME"; 
+            const outputDiv = document.getElementById('output-section');
+            const dataDiv = document.getElementById('ofp-data');
+
+            try {
+                const response = await fetch(`/api/get-ofp?username=${USERNAME}`);
+                const data = await response.json();
+
+                // If a valid flight was found in the last few minutes
+                if (data && data.general) {
+                    outputDiv.style.display = 'block';
+                    dataDiv.innerHTML = `
+                        <h3>${data.general.icao_airline}${data.general.flight_number}</h3>
+                        <p><strong>Route:</strong> ${data.general.route}</p>
+                        <p><strong>Block Fuel:</strong> ${data.params.block_fuel} lbs</p>
+                        <p><a href="${data.files.pdf.link}" target="_blank" class="button">Download PDF OFP</a></p>
+                    `;
+                }
+            } catch (e) {
+                console.log("No active flight found yet.");
+            }
+        }
+
+        // Run this every time the page loads
+        window.onload = checkAndLoadOFP;
+    </script>
+</body>
+</html>
