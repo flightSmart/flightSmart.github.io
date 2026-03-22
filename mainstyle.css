@@ -5,6 +5,16 @@ body {
 }
 
 
+
+.button-container {
+    display: flex;
+    gap: 0; /* Change this if you want a small gap between them */
+}
+
+
+
+
+
 /* Container to align button and info icon */
 .action-row {
   display: flex;
@@ -66,11 +76,26 @@ button:focus{
   color: rgb(30,30,30)
 }
 
+button.active {
+  background-color: rgb(224, 225, 226);
+  color: rgb(30, 30, 30);
+  border: 1px solid rgb(224, 225, 226); /* Optional: makes the border match */
+}
+
+
 label {
   font-size: 12px;
 }
 
 input[type=number] {
+  color:rgb(224,225,226);
+  background-color:rgb(50, 50, 50);
+  font-size: 12px;
+  font-family:'B612 Mono';
+  font-size: 12px
+}
+
+input[type=text] {
   color:rgb(224,225,226);
   background-color:rgb(50, 50, 50);
   font-size: 12px;
@@ -110,6 +135,13 @@ td {
   padding: 7px;
   border-radius: 7px;
   outline: 1px solid rgba(232, 232, 232, 0.275);
+}
+
+.expertServerTable {
+  background-color: rgb(30,30,30);
+  padding: 7px;
+  border-radius: 0px;
+  outline: 0px solid rgba(232, 232, 232, 0.275);
 }
 
 tr {
@@ -195,8 +227,31 @@ hr {
 
 
 .ldgBtton {
+  flex: 1; /* This makes them share the space 50/50 automatically */
+  text-align: center;
+  /* keep your other styling here */
+
   background-color: rgb(50, 50, 50);
   border: 1px solid rgb(100, 195, 153);
+  color:rgb(224,225,226);
+  padding: 3px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 12px;
+  font-family:'B612 Mono';
+  margin: 2px;
+  font-size: 12px
+
+}
+
+.ldgBttoninvis {
+  flex: 1; /* This makes them share the space 50/50 automatically */
+  text-align: center;
+  /* keep your other styling here */
+
+  background-color: rgb(50, 50, 50);
+  border: 0px solid rgb(100, 195, 153);
   color:rgb(224,225,226);
   padding: 3px;
   text-align: center;
@@ -215,6 +270,11 @@ hr {
 
 
 .ldgBttonSelected {
+    flex: 1; /* This makes them share the space 50/50 automatically */
+  text-align: center;
+  /* keep your other styling here */
+
+
   background-color: rgba(224,225,226, 1);
   border: 1px solid rgb(100, 195, 153);
   color:rgb(50,50,50);
@@ -325,7 +385,7 @@ hr {
 }
 
 .file-name {
-  margin-left: 10px;
+  margin-left: 0px;
   color: rgb(150, 150, 150);
   font-family: 'B612 Mono', monospace;
   font-size: 12px;
@@ -333,13 +393,16 @@ hr {
 
 
 
+
+
 @media screen and (max-width: 600px) {
   .flightData {
     width: auto;
+    min-width: 90%
   }
 
   .ldgDIV{
-    width: 350px;
+    width: 90%;
     
     border-radius: 0px;
     background-color: rgb(50, 50, 50);
