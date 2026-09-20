@@ -1,0 +1,2817 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Logbook Map</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href='https://fonts.googleapis.com/css?family=B612+Mono' rel='stylesheet'>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Shadows+Into+Light&display=swap" rel="stylesheet">    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <link rel="icon" type="image/x-icon" href="/images/favicon_logbook.png">
+    
+    <style>
+        /* ═══════════════════════════════════════════════════════════
+           FLIGHTSMART THEME OVERRIDE
+        ═══════════════════════════════════════════════════════════ */
+        :root {
+            /* Flightsmart Base Colors */
+            --bg-dark: rgb(30, 30, 30);
+            --bg-light: rgb(50, 50, 50);
+            --bg-hover: rgb(60, 60, 60);
+            --bg-active: rgb(40, 40, 40);
+            --text-main: rgb(224, 225, 226);
+            --text-main-alpha: rgba(224, 225, 226, 0.5);
+            --text-muted: rgb(150, 150, 150);
+            --accent-green: rgb(100, 195, 153);
+            --border-main: rgb(131, 131, 131);
+            --border-faint: rgba(232, 232, 232, 0.275);
+            --font-mono: 'B612 Mono', monospace;
+            --font-sans: Helvetica, sans-serif;
+
+            /* Component Mapping */
+            --bg-main: var(--bg-dark);
+            --bg-sidebar: var(--bg-dark);
+            --bg-header-grey: var(--bg-light);
+            --bg-accent-grey: var(--bg-light);
+            --bg-row-hover: var(--bg-hover);
+
+            --brd-light: var(--border-main);
+            --brd-medium: var(--border-main);
+            --brd-sidebar: var(--border-main);
+            --brd-table: var(--border-faint);
+
+            --txt-main: var(--text-main);
+            --txt-muted: var(--text-muted);
+            --txt-dim: var(--text-muted);
+            --txt-hint: var(--border-main);
+
+            /* Filters */
+            --inc-bg: var(--bg-dark);
+            --inc-txt: var(--accent-green);
+            --inc-brd: var(--accent-green);
+            --exc-bg: var(--bg-dark);
+            --exc-txt: rgb(248, 81, 73); 
+            --exc-brd: rgb(248, 81, 73);
+
+            --sidebar-font: var(--font-mono);
+            --hover-info-bg: var(--bg-light);
+            --hover-info-brd: var(--border-main);
+        }
+
+        /* ── LIGHT MODE THEME ── */
+        [data-theme="light"] {
+            --bg-dark: rgb(220, 220, 220);
+            --bg-light: rgb(225, 225, 225);
+            --bg-hover: rgb(218, 217, 213);
+            --bg-active: rgb(240, 239, 236);
+            --text-main: rgb(70, 70, 70);
+            --text-muted: rgb(105, 105, 105);
+            --accent-green: rgb(0, 148, 90);
+            --border-main: rgb(165, 165, 165);
+            --border-faint: rgba(0, 0, 0, 0.1);
+            --exc-txt: rgb(196, 48, 43);
+            --exc-brd: rgb(196, 48, 43);
+            --inc-txt: rgb(0, 148, 90);
+            --inc-brd: rgb(0, 148, 90);
+        }
+
+        [data-theme="light"] body {
+            background-color: rgb(248, 247, 244);
+            color: rgb(70, 70, 70);
+        }
+
+        /* Lighter, warmer map tiles for light mode */
+        [data-theme="light"] .leaflet-layer {
+            filter: hue-rotate(000deg) brightness(100%) contrast(100%) saturate(00%); 
+        }
+
+        /* Make hardcoded SVG icon strokes readable in light mode */
+        [data-theme="light"] .map-btn svg {
+            /* Turns the light grey SVG into rgb(105, 105, 105) */
+            filter: invert(72%) sepia(5%) saturate(6%) hue-rotate(6deg) brightness(90%) contrast(94%);
+        }
+
+        [data-theme="dark"], body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+        }
+
+        /* ── AIRPORT LABELS ON MAP ── */
+        .map-airport-label {
+            font-family: var(--font-mono);
+            font-size: 9px;
+            color: rgb(180, 180, 180);
+            white-space: nowrap;
+            pointer-events: none;
+            /* Default dark mode shadow */
+            text-shadow: 0 0 1px rgb(30, 30, 30), 0 0 1px rgb(30, 30, 30), 0 0 1px rgb(30, 30, 30);
+        }
+
+        [data-theme="light"] .map-airport-label {
+            color: rgb(70, 70, 70); /* Darker text so it reads well */
+            /* Clean white halo for light mode */
+            text-shadow: 0 0 1px rgb(255, 255, 255), 0 0 1px rgb(255, 255, 255), 0 0 1px rgb(255, 255, 255);
+        }
+
+
+        /* ── GLOBAL RESET ── */
+        *, *::before, *::after { 
+            box-sizing: border-box; 
+        }
+
+        body {
+            margin: 0; padding: 0;
+            font-family: var(--font-mono);
+            display: flex;
+            flex-direction: row; 
+            overflow: hidden;
+            height: 100vh;
+            letter-spacing: -0.5px;
+        }
+        
+        .map-btn svg text {
+            font-family: Helvetica, Arial, sans-serif !important;
+        }
+
+
+        /* ── LEFT PANEL (ROUTES) ── */
+        #left-panel {
+            width: 400px; height: 100%;
+            background: var(--bg-dark);
+            display: flex; flex-direction: column; flex-shrink: 0;
+            border-right: 1px solid var(--border-main);
+            z-index: 2000;
+            font-family: var(--font-mono);
+        }
+
+        /* ── MAP SECTION ── */
+        #map-container { flex-grow: 1; height: 100%; position: relative; }
+        #map { width: 100%; height: 100%; background: var(--bg-dark); }
+
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: hue-rotate(000deg) brightness(100%) contrast(100%) saturate(00%); 
+        }
+
+        #loading {
+            position: absolute; top: 10px; left: 50px; z-index: 1000;
+            background: var(--bg-light); padding: 9px 14px; 
+            border: 1px solid var(--border-main);
+            color: var(--text-main);
+            font-size: 10px; font-family: var(--font-mono);
+        }
+
+        .map-overlay-btns {
+            position: absolute; top: 10px; right: 10px; z-index: 1000;
+            display: flex; gap: 6px;
+        }
+        .map-btn {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-main);
+            color: var(--text-main);
+            font-size: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-block;
+            text-align: center;
+            font-family: var(--font-mono);
+            outline: none;         /* ← kills the default focus ring */
+        }
+        .map-btn:hover {
+            background-color: var(--bg-hover);   /* ← subtle, not full inversion */
+            color: var(--text-main);  
+            border: 1px solid var(--text-main);
+            outline: none;
+
+        }
+        .glow-active {
+                    filter: drop-shadow(0 0 1px #fa9822) drop-shadow(0 0 4px #fa9822);
+                    transition: filter 0.3s ease, stroke-width 0.2s ease;
+                    z-index: 1000 !important;
+        }
+        .glow-inactive {
+            filter: drop-shadow(0 0 1px #64c49a) drop-shadow(0 0 4px #64c49a);
+            transition: filter 0.3s ease, stroke-width 0.2s ease;
+        }
+
+
+        /* ── RIGHT SIDEBAR (FILTERS) ── */
+        #sidebar {
+            width: 350px; height: 100%;
+            background: var(--bg-dark);
+            display: flex; flex-direction: column; flex-shrink: 0;
+            border-left: 1px solid var(--border-main);
+            z-index: 2000;
+            font-family: var(--font-mono);
+        }
+
+        #filter-container {
+            padding: 4px 10px 2px;
+            background: var(--bg-dark);
+            border-bottom: 1px solid var(--border-main);
+            flex-shrink: 0; overflow-y: auto; max-height: 65%;
+        }
+
+        .filter-section { margin-bottom: 4px; }
+        .filter-header-row { margin-bottom: 2px; }
+
+        .filter-label {
+            font-family: var(--font-sans);
+            font-weight: bold;
+            font-size: 10px;
+            color: var(--text-main);
+            letter-spacing: normal;
+        }
+
+        /* ── DATE RANGE ── */
+        .date-row { display: flex; align-items: center; gap: 6px; margin-bottom: 5px; }
+        .date-row input[type="date"], input[type="text"] {
+            flex: 1; padding: 3px 4px;
+            border: 1px solid var(--border-main);
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--text-main); 
+            background-color: var(--bg-light);
+        }
+        .date-row input[type="date"]:focus, input[type="text"]:focus {
+            outline: none; border-color: var(--text-main);
+        }
+        .date-row span { font-size: 10px; color: var(--text-muted); }
+        
+        input[type="date"] {
+            color-scheme: dark;
+        }
+
+        [data-theme="light"] input[type="date"] {
+            color-scheme: light;
+        }
+
+
+        /* ── SEARCH INPUT ── */
+        .tag-input-wrapper { position: relative; }
+        .tag-input-row { display: flex; gap: 5px; height: 23px; }
+
+        .tag-box {
+            flex: 1;
+            border: 0px solid var(--border-main); 
+            background-color: var(--bg-light); cursor: text;
+            display: flex; align-items: center; padding: 0;
+        }
+
+        .tag-text-input {
+            border: none; outline: none; width: 100%; height: 100%;
+            padding: 0 2px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            background: transparent; color: var(--text-main);
+        }
+        .tag-text-input::placeholder { color: var(--text-muted); }
+
+        /* Action Buttons */
+        .action-btn {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-main);
+            color: var(--text-main);
+            font-size: 10px; font-family: var(--font-mono);
+            cursor: pointer; padding: 0 10px; transition: 0.2s;
+        }
+        .action-btn:hover {
+            background-color: var(--text-main);
+            color: var(--bg-dark);
+        }
+        .action-btn.btn-inc { border-color: var(--accent-green); color: var(--accent-green); }
+        .action-btn.btn-exc { border-color: var(--exc-brd); color: var(--exc-txt); }
+        .action-btn.btn-inc:hover { background-color: var(--accent-green); color: var(--bg-dark); }
+        .action-btn.btn-exc:hover { background-color: var(--exc-brd); color: var(--bg-dark); }
+
+        /* ── DROPDOWN ── */
+        .tag-dropdown {
+            display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            background: var(--bg-light);
+            border: 1px solid var(--border-main);
+            max-height: 350px; overflow-y: auto; z-index: 9999;
+        }
+        .tag-dropdown.open { display: block; }
+
+        .dropdown-group-header {
+            padding: 6px 10px 3px;
+            font-size: 10px; font-weight: bold;
+            font-family: var(--font-sans);
+            color: var(--text-main); 
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-faint);
+        }
+
+        .dropdown-opt {
+            padding: 7px 10px; cursor: pointer; font-size: 10px;
+            font-family: var(--font-mono);
+            display: flex; align-items: center; justify-content: space-between;
+            color: var(--text-main); transition: background 0.1s;
+        }
+        .dropdown-opt:hover { background: var(--bg-hover); }
+
+        .opt-badge { font-size: 10px; color: var(--text-muted); }
+
+        .no-results {
+            padding: 10px; font-size: 10px;
+            color: var(--text-muted); text-align: center;
+        }
+
+        /* ── CHIPS ── */
+        .tag-chip {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 4px 12px; font-size: 10px;
+            font-family: var(--font-mono);
+            background-color: var(--bg-light);
+            border: 1px solid var(--border-main);
+            color: var(--text-main);
+            gap: 6px;
+        }
+        .tag-chip.mode-include { border-color: var(--accent-green); color: var(--accent-green); }
+        .tag-chip.mode-exclude { border-color: var(--exc-brd); color: var(--exc-txt); }
+
+        .chip-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; letter-spacing: -0.5px; }
+        .chip-actions { display: flex; gap: 4px; align-items: center; flex-shrink: 0; }
+
+        .chip-toggle, .chip-remove {
+            background: none; border: none; cursor: pointer; padding: 1px 3px;
+            font-size: 10px; line-height: 1;
+            font-family: var(--font-mono);
+            color: var(--text-main);
+        }
+        .chip-toggle:hover, .chip-remove:hover { 
+            background: var(--text-main); color: var(--bg-dark); 
+        }
+
+        /* ── RESET BUTTON ── */
+        .reset-btn {
+            width: 100%; padding: 4px 6px;
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            border: 1px solid var(--border-main);
+            cursor: pointer;
+            font-size: 10px; font-family: var(--font-mono);
+            transition: 0.2s; margin-top: 10px; margin-bottom: 200px;;
+        }
+        .reset-btn:hover {
+            background: var(--text-main); color: var(--bg-dark); border-color: var(--text-main);
+
+        }
+
+        /* ── LEFT PANEL TABLE SECTION ── */
+        #routes-label {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 15px; flex-shrink: 0;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-main);
+            font-size: 10px; font-weight: bold;
+            font-family: var(--font-sans);
+            color: var(--text-main);
+            padding-left: 7px;
+        }
+        .header-stats {
+            display: flex; gap: 8px; align-items: center;
+            font-family: var(--font-mono);
+            font-weight: normal;
+        }
+        .header-stats span {
+            color: var(--text-muted);
+        }
+        .header-stats .stat-divider {
+            color: var(--border-main);
+            font-size: 8px;
+        }
+        /* Ensure the main count stays green and bold */
+        .header-stats #visible-routes-count {
+            color: var(--accent-green) !important;
+            font-weight: bold;
+        }
+
+        /* ── SECONDARY STATS BAR ── */
+        #secondary-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr; /* Changed to 3 equal columns */
+            border-bottom: 1px solid var(--border-main);
+            flex-shrink: 0;
+            background: var(--bg-light);
+        }
+        .sec-stat-cell {
+            padding: 5px 8px;
+            overflow: hidden;
+        }
+        /* Only add a right border to items that aren't the last one */
+        .sec-stat-cell:not(:last-child) {
+            border-right: 1px solid var(--border-faint);
+        }
+        .sec-stat-label {
+            color: var(--border-main);
+            font-size: 8px;
+        }
+        .sec-stat-value {
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--text-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .stat-arrow {
+            width: 9px;
+            height: 9px;
+            color: var(--border-main);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .stat-arrow:hover {
+            color: var(--text-main);
+        }
+
+        #visible-routes-count {
+            color: var(--accent-green);
+            font-family: var(--font-mono);
+        }
+
+        #sidebar-routes { padding: 0; overflow-y: auto; flex-grow: 1; background: var(--bg-dark); }
+
+        table { 
+            width: 100%; border-collapse: collapse; 
+            font-size: 10px; font-family: var(--font-mono); 
+            color: var(--text-main);
+            table-layout: fixed;
+        }
+
+        th {
+            padding: 7px 6px; 
+            text-align: left;
+            background: var(--bg-light);
+            border-bottom: 1px solid var(--border-main);
+            position: sticky; top: 0; z-index: 10;
+            color: var(--text-main);
+            letter-spacing: 0px;
+            
+            color: var(--border-main);
+            font-size: 8px;
+            font-family: var(--border-main);
+            letter-spacing: -0.7px;
+        }
+
+        td {
+            padding: 8px 6px; text-align: left;
+            border-bottom: 1px solid var(--border-faint);
+            background-color: var(--bg-dark);
+            vertical-align: middle;
+            letter-spacing: -0.5px;
+
+            border-right: 1px solid rgba(131, 131, 131, 0.1);
+        }
+        
+        /* ADDED: Zebra Striping for alternating backgrounds */
+        /* Targets the 1st, 5th, 9th rows */
+        .flight-row:nth-child(4n+1) td {
+            background-color: var(--bg-dark); 
+        }
+        /* Targets the 3rd, 7th, 11th rows */
+        .flight-row:nth-child(4n+3) td {
+            background-color: rgb(36, 36, 36); /* Slightly lighter than bg-dark */
+        }
+
+        [data-theme="light"] .flight-row:nth-child(4n+3) td {
+            background-color: rgb(225, 225, 225);
+        }
+        
+        .flight-row td:first-child b { font-weight: normal; }
+        
+        /* Ensures the hover effect overwrites the zebra striping */
+        .flight-row:hover td { background-color: var(--bg-hover) !important; cursor: pointer; color: var(--text-main); }
+
+
+
+
+        
+        .flight-row td:first-child b { font-weight: normal; }
+        .flight-row:hover td { background-color: var(--bg-hover); cursor: pointer; color: var(--text-main); }
+
+        /* Highlight for the table row */
+        .flight-row.active-row td {
+            background-color: rgba(250, 152, 34, 0.4) !important; 
+            border-bottom: 1px solid rgba(250, 152, 34, 1.0);
+            border-top: 1px solid rgba(250, 152, 34, 1.0);
+        }
+
+        .details-row td {
+            background-color: var(--bg-light);
+            border-bottom: 1px solid var(--border-main);
+            padding: 12px;
+            border: 1px solid rgba(250, 152, 34, 1.0);
+        }
+
+        /* ── AIRPORT HOVER INFO ── */
+        #hover-airport-id { color: var(--accent-green) !important; font-size: 15px !important; }
+       
+       #sidebar-routes, 
+        #filter-container {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;     /* Firefox */
+        }
+
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        #sidebar-routes::-webkit-scrollbar, 
+        #filter-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        /* ── CUSTOM DROPDOWN SCROLLBAR ── */
+        .tag-dropdown {
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-light) var(--bg-dark);
+        }
+        .tag-dropdown::-webkit-scrollbar {
+            width: 8px;
+        }
+        .tag-dropdown::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        .tag-dropdown::-webkit-scrollbar-thumb {
+            background: var(--bg-light);
+            border: 1px solid var(--bg-dark);
+            border-radius: 4px;
+        }
+        .tag-dropdown::-webkit-scrollbar-thumb:hover {
+            background: var(--border-main);
+        }    
+
+        /* ── AIRPORT HOVER INFO ── */
+        #airport-hover-info {
+            /* Mirrored from .tag-chip */
+            padding: 4px 12px; 
+            margin: 0 12px 12px 12px; 
+            background-color: var(--bg-light);
+            border: 1px solid var(--accent-green); 
+            color: var(--accent-green); 
+            font-family: var(--font-mono);
+            font-size: 10px;
+            align-items: center; 
+            justify-content: space-between;
+            gap: 6px;
+        }
+
+        #hover-airport-id { 
+            font-weight: bold; 
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            /* Scaled down to match the chip text */
+            font-size: 10px; 
+        }
+
+        #hover-airport-count {
+            font-size: 9px; 
+            color: var(--text-muted); 
+            white-space: nowrap;
+        }
+
+        /* ── ZEN MODE (Hide UI) ── */
+        body.ui-hidden #left-panel,
+        body.ui-hidden #sidebar,
+        body.ui-hidden .map-overlay-btns {
+            display: none !important;
+        }
+
+        /* ── GLOW CONFIRMATION MODAL ── */
+        #glow-confirm-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 99999;
+            background: rgba(0, 0, 0, 0.5);
+            align-items: center;
+            justify-content: center;
+        }
+        #glow-confirm-overlay.open { display: flex; }
+        #glow-confirm-box {
+            background: var(--bg-dark);
+            border: 1px solid var(--border-main);
+            padding: 20px;
+            max-width: 300px;
+            width: 90%;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-main);
+            line-height: 1.7;
+        }
+        #glow-confirm-box p { margin: 0 0 16px 0; }
+        #glow-confirm-buttons { display: flex; gap: 8px;  }
+
+        #glow-confirm-buttons .action-btn {
+            padding: 4px 7px;
+        }
+
+
+        /* ── MOBILE CLOSE BUTTON ── */
+        .mobile-close-btn {
+            display: none; 
+            position: absolute; /* Takes the button out of the flex layout */
+            right: 15px;        /* Pins it to the right edge */
+            top: 7px;           /* Pins it to the top */
+            background: var(--bg-hover);
+            border: 1px solid var(--border-main);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 3px 8px;
+            z-index: 3000;
+        }
+
+        .mobile-close-btn:hover {
+            background: var(--text-main);
+            color: var(--bg-dark);
+        }
+
+        /* ── MOBILE RESPONSIVENESS UPDATE ── */
+        @media (max-width: 768px) {
+            #left-panel, #sidebar {
+                display: none;
+                position: absolute; 
+                left: 0;
+                top: 0;
+                width: 100%; 
+                border-left: none; /* Remove border-left on mobile */
+            }
+            
+            /* Show the close button on mobile for both panels */
+            .mobile-close-btn {
+                display: block !important;
+            }
+
+            /* Adjust filter container padding to avoid overlapping the button */
+            #filter-container {
+                padding-top: 30px;
+            }
+        }
+
+        /* Ensure the button is styled for the filter container context */
+        #filter-container {
+            position: relative;
+        }
+
+
+
+    </style>
+</head>
+<body>
+
+<div id="left-panel">
+    <div id="routes-label">
+        <div style="display: flex; align-items: center; gap: 5px;">
+                <img src="/images/pfp.png" width="15" style="border-radius: 50%; transform: translateY(1px);" alt=" ">
+                <span style="letter-spacing: 0px;">darkeyes</span>
+        </div>
+        <div class="header-stats">
+            <span style="color: var(--text-main);"id="visible-flight-time" title="Total Flight Time">0h 0m</span>
+            <span class="stat-divider">Flight Time |</span>
+            <span style="color: var(--text-main);" id="visible-unique-dest" title="Unique Destinations">0</span>
+            <span class="stat-divider">Airports |</span>
+            <span id="visible-routes-count" title="Total Visible Routes">0</span>
+            <span class="stat-divider">Routes</span>
+        </div>
+
+        <button class="mobile-close-btn" onclick="toggleLeftPanel()">X</button>
+
+    </div>
+
+    <div id="secondary-stats">
+        <div class="sec-stat-cell">
+            <div class="sec-stat-label">Top Airport</div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="sec-stat-value" style="flex: 1; min-width: 0; padding-right: 5px;">
+                    <span id="rank-top-airport" style="color:var(--border-main); font-size:8px; margin-right:2px; display:none;">1.</span><span id="stat-top-airport">—</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;">
+                    <svg onclick="cycleStat('airport', -1)" class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    <svg onclick="cycleStat('airport', 1)" class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+        </div>
+        <div class="sec-stat-cell">
+            <div class="sec-stat-label">Top Aircraft</div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="sec-stat-value" style="flex: 1; min-width: 0; padding-right: 5px;">
+                    <span id="rank-top-aircraft" style="color:var(--border-main); font-size:8px; margin-right:2px; display:none;">1.</span><span id="stat-top-aircraft">—</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;">
+                    <svg onclick="cycleStat('aircraft', -1)" class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    <svg onclick="cycleStat('aircraft', 1)" class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+        </div>
+        <div class="sec-stat-cell">
+            <div class="sec-stat-label">Top Livery</div>
+            <div style="display: flex; align-items: center; justify-content: space-between;">
+                <div class="sec-stat-value" style="flex: 1; min-width: 0; padding-right: 5px;">
+                    <span id="rank-top-livery" style="color:var(--border-main); font-size:8px; margin-right:2px; display:none;">1.</span><span id="stat-top-livery">—</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px; flex-shrink: 0;">
+                    <svg onclick="cycleStat('livery', -1)" class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                    <svg onclick="cycleStat('livery', 1)" class="stat-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="sidebar-routes">
+        <p style="color: var(--text-muted); text-align:center; margin-top:30px; font-size:9px;">
+            Loading routes...
+        </p>
+    </div>
+</div>
+
+
+<div id="map-container">
+    <div id="loading">Loading data...</div>
+    
+    <div class="map-overlay-btns">
+        <button id="left-toggle" class="map-btn" onclick="toggleLeftPanel()" title="Toggle Routes Panel"> < ROUTES </button>
+
+        <button id="tp-toggle" class="map-btn" onclick="toggleTpVisibility()" title="Toggle Traffic Patterns">
+                    <svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">  
+                                <path id="Pill" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 99.027512 97.369141 C 99.032455 110.081856 88.730751 120.391579 76.018036 120.396515 C 63.305321 120.401459 52.995602 110.099747 52.990662 97.387039 L 52.972485 50.630859 C 52.967545 37.918144 63.269249 27.608421 75.981964 27.603485 C 88.694679 27.598541 99.004402 37.900246 99.009338 50.612961 L 99.027512 97.369141 Z"/>
+                        <path id="Triangle" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" d="M 52.499622 92.999252 L 62.295155 76 L 42.704094 76 Z"/>
+                        <path id="Triangle-copy" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" d="M 99.500374 55.000748 L 89.704842 72 L 109.295906 72 Z"/>
+                        <path id="path1-copy-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 116 116 L 36 36"/>
+                    </svg>
+        </button>
+
+        <button id="atc-toggle" class="map-btn" onclick="toggleAtcVisibility()" title="Toggle ATC Circles">
+            <svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">    <g id="Group">        <path id="Path" fill="#d8d8d9" stroke="none" d="M 67.599998 76.880005 C 67.598991 80.102402 69.416084 83.049652 72.295609 84.496101 C 75.175133 85.942551 78.624329 85.640671 81.208809 83.716003 C 83.793289 81.791328 85.07077 78.573235 84.510002 75.400002 L 119 69.32 C 120.232033 69.10791 121.317101 68.385132 121.987541 67.329956 C 122.657974 66.274773 122.851364 64.985443 122.519997 63.779999 C 117.962547 47.656944 105.349884 35.063217 89.220001 30.529999 C 88.021866 30.198082 86.739403 30.384911 85.685768 31.044861 C 84.632126 31.704811 83.904297 32.777145 83.68 34 L 77.599998 68.490005 C 75.117508 68.037659 72.562515 68.714386 70.62941 70.336258 C 68.696304 71.958145 67.585907 74.356674 67.599998 76.880005 Z"/>        <path id="path1" fill="#d8d8d9" stroke="none" d="M 76.120003 123.830002 C 100.182892 123.862526 120.361122 105.667976 122.809998 81.729996 C 122.9459 80.489807 122.541496 79.251106 121.699997 78.330002 C 120.865547 77.402756 119.677437 76.872284 118.43 76.869995 C 118.168457 76.870575 117.907463 76.893997 117.650002 76.940002 C 115.676987 77.300156 114.19207 78.940948 114.029999 80.940002 C 111.935295 100.873779 94.775711 115.789612 74.744431 115.088646 C 54.713154 114.387688 38.638172 98.308868 37.941986 78.27742 C 37.245804 58.245979 52.165722 41.089951 72.099998 39 C 74.434875 38.778275 76.187729 36.767799 76.089203 34.424492 C 75.990677 32.081192 74.075249 30.224945 71.730003 30.199997 L 71.270004 30.199997 C 46.452591 32.822418 28.023293 54.401497 29.316767 79.323532 C 30.610243 104.245567 51.174454 123.80085 76.130005 123.839996 Z"/>        <path id="path2" fill="#d8d8d9" stroke="none" d="M 69.739998 58.620003 C 71.211967 58.088326 72.282478 56.803719 72.540001 55.260002 C 72.761368 53.964676 72.39489 52.638016 71.540001 51.639999 C 70.719002 50.645859 69.499298 50.067139 68.209999 50.059998 C 67.72654 50.059601 67.246475 50.140739 66.790001 50.300003 C 54.375217 54.641174 46.614216 66.992691 48.089478 80.061584 C 49.564743 93.130486 59.883926 103.441048 72.954048 104.905388 C 86.024178 106.369728 98.369209 98.598404 102.699997 86.18 C 103.163589 84.866768 102.954376 83.409729 102.139999 82.279999 C 101.310555 81.107491 99.966209 80.407387 98.529999 80.400002 C 98.268463 80.400772 98.007492 80.424194 97.75 80.470001 C 96.206284 80.727524 94.921677 81.798027 94.389999 83.270004 C 91.411247 91.794395 82.932579 97.125244 73.959351 96.115494 C 64.98613 95.105736 57.904263 88.023865 56.894508 79.050644 C 55.884754 70.077423 61.215603 61.598755 69.739998 58.620003 Z"/>    </g>    <g id="ptIcon" opacity="0.386558">        <path id="Pill" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 99.027512 99.369141 C 99.032455 112.081856 88.730751 122.391579 76.018036 122.396515 C 63.305321 122.401459 52.995602 112.099747 52.990662 99.387039 L 52.972485 52.630859 C 52.967545 39.918144 63.269249 29.608421 75.981964 29.603485 C 88.694679 29.598541 99.004402 39.900246 99.009338 52.612961 L 99.027512 99.369141 Z"/>        <path id="Triangle" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 52.499622 94.999252 L 62.295155 78 L 42.704094 78 Z"/>        <path id="Triangle-copy" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 99.500374 57.000748 L 89.704842 74 L 109.295906 74 Z"/>        <path id="path1-copy-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 116 118 L 36 38"/>    </g></svg>
+        </button>
+
+
+        <button id="label-toggle" class="map-btn" onclick="toggleAirportLabels()" title="Toggle ICAO Labels">
+            <svg width="24" height="24" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                <g id="Group">
+                    <image id="Parallelogram" x="39" y="46" width="79" height="43" xlink:href="data:image/png;base64, iVBORw0KGgoAAAANSUhEUgAAAE8AAAArCAYAAAA5UdXKAAAAAXNSR0IArs4c6QAAAERlWElmTU0AKgAAAAgAAYdpAAQAAAABAAAAGgAAAAAAA6ABAAMAAAABAAEAAKACAAQAAAABAAAAT6ADAAQAAAABAAAAKwAAAABuMTc5AAALQUlEQVRoBcWaC3BU1RmA997dDa8NAYqVCUUaSEhCzETGDLaUdhqmnQoaRJSHTGVwWgZRSy1TrbRaQ6cMMI0FtVCUzGB5VspgDRQ7Womt1MGZtGooeRIoIg8tyitrCLt7b7+TcDd3d8/de3bz8M7s3LP/85z//uc///nP0TxJnqNHj2Z4vd5ppqlNNgzPwaKi/EMy8oqKCp2fIcMhY4Tf73/cNM0iGb4vYabpCWua5yI6mtD/dn5+/juappm9pVOTCWptbc0KhUKPeTzaUvAjBA0d+aPPpy/Jy8u7LOOhc/RL3rEjR47f6PeHdsI3TcbbfzDzQ9PUK4PBy5tKS0tDPdWbYLzGxsYyjLYNwaPjhEcw4ZpIJLKmqKioLQ7n+repqWkkH0DIvd2VuO8J6nRdmz9hwoSGnqiKMR6Gm4vhtiPQ7yxUq/Z4jKUFBQVnnGnkmFOnTo0IBoNb0DFTTtGv0EumacwoLCx8J12tUeNhuHwGVYegDDdhTNFmn887Pzc3932nqeok48SJE8M6OkKb8eJ7nWj6D65dMIzwbRMnTmxJR6duMQ0bNuwjjLfH+p/sjcEmRCLGWw0NzbMwpDcZbTwuJyfnoter/QDjiRj4BT/mcF33bk91DFano8YbNWpUsK3N+5CqAREwVNc9e5qbm59kRQ1YAlXe1xedB4mBL6nQ9zHN5MbGFsad+hOdthZr17Tq2IoRyy2Ywvs1w4gsxf1PKtBGST744NyQAQMuPoOuJVHgF9O4FAr584uLx32civqo51lMYloNGTJkEdPqrxZM4T0d9z9E3PyGSFkU6DtJSkqEtw9djgf+TpWnj+iySKV+k6rsBOMJAWPGjPmM5HghBqxJQeBX8KA3SElmYkCpXJms0tLszy9c+PRxeCtl+H6E3U/fv5mKPp2YNU7GQFz6H4nyfeCkuwoZD7BBeJGIg3NSMeCUKVPaz549/RS7gdUOcvsFzKTZWFNT41NVphuGsZKAP0nGUFxcTAww57G6HpbhZTBofRhwe6oGLCsru6rr+koMWCGT2z8w8+bs7Oxlqrp0BssM9e07duzYzTImkQyTjc9hUO/J8A4wYcBtpDJ3pRID8faOcDi8Gt6fO8jtczC6K4jd2SqKdAbXCuHocDiyH28plDExqI/Ylt0NTiTRqo+ffG5nQ0PLjFQMyNbvWjB4pZLsn721p9c28aqdhi6T6UsG4P6IwP7P62RjsXo1RYE8GZtIQ/BAYcAmGV4Gw2gDNc3YTSD+XioGFJt2PH493i6mUL8bEL3z8b5psjHZYXpbW9ubAD4VQAaYGwqF9zktImykjxuGrxzhx+xCkrUJC4NZSfcic7ooXSWjtePgC585c2YTvXqItrTcZafv/ba2oba2Nsken1EJpXjGL/G6ld0dMI8YRkb5xInjpEmvmN4sNK/BPrabx7V11ePR78/Pz92bijH4oF76t1DT9M2i7aqlFwlwkhXUANc4iez0BDq1DoJz3URasdcbfqWlpYXcLfERpRw88E4wpxOxjpCBVGN2YYgHUkkHMHSkrq5uKzFwEf0MO0rvAwQO9SQL6Rgn0dHdACvjAmqZO+yEML8LbLZT+QkPvMUwTDzQM8rO59ImhpkrWIDWicXBhTaKxnA6hqcS41Yyi7L0SgPv24v33SMTFjWeQDY2NtcwsG/HER4Kha7d25XzxWE6eVpLPZ6wMODIRKwzhMVn7aBBg1aym2l3porFCAPywagFarto48n99ZjTcaCE7WpMACe1eJjuxJenp/r9GbuYwjfIulpQMP5fTCkxoAsyvBMMj/1ZMNj+21QqMiJWEjJexRvwQI+y0Z36oApH7/OMf0A8fYzxyOfq8bz18UT8L6N+t7WhoeFLEpzJVznM9L4LnPR8Q8JzHWQ+6PP5NpAWZDrTxGIYiEk/D+CEopYYjMX2zT/CVy5hhv137BNjPIGC6Fe8KIwmPLezGdkiSlbxGDEgPII9sCnywLZ4fLL/dGwhSekLtbWtWcno7Dihr6Ag9w12gqRN2iU7ru/a2go+co5dfoLxug53zOV2ou62Wd7R0VElTte6YV0tMSACa43Xq4vgSlqi/jAN7wsEIlUOni0V1KVv/FvhsFmeasiQCnQHDoLkWTtZzIJhR7CyvY5XfNcOs9rAd2GrJUzXKxbMejOVNCqzd4DfAywhTlh0Dm9h/IViO+iATwALfaQTt5F3VtMvaVxOYOoBgHAxs7Awb58QkeB5llw68whtaSohPIWk9TlZsBce8fLLOw8IGvjjFx9LvNO7jD32m3hgMQSOH9bOLPRh7Hcx4gzgtlzVTtV7bdas9dbOI2kH8b5VfE3HCge4zVlZmY9Sxvk8vnsMxsrLRO7oi8e7/D8P+xzi2t+FcVxoo2iRd6J3H/2SJvdRwh43NI5eJ2xy9Dwh/8qVzFW8TjrpwrsWX7p0ZS3nsSIexDwM2iAGMnX1B2hHYpDuf0bCfgBjzMUYylsyFq33WfCmI/6/7ip6QmEuEdxJjSdK5Bjo0WRqwD9CcWEVq3BC0ioMWFf3HgmtsVi0k8mR4ERVmpJW009lsiX0nSCqP/+hTxhQS+ss1kluHPyWo0dbb0o6bS2Gxsamv9AWMcXxocOrRSWY+NMRTyS8p6mpZTGpzEZwSjrtMjDi1kBg8E/E2YodnqxdX1+fx6FUNTQFyejSxTHe2Uk9zxLMVupHtJOmHwxwBYvMChaRhBsHYtpyRlHFwvhj5CjHMEs/HV3IbkQUa8dZMLd31y2AzkUklQKum1g7PlvJeMSS4wxgjZ1T1saAT3u9/ses1chOwxlFuKAg7/dM4YRM3U7n3Da/bhjmQVbiW/FkJe8llTrBeTJbR/PfznLTw9AHv5LxhPiMjIy1vFrdVZm/zszMXIbwhBUWDwxz0edZjPwLdzlSirGkSH/DA6eqGlBUwNE7k99hqcT0geeVjZeTk3MV71umogvjVJLmPCyr24kSO5drKpFVoSJLQsP2UNvPVulbqgZk1T8diYRno/MfEnlpgfgYR5Tc3y6dxeMV/s+ywxzaJrFyKQtIFYoSUhVRpQiHjQoG9IQDvxuYPa15B4ZRvu3JTuTLnM7twvjT3IQnw9Pnjwllo5U9zxJGDCF1MROSYgtve2t44EY8cNHu3bsTcjWxKg8cmLESmmdsPKk02V9r1XyEyTApOQFX4j7hQ86DXtQf0364YrxTOETKxhMxhHgtkmfXh2nFubD+QklJyQLRjmfIIRRw1YKbAtrz8TjF/yOQu48pfKsivQdPPc8U/j70r6ryxNG1czus84MnDCiOUPqXc1UuxaitYAzOi3dtIchLr2CIqxaZmYEnoHlRqswFCN8NfMz9eHiJC2kUTeXos/b2jEU47J+iQOWG9rSIoYI8LeOJoM81g7nwf6Ko00uasY0pNkt2/Cj2xsOHZy0nlrykKC+GDL4bMWA1BlROiCdN6rxk+UMMuCNGWJI/6OE8I6/SIknLeIKZmNVKzvYdmqcsYcneTE0/Btw5b94C6Q0CcbkSL2U119K8MWrehBf+mTzwq8n6YccxBirfxlJm0RY7XNYWhmMHxSFZd6FCKdDKhFmwrhXM2EAHxLmC64NyYoZ2N8H7dXtHLEYS7KxAYGiVqjyLz/auZaCzrKllgzs2z507N+TixcvEsa4Nfyyhyf5ee4rVdV18f3tsPEtRfX3L17xeg+TYUw4sYMFlbzwsyABnMsCa+A4J+hNdl77/wGDYHaT+IPsQYeUesbqqcvPRBgcCgdV4vpXLnkTOjmvX/M853RjtNeNZnRSJMTGsCAONBTYU4zjpEHHzoNMARR7IXnkqMrIt2am8UXuW39siJVLlE4sbcZPDHn97UdH4D934/g82YJ3Mh7SKOQAAAABJRU5ErkJggg=="/>
+                    <image id="Parallelogram-copy" x="39" y="65" width="79" height="43" xlink:href="data:image/png;base64, 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"/>
+                </g>
+                <path id="path1-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M 115 116 L 35 36"/>
+                <g id="hidden-airport-icon" opacity="0.263249">
+                    <path id="Circle" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 39.338242 75.543045 C 39.338242 95.459671 55.483856 111.605293 75.400482 111.605293 C 95.317116 111.605293 111.46273 95.459671 111.46273 75.543045 C 111.46273 55.626419 95.317116 39.480804 75.400482 39.480804 C 55.483856 39.480804 39.338242 55.626419 39.338242 75.543045 Z"/>
+                    <path id="Path" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 109 90 L 61 42 C 61 42 84.630623 32.67308 101 50 C 117.369377 67.326912 109 90 109 90 Z"/>
+                    <path id="Path-copy-2" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 42 61 L 90 109 C 90 109 66.369377 118.32692 50 101 C 33.630623 83.673088 42 61 42 61 Z"/>
+                    <text id="A" visibility="hidden" transform="matrix(-1 0 -0 -1 49 51)" xml:space="preserve" x="8" y="46" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+                    <path id="path1" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 36 36 L 116 116"/>
+                </g>
+            </svg>
+        </button>
+        
+        <button id="glow-toggle" class="map-btn" onclick="cycleGlowMode()" title="Cycle Glow Mode">
+            <svg style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                            <text id="A" xml:space="preserve" x="110" y="147" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+                            <filter id="glow-filter-auto" x="0" y="0" width="152" height="152" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                                <feGaussianBlur stdDeviation="27"/>
+                                <feOffset dx="-0" dy="0" result="offsetblur"/>
+                                <feFlood flood-color="#d8d8d9" flood-opacity="1"/>
+                                <feComposite in2="offsetblur" operator="in"/>
+                                <feMerge>
+                                    <feMergeNode/>
+                                    <feMergeNode in="SourceGraphic"/>
+                                </feMerge>
+                            </filter>
+                            <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-filter-auto)" d="M 124 30 L 35 119"/>
+                        </svg>
+        </button>
+        
+        <button id="circle-toggle" class="map-btn" onclick="cycleCircleMode()" title="Cycle Airport Mode">
+            <svg id="toggle-icon" style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <path id="Path-copy" fill="#99a7b6" fill-rule="evenodd" stroke="#838383" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 115 116 L 35 36"/>
+                <path id="Circle" fill="#d8d8d9" fill-rule="evenodd" stroke="none" d="M 111.661758 76.456955 C 111.661758 56.540329 95.516144 40.394707 75.599518 40.394707 C 55.682888 40.394707 39.53727 56.540329 39.53727 76.456955 C 39.53727 96.373581 55.682888 112.519196 75.599518 112.519196 C 95.516144 112.519196 111.661758 96.373581 111.661758 76.456955 Z"/>
+                <path id="Path" fill="#99a7b6" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 42 62 L 90 110 C 90 110 66.369377 119.32692 50 102 C 33.630623 84.673088 42 62 42 62 Z"/>
+                <path id="Path-copy-2" fill="#99a7b6" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 109 91 L 61 43 C 61 43 84.630623 33.67308 101 51 C 117.369377 68.326912 109 91 109 91 Z"/>
+                <text id="A" xml:space="preserve" x="111" y="144" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+                <path id="path1" fill="#99a7b6" fill-rule="evenodd" stroke="#99a7b6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 115 116 L 35 36"/>
+            </svg>
+        </button>
+
+
+        <button id="theme-toggle" class="map-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
+            <svg id="theme-icon" style="width: 20; height: 20;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <path transform="scale(1.2), translate(-8, -8)" d="M 98 42 A 42 42 0 1 0 98 110 A 28 28 0 1 1 98 42 Z" fill="#d8d8d9"/>
+            </svg>
+        </button>
+
+        <button id="sidebar-toggle" class="map-btn" onclick="toggleSidebar()" title="Toggle Filter Panel">FILTERS (0) ></button>
+
+    </div>
+
+    <div id="map"></div>
+</div>
+<div id="sidebar" style="display: none;">
+    <div id="filter-container">     
+        <button class="mobile-close-btn" onclick="toggleSidebar()">X</button>
+
+        <div class="filter-section">
+            <div class="filter-header-row"><span class="filter-label">Date Range</span></div>
+            <div class="date-row">
+                <input type="date" id="start-date">
+                <span>–</span>
+                <input type="date" id="end-date">
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-header-row"><span class="filter-label">Aircraft</span></div>
+            <div class="tag-input-wrapper" id="aircraft-wrapper"></div>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-header-row"><span class="filter-label">Airline / Livery</span></div>
+            <div class="tag-input-wrapper" id="airline-wrapper"></div>
+        </div>
+        
+        
+
+
+        <div class="filter-section">
+            <div class="filter-header-row"><span class="filter-label">Airport</span></div>
+            <div class="tag-input-wrapper" id="airport-wrapper"></div>
+            <label style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-top: 8px; cursor: pointer;">
+                <input type="checkbox" id="airport-strict-match" onchange="window.applyFiltersGlobal()">
+                Only show strict matches
+            </label>
+        </div>
+
+        <div class="filter-section">
+            <div class="filter-header-row"><span class="filter-label">IFATC Sessions</span></div>
+            <div class="tag-input-wrapper">
+                <div class="tag-input-row">
+                    <button id="btn-ifatc-inc" class="action-btn btn-inc" style="flex: 1;">INC</button>
+                    <button id="btn-ifatc-exc" class="action-btn btn-exc" style="flex: 1;">EXC</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="filter-section">
+            <div class="filter-header-row"><span class="filter-label">Remarks</span></div>
+            <div class="tag-input-wrapper" id="remarks-wrapper"></div>
+        </div>
+
+        <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button> 
+    </div>
+
+    <div id="active-filters-section" style="padding: 12px 10px; flex-grow: 1; overflow-y: auto;">
+        <div class="filter-header-row" style="margin-bottom: 8px;">
+            <span class="filter-label">Active Filters</span>
+        </div>
+        <div id="active-filters-list" style="display: flex; flex-direction: column; gap: 5px;"></div>
+    </div>
+
+        <div id="airport-hover-info" style="display: none;">
+            <span id="hover-airport-id"></span>
+            <span id="hover-airport-count"></span>
+        </div>
+</div>
+
+
+<div id="glow-confirm-overlay">
+    <div id="glow-confirm-box">
+        <p>Turning on glow on all routes can be laggy. Are you sure you want to turn on glow?</p>
+        <div id="glow-confirm-buttons">
+            <button id="glow-confirm-yes" class="action-btn"         style="flex:1;">Turn on glow</button>
+            <button id="glow-confirm-no"  class="action-btn btn-inc" style="flex:1;">Cancel</button>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+
+function backToMain() {
+    window.location.href = "https://www.flightsmart.tools";
+}
+
+// ═══════════════════════════════════════════════════════════
+// LIGHT / DARK THEME TOGGLE
+// ═══════════════════════════════════════════════════════════
+var _sunSVG = '<circle cx="76" cy="76" r="22" fill="none" stroke="#d8d8d9" stroke-width="15"/>'
+    + '<line x1="76" y1="20" x2="76" y2="36" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="76" y1="116" x2="76" y2="132" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="20" y1="76" x2="36" y2="76" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="116" y1="76" x2="132" y2="76" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="37" y1="37" x2="48" y2="48" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="104" y1="104" x2="115" y2="115" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="115" y1="37" x2="104" y2="48" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>'
+    + '<line x1="48" y1="104" x2="37" y2="115" stroke="#d8d8d9" stroke-width="15" stroke-linecap="round"/>';
+
+var _moonSVG = '<path transform="scale(1.2), translate(-8, -8)" d="M 98 42 A 42 42 0 1 0 98 110 A 28 28 0 1 1 98 42 Z" fill="#d8d8d9"/>';
+
+function _updateThemeIcon(theme) {
+    var icon = document.getElementById('theme-icon');
+    if (!icon) return;
+    // Show the moon in dark mode (current state); show the sun in light mode (current state)
+    icon.innerHTML = theme === 'dark' ? _moonSVG : _sunSVG;
+}
+
+window.toggleTheme = function() {
+    // Target documentElement instead of document.body
+    var current = document.documentElement.getAttribute('data-theme') || 'dark';
+    var next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem('flightsmart-theme', next); } catch(e) {}
+    _updateThemeIcon(next);
+    
+    // Smoothly swap the tile layer URL without flickering
+    if (typeof mapBaseLayer !== 'undefined') {
+        mapBaseLayer.setUrl(next === 'light' ? lightTileUrl : darkTileUrl);
+    }
+};
+
+// ── Apply saved theme immediately, before map init ──
+var _savedTheme = null;
+try { _savedTheme = localStorage.getItem('flightsmart-theme'); } catch(e) {}
+var _initTheme = _savedTheme || 'dark';
+// Target documentElement instead of document.body
+document.documentElement.setAttribute('data-theme', _initTheme);
+_updateThemeIcon(_initTheme);
+
+
+// ═══════════════════════════════════════════════════════════
+// MAP SETUP & THEMES
+// ═══════════════════════════════════════════════════════════
+var mapBounds = L.latLngBounds([[-90, -Infinity], [90, Infinity]]);
+var map = L.map('map', {
+    minZoom: 2, 
+    maxBounds: mapBounds, 
+    maxBoundsViscosity: 1.0,
+    zoomControl: false,
+    worldCopyJump: true 
+}).setView([20, 0], 2);
+
+var darkTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+var lightTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}';
+
+// Load the correct tile URL based on the saved theme state
+var mapBaseLayer = L.tileLayer(_initTheme === 'light' ? lightTileUrl : darkTileUrl, {
+    attribution: '', maxZoom: 16
+}).addTo(map);
+
+
+
+var googleSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?output=csv";
+// YOUR ATC CSV URL HERE
+var atcSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRU1VT5H_li0QNytw6EDCNINd4jlyLuAT1CJiwyy7-EdjwqClCdPMseakuTPbJgQJ3yUDCQ-YBQ4TIz/pub?output=csv";
+
+var flightLayers = [];
+var airportMarkers = []; 
+
+var airportLabelGroup = null;
+var labelsVisible = false;
+
+var tpLayers = [];      // all TP oval polylines
+var tpVisible = true;   // toggle state
+
+var atcCircleLayers = [];     // ADDED: array to hold the ATC circles
+var atcCircleVisible = true;  // ADDED: state for ATC circles
+
+// ═══════════════════════════════════════════════════════════
+// CIRCLE & GLOW VISIBILITY LOGIC
+// ═══════════════════════════════════════════════════════════
+var circleMode = 'auto'; 
+var glowMode = 'auto'; // NEW: 'auto', 'on', 'off'
+
+window.liveryColorMap = {};
+
+
+const modeIcons = {
+    'auto': `<svg id="toggle-icon" style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+        <path id="Path-copy" fill="#99a7b6" fill-rule="evenodd" stroke="#838383" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 115 116 L 35 36"/>
+        <path id="Circle" fill="#d8d8d9" fill-rule="evenodd" stroke="none" d="M 111.661758 76.456955 C 111.661758 56.540329 95.516144 40.394707 75.599518 40.394707 C 55.682888 40.394707 39.53727 56.540329 39.53727 76.456955 C 39.53727 96.373581 55.682888 112.519196 75.599518 112.519196 C 95.516144 112.519196 111.661758 96.373581 111.661758 76.456955 Z"/>
+        <path id="Path" fill="#99a7b6" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 42 62 L 90 110 C 90 110 66.369377 119.32692 50 102 C 33.630623 84.673088 42 62 42 62 Z"/>
+        <path id="Path-copy-2" fill="#99a7b6" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 109 91 L 61 43 C 61 43 84.630623 33.67308 101 51 C 117.369377 68.326912 109 91 109 91 Z"/>
+        <text id="A" xml:space="preserve" x="111" y="144" font-family="B612" font-size="42" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+        <path id="path1" fill="#99a7b6" fill-rule="evenodd" stroke="#99a7b6" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 115 116 L 35 36"/>
+    </svg>`,
+
+    'show': `<svg id="toggle-icon" style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+        <path id="Circle" fill="#d8d8d9" fill-rule="evenodd" stroke="none" d="M 111.661758 76.456955 C 111.661758 56.540329 95.516144 40.394707 75.599518 40.394707 C 55.682888 40.394707 39.53727 56.540329 39.53727 76.456955 C 39.53727 96.373581 55.682888 112.519196 75.599518 112.519196 C 95.516144 112.519196 111.661758 96.373581 111.661758 76.456955 Z"/>
+        <path id="Path" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 42 62 L 90 110 C 90 110 66.369377 119.32692 50 102 C 33.630623 84.673088 42 62 42 62 Z"/>
+        <path id="Path-copy-2" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 109 91 L 61 43 C 61 43 84.630623 33.67308 101 51 C 117.369377 68.326912 109 91 109 91 Z"/>
+        <text id="A" visibility="hidden" xml:space="preserve" x="111" y="144" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+        <path id="path1" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 115 116 L 35 36"/>
+    </svg>`,
+
+    'hide': `<svg id="toggle-icon" style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+        <path id="Circle" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 111.661758 76.456955 C 111.661758 56.540329 95.516144 40.394707 75.599518 40.394707 C 55.682888 40.394707 39.53727 56.540329 39.53727 76.456955 C 39.53727 96.373581 55.682888 112.519196 75.599518 112.519196 C 95.516144 112.519196 111.661758 96.373581 111.661758 76.456955 Z"/>
+        <path id="Path" fill="#d8d8d9" fill-rule="evenodd" stroke="none" d="M 42 62 L 90 110 C 90 110 66.369377 119.32692 50 102 C 33.630623 84.673088 42 62 42 62 Z"/>
+        <path id="Path-copy-2" fill="#d8d8d9" fill-rule="evenodd" stroke="none" d="M 109 91 L 61 43 C 61 43 84.630623 33.67308 101 51 C 117.369377 68.326912 109 91 109 91 Z"/>
+        <text id="A" visibility="hidden" xml:space="preserve" x="111" y="144" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+        <path id="path1" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M 115 116 L 35 36"/>
+    </svg>`
+};
+
+
+const glowIcons = {
+    'auto': `<svg style="width: 23px; height: 23px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <text id="A" xml:space="preserve" x="110" y="147" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+                <filter id="glow-filter-auto" x="0" y="0" width="152" height="152" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feGaussianBlur stdDeviation="27"/>
+                    <feOffset dx="-0" dy="0" result="offsetblur"/>
+                    <feFlood flood-color="#d8d8d9" flood-opacity="1"/>
+                    <feComposite in2="offsetblur" operator="in"/>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-filter-auto)" d="M 124 30 L 35 119"/>
+            </svg>`,
+             
+    'on': `<svg style="width: 23px; height: 23px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <filter id="glow-filter-on" x="0" y="0" width="152" height="152" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+                    <feGaussianBlur stdDeviation="27"/>
+                    <feOffset dx="-0" dy="0" result="offsetblur"/>
+                    <feFlood flood-color="#d8d8d9" flood-opacity="1"/>
+                    <feComposite in2="offsetblur" operator="in"/>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+                <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-filter-on)" d="M 124 30 L 35 119"/>
+            </svg>`,
+           
+    'off': `<svg style="width: 23px; height: 23px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" d="M 124 30 L 35 119"/>
+            </svg>`
+};
+
+const labelIcons = {
+    'off': `<svg width="24" height="24" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <g id="Group">
+        <image id="Parallelogram" x="39" y="46" width="79" height="43" xlink:href="data:image/png;base64, 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"/>
+        <image id="Parallelogram-copy" x="39" y="65" width="79" height="43" xlink:href="data:image/png;base64, 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"/>
+    </g>
+    <path id="path1-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M 115 116 L 35 36"/>
+    <g id="hidden-airport-icon" opacity="0.263249">
+        <path id="Circle" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 39.338242 75.543045 C 39.338242 95.459671 55.483856 111.605293 75.400482 111.605293 C 95.317116 111.605293 111.46273 95.459671 111.46273 75.543045 C 111.46273 55.626419 95.317116 39.480804 75.400482 39.480804 C 55.483856 39.480804 39.338242 55.626419 39.338242 75.543045 Z"/>
+        <path id="Path" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 109 90 L 61 42 C 61 42 84.630623 32.67308 101 50 C 117.369377 67.326912 109 90 109 90 Z"/>
+        <path id="Path-copy-2" fill="#d8d8d9" fill-rule="evenodd" stroke="none" visibility="hidden" d="M 42 61 L 90 109 C 90 109 66.369377 118.32692 50 101 C 33.630623 83.673088 42 61 42 61 Z"/>
+        <text id="A" visibility="hidden" transform="matrix(-1 0 -0 -1 49 51)" xml:space="preserve" x="8" y="46" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
+        <path id="path1" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 36 36 L 116 116"/>
+    </g>
+</svg>`,
+
+    'on': `<svg width="24" height="24" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+    <g id="Group">
+        <path id="Parallelogram" fill="none" stroke="#d8d8d9" stroke-width="22.398827" stroke-linecap="round" stroke-linejoin="round" d="M 51 58 L 94.075058 58 L 105.745636 76.665688 L 62.670582 76.665688 Z"/>
+        <path id="Parallelogram-copy" fill="none" stroke="#d8d8d9" stroke-width="22.398827" stroke-linecap="round" stroke-linejoin="round" d="M 51.106823 96 L 94.097824 96 L 105.745636 77.334312 L 62.754631 77.334312 Z"/>
+    </g>
+</svg>`
+};
+
+const tpIcons = {
+    'off': `<svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">  
+            <path id="Path" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 58 36 C 58 36 61 28 78 28 C 97 28 99 51 99 51 L 99 68"/>
+    <path id="path1" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 52 80 L 52 103 C 52 103 58 121 75 121 C 88.147575 121 92 114 92 114"/>
+    <path id="path2" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 42 77 L 52 95 L 59 84 L 49 75 L 43 75 L 42 77 Z"/>
+    <path id="Path-copy-2" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 110 72 L 100 54 L 93 65 L 103 74 L 109 74 L 110 72 Z"/>
+    <path id="path1-copy-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M 116 116 L 36 36"/>
+</svg>
+`,
+    'on': `<svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">  
+             <path id="Pill" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 99.027512 97.369141 C 99.032455 110.081856 88.730751 120.391579 76.018036 120.396515 C 63.305321 120.401459 52.995602 110.099747 52.990662 97.387039 L 52.972485 50.630859 C 52.967545 37.918144 63.269249 27.608421 75.981964 27.603485 C 88.694679 27.598541 99.004402 37.900246 99.009338 50.612961 L 99.027512 97.369141 Z"/>
+    <path id="Triangle" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" d="M 52.499622 92.999252 L 62.295155 76 L 42.704094 76 Z"/>
+    <path id="Triangle-copy" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" d="M 99.500374 55.000748 L 89.704842 72 L 109.295906 72 Z"/>
+    <path id="path1-copy-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 116 116 L 36 36"/>
+</svg>
+`
+};
+
+const atcIcons = {
+    'off': `<svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">    <g id="Group">        <path id="Path" fill="none" stroke="#d8d8d9" stroke-width="9" d="M 97 114 C 66.877312 136.088776 16.646446 99.222343 38 58"/>        <path id="Path-copy" fill="none" stroke="#d8d8d9" stroke-width="9" d="M 83 101 C 80.193924 103.100372 46.737446 101.168808 53 72"/>        <path id="Path-copy-2" fill="none" stroke="#d8d8d9" stroke-width="9" d="M 57 40 C 59.321007 37.157486 68.349915 34.097412 75 36"/>        <path id="Path-copy-3" fill="none" stroke="#d8d8d9" stroke-width="9" d="M 117 78 C 118.900581 81.139229 117.889694 89.521637 113.868996 95.14991"/>        <path id="path1" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="9" d="M 84 60 L 93 69 L 117 64 C 117 64 111.761688 49.327278 105 44 C 98.063332 38.534866 89 36 89 36 L 84 60 Z"/>        <path id="path1-copy-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" d="M 116 116 L 36 36"/>    </g></svg>`,
+    'on': `<svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">    <g id="Group">        <path id="Path" fill="#d8d8d9" stroke="none" d="M 67.599998 76.880005 C 67.598991 80.102402 69.416084 83.049652 72.295609 84.496101 C 75.175133 85.942551 78.624329 85.640671 81.208809 83.716003 C 83.793289 81.791328 85.07077 78.573235 84.510002 75.400002 L 119 69.32 C 120.232033 69.10791 121.317101 68.385132 121.987541 67.329956 C 122.657974 66.274773 122.851364 64.985443 122.519997 63.779999 C 117.962547 47.656944 105.349884 35.063217 89.220001 30.529999 C 88.021866 30.198082 86.739403 30.384911 85.685768 31.044861 C 84.632126 31.704811 83.904297 32.777145 83.68 34 L 77.599998 68.490005 C 75.117508 68.037659 72.562515 68.714386 70.62941 70.336258 C 68.696304 71.958145 67.585907 74.356674 67.599998 76.880005 Z"/>        <path id="path1" fill="#d8d8d9" stroke="none" d="M 76.120003 123.830002 C 100.182892 123.862526 120.361122 105.667976 122.809998 81.729996 C 122.9459 80.489807 122.541496 79.251106 121.699997 78.330002 C 120.865547 77.402756 119.677437 76.872284 118.43 76.869995 C 118.168457 76.870575 117.907463 76.893997 117.650002 76.940002 C 115.676987 77.300156 114.19207 78.940948 114.029999 80.940002 C 111.935295 100.873779 94.775711 115.789612 74.744431 115.088646 C 54.713154 114.387688 38.638172 98.308868 37.941986 78.27742 C 37.245804 58.245979 52.165722 41.089951 72.099998 39 C 74.434875 38.778275 76.187729 36.767799 76.089203 34.424492 C 75.990677 32.081192 74.075249 30.224945 71.730003 30.199997 L 71.270004 30.199997 C 46.452591 32.822418 28.023293 54.401497 29.316767 79.323532 C 30.610243 104.245567 51.174454 123.80085 76.130005 123.839996 Z"/>        <path id="path2" fill="#d8d8d9" stroke="none" d="M 69.739998 58.620003 C 71.211967 58.088326 72.282478 56.803719 72.540001 55.260002 C 72.761368 53.964676 72.39489 52.638016 71.540001 51.639999 C 70.719002 50.645859 69.499298 50.067139 68.209999 50.059998 C 67.72654 50.059601 67.246475 50.140739 66.790001 50.300003 C 54.375217 54.641174 46.614216 66.992691 48.089478 80.061584 C 49.564743 93.130486 59.883926 103.441048 72.954048 104.905388 C 86.024178 106.369728 98.369209 98.598404 102.699997 86.18 C 103.163589 84.866768 102.954376 83.409729 102.139999 82.279999 C 101.310555 81.107491 99.966209 80.407387 98.529999 80.400002 C 98.268463 80.400772 98.007492 80.424194 97.75 80.470001 C 96.206284 80.727524 94.921677 81.798027 94.389999 83.270004 C 91.411247 91.794395 82.932579 97.125244 73.959351 96.115494 C 64.98613 95.105736 57.904263 88.023865 56.894508 79.050644 C 55.884754 70.077423 61.215603 61.598755 69.739998 58.620003 Z"/>    </g>    <g id="ptIcon" opacity="0.386558">        <path id="Pill" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 99.027512 99.369141 C 99.032455 112.081856 88.730751 122.391579 76.018036 122.396515 C 63.305321 122.401459 52.995602 112.099747 52.990662 99.387039 L 52.972485 52.630859 C 52.967545 39.918144 63.269249 29.608421 75.981964 29.603485 C 88.694679 29.598541 99.004402 39.900246 99.009338 52.612961 L 99.027512 99.369141 Z"/>        <path id="Triangle" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 52.499622 94.999252 L 62.295155 78 L 42.704094 78 Z"/>        <path id="Triangle-copy" fill="none" stroke="#d8d8d9" stroke-width="14" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 99.500374 57.000748 L 89.704842 74 L 109.295906 74 Z"/>        <path id="path1-copy-copy" fill="#d8d8d9" fill-rule="evenodd" stroke="#d8d8d9" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 116 118 L 36 38"/>    </g></svg>`
+};
+
+
+window.cycleCircleMode = function() {
+    if (circleMode === 'auto') circleMode = 'show';
+    else if (circleMode === 'show') circleMode = 'hide';
+    else circleMode = 'auto';
+    window.updateCircles();
+};
+
+window.updateCircles = function() {
+    const iconElement = document.getElementById('toggle-icon');
+    if (iconElement) {
+        iconElement.outerHTML = modeIcons[circleMode];
+    }
+
+    var baseR, op;
+    if (circleMode === 'hide') {
+        baseR = 0; op = 0; 
+    } else if (circleMode === 'show') {
+        baseR = 1; op = 1;
+    } else {
+        var isZoomedIn = map.getZoom() > 3;
+        baseR = isZoomedIn ? 2 : 0;
+        op = isZoomedIn ? 1 : 0;
+    }
+    
+    airportMarkers.forEach(function(marker) {
+        var scaledPart = Math.sqrt(marker.flightCount) * .9;
+        var cappedScaledPart = Math.min(scaledPart, 3);
+        var finalRadius = baseR === 0 ? 0 : baseR + cappedScaledPart;
+        
+        marker.setRadius(finalRadius);
+        marker.setStyle({ fillOpacity: op });
+    });
+};
+
+window.cycleGlowMode = function() {
+    if (glowMode === 'auto') {
+        // Check if any filters are currently active
+        var hasActiveFilters = false;
+        if (document.getElementById('start-date').value || document.getElementById('end-date').value) {
+            hasActiveFilters = true;
+        }
+        if (!hasActiveFilters) {
+            ['aircraft', 'airline', 'airport', 'ifatc', 'remarks'].forEach(function(key) {
+                if (filterState[key].includes.size > 0 || filterState[key].excludes.size > 0) {
+                    hasActiveFilters = true;
+                }
+            });
+        }
+
+        if (hasActiveFilters) {
+            // Filters are narrowing down the routes — skip the warning and just turn on
+            glowMode = 'on';
+            window.updateGlows();
+        } else {
+            // No filters, full route set could be laggy — show confirmation
+            document.getElementById('glow-confirm-overlay').classList.add('open');
+        }
+        return;
+    } else if (glowMode === 'on') {
+        glowMode = 'off';
+    } else {
+        glowMode = 'auto';
+    }
+    window.updateGlows();
+};
+
+document.getElementById('glow-confirm-no').addEventListener('click', function() {
+    document.getElementById('glow-confirm-overlay').classList.remove('open');
+});
+document.getElementById('glow-confirm-yes').addEventListener('click', function() {
+    document.getElementById('glow-confirm-overlay').classList.remove('open');
+    glowMode = 'on';
+    window.updateGlows();
+});
+document.getElementById('glow-confirm-overlay').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open'); // Click outside to cancel
+});
+
+window.toggleAirportLabels = function() {
+    labelsVisible = !labelsVisible;
+    var btn = document.getElementById('label-toggle');
+    if (labelsVisible) {
+        airportLabelGroup.addTo(map);
+        btn.innerHTML = labelIcons['on'];
+    } else {
+        if (map.hasLayer(airportLabelGroup)) map.removeLayer(airportLabelGroup);
+        btn.innerHTML = labelIcons['off'];
+    }
+};
+
+
+window.updateGlows = function() {
+    const btn = document.getElementById('glow-toggle');
+    if (btn) {
+        btn.innerHTML = glowIcons[glowMode];
+    }
+
+    flightLayers.forEach(function(item, idx) {
+        if (!item || !item.layers) return;
+        
+        var isSelected = window.selectedFlightIndices.has(idx);
+        var isHovered = (window.hoveredFlightIndex === idx);
+        var isActive = isSelected || isHovered;
+
+        item.layers.forEach(function(l) {
+            var el = l.getElement();
+            if (!el) return;
+
+            if (glowMode === 'on') {
+                if (isActive) {
+                    el.classList.add('glow-active');
+                    el.classList.remove('glow-inactive');
+                } else {
+                    el.classList.add('glow-inactive');
+                    el.classList.remove('glow-active');
+                }
+            } else if (glowMode === 'auto') {
+                if (isActive) {
+                    el.classList.add('glow-active');
+                    el.classList.remove('glow-inactive');
+                } else {
+                    el.classList.remove('glow-active', 'glow-inactive');
+                }
+            } else {
+                el.classList.remove('glow-active', 'glow-inactive');
+            }
+        });
+    });
+};
+// ═══════════════════════════════════════════════════════════
+// FILTER STATE & TAG INPUT COMPONENT
+// ═══════════════════════════════════════════════════════════
+var filterState = {
+    aircraft: { includes: new Set(), excludes: new Set() },
+    airline:  { includes: new Set(), excludes: new Set() },
+    airport:  { includes: new Set(), excludes: new Set() },
+    ifatc:    { includes: new Set(), excludes: new Set() },
+    remarks:  { includes: new Set(), excludes: new Set() }
+};
+var filterHistory = [];
+var tagInputs = {};
+
+function TagInput(filterKey, wrapper, options) {
+    this.filterKey = filterKey;
+    this.wrapper   = wrapper;
+    this.options   = options; 
+    this.stagedValue = null; 
+    this.savedQuery = null; // NEW: Track the search query
+    this._init();
+}
+
+TagInput.prototype._init = function() {
+    var self = this;
+    this.wrapper.innerHTML = ''; 
+
+    var row = document.createElement('div');
+    row.className = 'tag-input-row';
+
+    var box = document.createElement('div');
+    box.className = 'tag-box';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'tag-text-input';
+    input.placeholder = 'Search...';
+    box.appendChild(input);
+
+    var btnInc = document.createElement('button');
+    btnInc.className = 'action-btn btn-inc';
+    btnInc.textContent = 'INC';
+
+    var btnExc = document.createElement('button');
+    btnExc.className = 'action-btn btn-exc';
+    btnExc.textContent = 'EXC';
+
+    var dropdown = document.createElement('div');
+    dropdown.className = 'tag-dropdown';
+
+    row.appendChild(box);
+    row.appendChild(btnInc);
+    row.appendChild(btnExc);
+    this.wrapper.appendChild(row);
+    this.wrapper.appendChild(dropdown);
+
+    this._input    = input;
+    this._dropdown = dropdown;
+
+    input.addEventListener('input', function() { 
+        self.stagedValue = null; 
+        self.savedQuery = null; // Clear saved query if they resume typing
+        this.style.color = 'var(--text-main)'; // Restore standard color
+        self._updateDropdown(this.value); 
+    });
+    input.addEventListener('focus', function() { 
+        // Prevent re-filtering the list if we just clicked and staged an item
+        if (self.stagedValue !== null) return; 
+        self._updateDropdown(this.value); 
+    });    
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') { 
+            dropdown.classList.remove('open'); 
+            input.blur(); 
+            // Restore query if they abort with Escape
+            if (self.savedQuery !== null) {
+                input.value = self.savedQuery;
+                self.savedQuery = null;
+                input.style.color = 'var(--text-main)';
+                self.stagedValue = null;
+            }
+        }
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!self.wrapper.contains(e.target)) {
+            dropdown.classList.remove('open');
+            // Restore query if they click away
+            if (self.savedQuery !== null) {
+                self._input.value = self.savedQuery;
+                self.savedQuery = null;
+                self._input.style.color = 'var(--text-main)';
+                self.stagedValue = null;
+            }
+        }
+    });
+
+    box.addEventListener('click', function(e) {
+        if (e.target === box) input.focus();
+    });
+
+    function triggerAdd(mode) {
+        var val = self.stagedValue;
+        if (!val) {
+            var q = input.value.toLowerCase().trim();
+            var exactMatch = self.options.find(function(o) { return o.label.toLowerCase() === q; });
+            if (exactMatch) val = exactMatch.value;
+        }
+
+        if (val) {
+            self.addTag(val, mode);
+            self.stagedValue = null;
+            
+            // Restore saved query so the user can quickly pick the next item
+            if (self.savedQuery !== null) {
+                input.value = self.savedQuery;
+                self.savedQuery = null;
+            } else {
+                input.value = '';
+            }
+            input.style.color = 'var(--text-main)'; // Restore text color
+            
+            self._updateDropdown(input.value);
+            input.focus();
+        } else {
+            input.focus();
+        }
+    }
+
+    btnInc.addEventListener('click', function() { triggerAdd('include'); });
+    btnExc.addEventListener('click', function() { triggerAdd('exclude'); });
+};
+
+TagInput.prototype._updateDropdown = function(query) {
+    var self = this;
+    var incs = filterState[this.filterKey].includes;
+    var excs = filterState[this.filterKey].excludes;
+    var q    = query.toLowerCase().trim();
+
+    var filtered = this.options.filter(function(opt) {
+        if (incs.has(opt.value) || excs.has(opt.value)) return false;
+        if (!q) return true;
+        return opt.label.toLowerCase().includes(q);
+    });
+
+    if (filtered.length === 0) {
+        this._dropdown.innerHTML = '<div class="no-results">No matches</div>';
+        this._dropdown.classList.add('open');
+        return;
+    }
+
+    var groups = {}, groupOrder = [];
+    filtered.forEach(function(opt) {
+        var grp = opt.badge || '';
+        if (!groups[grp]) { groups[grp] = []; groupOrder.push(grp); }
+        groups[grp].push(opt);
+    });
+    var multipleGroups = groupOrder.length > 1;
+
+    var html = '';
+    groupOrder.forEach(function(grp) {
+        if (multipleGroups && grp) {
+            html += '<div class="dropdown-group-header">' + escapeHtml(grp) + '</div>';
+        }
+        groups[grp].forEach(function(opt) {
+            html += '<div class="dropdown-opt" data-value="' + escapeHtml(opt.value) + '">' +
+                '<span class="opt-label">' + escapeHtml(opt.label) + '</span>' +
+                (opt.badge && !multipleGroups ? '<span class="opt-badge">' + escapeHtml(opt.badge) + '</span>' : '') +
+                '</div>';
+        });
+    });
+
+    this._dropdown.innerHTML = html;
+    this._dropdown.querySelectorAll('.dropdown-opt').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            self.stagedValue = this.getAttribute('data-value');
+            
+            // Capture the current search term before we overwrite it
+            if (self.savedQuery === null) {
+                self.savedQuery = self._input.value;
+            }
+            // Display the selected item in the text box & turn it green
+            self._input.value = this.querySelector('.opt-label').textContent;
+            self._input.style.color = 'var(--accent-green)';
+            
+            self._dropdown.querySelectorAll('.dropdown-opt').forEach(function(opt) {
+                opt.style.background = ''; 
+            });
+            this.style.background = 'var(--bg-hover)';
+            self._input.focus();
+        });
+    });
+    this._dropdown.classList.add('open');
+};
+
+TagInput.prototype.addTag = function(value, mode) {
+    var state = filterState[this.filterKey];
+    if (mode === 'include') {
+        state.includes.add(value);
+        state.excludes.delete(value);
+    } else {
+        state.excludes.add(value);
+        state.includes.delete(value);
+    }
+    
+    filterHistory = filterHistory.filter(function(h) { return !(h.key === this.filterKey && h.value === value); }.bind(this));
+    filterHistory.push({ key: this.filterKey, value: value, mode: mode });
+
+    if (window.renderAllActiveFilters) window.renderAllActiveFilters();
+    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+};
+
+TagInput.prototype.removeTag = function(value, mode) {
+    if (mode === 'include') filterState[this.filterKey].includes.delete(value);
+    else filterState[this.filterKey].excludes.delete(value);
+    
+    filterHistory = filterHistory.filter(function(h) { return !(h.key === this.filterKey && h.value === value); });
+
+    if (window.renderAllActiveFilters) window.renderAllActiveFilters();
+    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+};
+
+function toggleFilterState(filterKey, value, currentMode) {
+    var newMode = currentMode === 'include' ? 'exclude' : 'include';
+    if (currentMode === 'include') {
+        filterState[filterKey].includes.delete(value);
+        filterState[filterKey].excludes.add(value);
+    } else {
+        filterState[filterKey].excludes.delete(value);
+        filterState[filterKey].includes.add(value);
+    }
+    
+    filterHistory = filterHistory.filter(function(h) { return !(h.key === filterKey && h.value === value); });
+    filterHistory.push({ key: filterKey, value: value, mode: newMode });
+
+    window.renderAllActiveFilters();
+    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+}
+
+function toggleTpVisibility() {
+    tpVisible = !tpVisible;
+    var btn = document.getElementById('tp-toggle');
+    btn.innerHTML = tpIcons[tpVisible ? 'on' : 'off'];
+    tpLayers.forEach(function(l) {
+        l.setStyle({ opacity: tpVisible ? 0.5 : 0 });
+    });
+}
+
+function toggleAtcVisibility() {
+    atcCircleVisible = !atcCircleVisible;
+    var btn = document.getElementById('atc-toggle');
+    btn.innerHTML = atcIcons[atcCircleVisible ? 'on' : 'off'];
+    atcCircleLayers.forEach(function(l) {
+        l.setStyle({ 
+            opacity: atcCircleVisible ? 0.5 : 0, 
+            fillOpacity: atcCircleVisible ? 0.2 : 0,
+        });
+        
+    });
+}
+
+window.renderAllActiveFilters = function() {
+    var container = document.getElementById('active-filters-list');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    var hasFilters = false;
+    let filterCount = 0; 
+
+    function createGlobalChip(mainText, subText, modeClass, onRemove, onToggle) {
+        var chip = document.createElement('div');
+        chip.className = 'tag-chip mode-' + modeClass;
+        chip.style.alignItems = 'center';
+
+        var labelContainer = document.createElement('div');
+        labelContainer.style.display = 'flex';
+        labelContainer.style.flexDirection = 'column';
+        labelContainer.style.flex = '1';
+        labelContainer.style.overflow = 'hidden';
+        labelContainer.style.gap = '2px';
+        
+        var mainSpan = document.createElement('span');
+        mainSpan.textContent = mainText;
+        mainSpan.style.whiteSpace = 'nowrap';
+        mainSpan.style.overflow = 'hidden';
+        mainSpan.style.textOverflow = 'ellipsis';
+        mainSpan.style.fontWeight = 'bold';
+        labelContainer.appendChild(mainSpan);
+
+        if (subText) {
+            var subSpan = document.createElement('span');
+            subSpan.textContent = subText;
+            subSpan.style.fontSize = '9px'; 
+            subSpan.style.color = 'var(--text-muted)';
+            subSpan.style.whiteSpace = 'nowrap';
+            subSpan.style.overflow = 'hidden';
+            subSpan.style.textOverflow = 'ellipsis';
+            labelContainer.appendChild(subSpan);
+        }
+
+        chip.appendChild(labelContainer);
+
+        var actionsDiv = document.createElement('div');
+        actionsDiv.className = 'chip-actions';
+
+        if (onToggle) {
+            var toggleBtn = document.createElement('button');
+            toggleBtn.className = 'chip-toggle';
+            toggleBtn.innerHTML = 'SWP';
+            toggleBtn.addEventListener('click', function(e) { e.stopPropagation(); onToggle(); });
+            actionsDiv.appendChild(toggleBtn);
+        }
+
+        var btn = document.createElement('button');
+        btn.className = 'chip-remove';
+        btn.innerHTML = 'X';
+        btn.addEventListener('click', function(e) { e.stopPropagation(); onRemove(); });
+        actionsDiv.appendChild(btn);
+
+        chip.appendChild(actionsDiv);
+        return chip;
+    }
+
+    var sd = document.getElementById('start-date').value;
+    var ed = document.getElementById('end-date').value;
+    if (sd || ed) {
+        hasFilters = true;
+        filterCount++;
+        var dateSubText = (sd || 'Any') + ' > ' + (ed || 'Any');
+        container.appendChild(createGlobalChip('Date Range', dateSubText, 'include', function() {
+            document.getElementById('start-date').value = '';
+            document.getElementById('end-date').value = '';
+            window.renderAllActiveFilters();
+            if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+        }, null));
+    }
+    ['aircraft', 'airline', 'airport', 'ifatc', 'remarks'].forEach(function(key) {
+        var state = filterState[key];
+        
+        function renderTags(set, mode) {
+            set.forEach(function(val) {
+                hasFilters = true;
+                filterCount++; 
+                
+                var mainText, subText = null;
+
+                if (key === 'ifatc') {
+                    mainText = "IFATC Session";
+                } else {
+                    var opt = tagInputs[key].options.find(function(o) { return o.value === val; });
+                    var fullLabel = opt ? opt.label : val;
+                    mainText = fullLabel;
+
+                    if (key === 'airport' && fullLabel.includes(' - ')) {
+                        var parts = fullLabel.split(' - ');
+                        mainText = parts[0];
+                        subText = parts.slice(1).join(' - ');
+                    }
+                }
+
+                container.appendChild(createGlobalChip(mainText, subText, mode, function() {
+                    // Custom remove handler for IFATC
+                    if (key === 'ifatc') {
+                        if (mode === 'include') filterState.ifatc.includes.delete(val);
+                        else filterState.ifatc.excludes.delete(val);
+                        filterHistory = filterHistory.filter(function(h) { return !(h.key === key && h.value === val); });
+                        window.renderAllActiveFilters();
+                        if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+                    } else {
+                        tagInputs[key].removeTag(val, mode);
+                    }
+                }, function() { toggleFilterState(key, val, mode); }));
+            });
+        }
+
+        renderTags(state.includes, 'include');
+        renderTags(state.excludes, 'exclude');
+    });
+
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    if (sidebarToggle) {
+        sidebarToggle.textContent = `FILTERS (${filterCount}) >`;
+    }
+};
+// ═══════════════════════════════════════════════════════════
+// UTILITIES
+// ═══════════════════════════════════════════════════════════
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function greatCirclePoints(lat1, lon1, lat2, lon2, n) {
+    var R = Math.PI/180, D = 180/Math.PI;
+    var p1=lat1*R, l1=lon1*R, p2=lat2*R, l2=lon2*R;
+    var dp=p2-p1, dl=l2-l1;
+    var a = Math.sin(dp/2)*Math.sin(dp/2) + Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)*Math.sin(dl/2);
+    var d = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    if (d < 0.001) return [[lat1,lon1],[lat2,lon2]];
+    var pts = [];
+    for (var i=0; i<=n; i++) {
+        var f=i/n, A=Math.sin((1-f)*d)/Math.sin(d), B=Math.sin(f*d)/Math.sin(d);
+        var x=A*Math.cos(p1)*Math.cos(l1)+B*Math.cos(p2)*Math.cos(l2);
+        var y=A*Math.cos(p1)*Math.sin(l1)+B*Math.cos(p2)*Math.sin(l2);
+        var z=A*Math.sin(p1)+B*Math.sin(p2);
+        pts.push([Math.atan2(z,Math.sqrt(x*x+y*y))*D, Math.atan2(y,x)*D]);
+    }
+    return pts;
+}
+
+function makeContinuous(pts) {
+    if (!pts || pts.length === 0) return pts;
+    var contPts = [[pts[0][0], pts[0][1]]];
+    var currentOffset = 0;
+    for (var i = 1; i < pts.length; i++) {
+        var prevLon = contPts[i-1][1];
+        var currLon = pts[i][1] + currentOffset;
+        if (currLon - prevLon > 180) { currentOffset -= 360; currLon -= 360; } 
+        else if (prevLon - currLon > 180) { currentOffset += 360; currLon += 360; }
+        contPts.push([pts[i][0], currLon]);
+    }
+    return contPts;
+}
+
+function makeRoundedRectPoints(lat, lon, halfH, halfW, cornerR, n) {
+    var pts = [];
+    var corners = [
+        { cy: lat + halfH - cornerR, cx: lon + halfW - cornerR, a0: 0,             a1: Math.PI/2 },
+        { cy: lat + halfH - cornerR, cx: lon - halfW + cornerR, a0: Math.PI/2,  a1: Math.PI },
+        { cy: lat - halfH + cornerR, cx: lon - halfW + cornerR, a0: Math.PI,    a1: 3*Math.PI/2 },
+        { cy: lat - halfH + cornerR, cx: lon + halfW - cornerR, a0: 3*Math.PI/2, a1: 2*Math.PI }
+    ];
+
+    corners.forEach(function(c) {
+        for (var i = 0; i <= n; i++) {
+            var a = c.a0 + (i / n) * (c.a1 - c.a0);
+            pts.push([c.cy + cornerR * Math.sin(a), c.cx + cornerR * Math.cos(a)]);
+        }
+    });
+
+    pts.push(pts[0]);
+    return pts;
+}
+
+function getTpSize() {
+    var z = map.getZoom();
+    var scale = Math.pow(2, 10 - z) * 0.004; 
+    scale = Math.max(0.004, Math.min(scale, 0.08)); 
+    return { 
+        halfH: scale * 2.5,
+        halfW: scale * 1.2,
+        cornerR: scale * 1.0
+    }
+}
+
+
+function getAircraftDetails(rawName) {
+    if (!rawName || !rawName.trim()) return { mfr:null, family:null, specific:'Unknown' };
+    var n=rawName.toLowerCase(), mfr=null, family=null, specific=formatAircraft(rawName);
+    if      (n.includes('boeing'))      mfr='Boeing';
+    else if (n.includes('airbus'))      mfr='Airbus';
+    else if (n.includes('embraer'))     mfr='Embraer';
+    else if (n.includes('bombardier'))  mfr='Bombardier';
+    else if (n.includes('cessna'))      mfr='Cessna';
+    else if (n.includes('mcdonnell douglas'))      mfr='McDonnell Douglas';
+    if (mfr==='Airbus') {
+        if      (n.match(/a318|a319|a320|a321/)) family='A320 Family';
+        else if (n.includes('a220'))             family='A220 Family';
+        else if (n.includes('a330'))             family='A330 Family';
+        else if (n.includes('a350'))             family='A350 Family';
+        else if (n.includes('a380'))             family='A380 Family';
+    } else if (mfr==='Boeing') {
+        if      (n.includes('737')) family='737 Family';
+        else if (n.includes('747')) family='747 Family';
+        else if (n.includes('757')) family='757 Family';
+        else if (n.includes('767')) family='767 Family';
+        else if (n.includes('777')) family='777 Family';
+        else if (n.includes('787')) family='787 Family';
+    } else if (mfr==='Embraer') {
+        if (n.match(/e170|e175|e190|e195/)) family='E-Jet Family';
+    } else if (mfr==='Bombardier') {
+        if (n.includes('cl350')||n.includes('challenger')) family='Challenger Family';
+    } 
+    return { mfr, family, specific };
+}
+
+function formatAircraft(name) {
+    if (!name) return 'Unknown';
+    var mfrs=['Boeing','Airbus','Bombardier','Embraer','Cessna','SCOATA Daher',
+              'Lockheed Martin','Piper','Cub Crafters','Supermarine','McDonnell Douglas'];
+    var s=name;
+    mfrs.forEach(function(m){ s=s.replace(new RegExp('^'+m+'\\s+','i'),''); });
+    if (s.toLowerCase()==='spitfire spitfire') return 'Spitfire';
+    return s;
+}
+
+window.selectedFlightIndices = new Set();
+window.hoveredFlightIndex = null;
+
+window.statsData = {
+    airport: { list: [], index: 0 },
+    aircraft: { list: [], index: 0 },
+    livery: { list: [], index: 0 }
+};
+
+window.cycleStat = function(type, direction) {
+    var data = window.statsData[type];
+    if (!data.list || data.list.length === 0) return;
+
+    data.index += direction;
+    // Loop around to the start/end if they click past the bounds
+    if (data.index < 0) data.index = data.list.length - 1;
+    if (data.index >= data.list.length) data.index = 0;
+
+    window.updateStatDisplay(type);
+};
+
+window.updateStatDisplay = function(type) {
+    var data = window.statsData[type];
+    var valEl = document.getElementById('stat-top-' + type);
+    var rankEl = document.getElementById('rank-top-' + type);
+
+    if (!data.list || data.list.length === 0) {
+        if (valEl) valEl.textContent = '—';
+        if (rankEl) {
+            rankEl.textContent = '';
+            rankEl.style.display = 'none';
+        }
+        return;
+    }
+
+    var item = data.list[data.index];
+    
+    // Only put the name here so it can cleanly truncate with ...
+    if (valEl) valEl.textContent = item.name; 
+
+    if (rankEl) {
+        // Combine the rank and the count inside the gray styled span
+        rankEl.textContent = (data.index + 1) + '.[' + item.count + ']';
+        rankEl.style.display = 'inline';
+        rankEl.style.marginRight = '4px'; // Just giving it a tiny bit of breathing room
+    }
+};
+
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName.toLowerCase() === 'input') return;
+    if (e.key.toLowerCase() === 'm') {
+        document.body.classList.toggle('ui-hidden');
+        setTimeout(function(){ 
+            if (typeof map !== 'undefined') map.invalidateSize(); 
+        }, 200);
+    }
+});
+
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        var anyDropdownOpen = document.querySelector('.tag-dropdown.open');
+        if (anyDropdownOpen) return;
+        if (filterHistory.length > 0) {
+            var lastFilter = filterHistory.pop();
+            if (lastFilter.mode === 'include') filterState[lastFilter.key].includes.delete(lastFilter.value);
+            else filterState[lastFilter.key].excludes.delete(lastFilter.value);
+            if (window.renderAllActiveFilters) window.renderAllActiveFilters();
+            if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+        }
+    }
+});
+
+function toggleSidebar() {
+    var sb = document.getElementById('sidebar');
+    var lp = document.getElementById('left-panel');
+
+    
+    sb.style.display = sb.style.display === 'none' ? 'flex' : 'none';
+    setTimeout(function(){ map.invalidateSize(); }, 200);
+}
+
+function toggleLeftPanel() {
+    var lp = document.getElementById('left-panel');
+    // Check the actual computed display style rather than just the inline style
+    var currentDisplay = window.getComputedStyle(lp).display;
+    lp.style.display = currentDisplay === 'none' ? 'flex' : 'none';
+    setTimeout(function(){ map.invalidateSize(); }, 200);
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// ICAO CODE MAPPER
+// ═══════════════════════════════════════════════════════════
+function getIcaoCode(name) {
+    if (!name) return 'UNKN';
+    var n = name.toLowerCase();
+    if (n.includes('a318')) return 'A318';
+    if (n.includes('a319')) return 'A319';
+    if (n.includes('a320')) return 'A320';
+    if (n.includes('a321')) return 'A321';
+    if (n.includes('a330-300')) return 'A333';
+    if (n.includes('a330-900')) return 'A339';
+    if (n.includes('a330')) return 'A330';
+    if (n.includes('a340')) return 'A346';
+    if (n.includes('a350')) return 'A359';
+    if (n.includes('a380')) return 'A388';
+    if (n.includes('a220')) return 'BCS3';
+    if (n.includes('737-700')) return 'B737';
+    if (n.includes('737-800')) return 'B738';
+    if (n.includes('737-8')) return 'B38M';
+    if (n.includes('737-900')) return 'B739';
+    if (n.includes('747-400')) return 'B744';
+    if (n.includes('747-8')) return 'B748';
+    if (n.includes('747-SCA')) return 'B74SCA';
+    if (n.includes('757')) return 'B752';
+    if (n.includes('767')) return 'B763';
+    if (n.includes('777-200')) return 'B772';
+    if (n.includes('777-300')) return 'B77W';
+    if (n.includes('777f') || n.includes('777-f')) return 'B77L';
+    if (n.includes('787-8')) return 'B788';
+    if (n.includes('787-9')) return 'B789';
+    if (n.includes('787-10')) return 'B78X';
+    if (n.includes('e175')) return 'E75S';
+    if (n.includes('e190')) return 'E190';
+    if (n.includes('crj-200') || n.includes('crj200')) return 'CRJ2';
+    if (n.includes('crj-700') || n.includes('crj700')) return 'CRJ7';
+    if (n.includes('crj-900') || n.includes('crj900')) return 'CRJ9';
+    if (n.includes('crj-1000') || n.includes('crj1000')) return 'CRJX';
+    if (n.includes('dash 8') || n.includes('q400')) return 'DH8D';
+    if (n.includes('Challenger 350') || n.includes('challenger 350')) return 'CL35';
+    if (n.includes('Citation X') || n.includes('citation x')) return 'CITX';
+    if (n.includes('c172') || n.includes('skyhawk')) return 'C172';
+    if (n.includes('c208') || n.includes('caravan')) return 'C208';
+    if (n.includes('sr22')) return 'SR22';
+    if (n.includes('tbm-930') || n.includes('tbm 930')) return 'TBM9';
+    if (n.includes('xcub')) return 'CC19';
+    if (n.includes('md-11')) return 'MD11';
+    if (n.includes('dc-10')) return 'DC10';
+    if (n.includes('c-130')) return 'C130';
+    if (n.includes('c-17')) return 'C17';
+    if (n.includes('f/a-18')) return 'F18';
+    if (n.includes('f-22')) return 'F22';
+    if (n.includes('a-10')) return 'A10';
+    if (n.includes('spitfire')) return 'SPIT';
+    var fallback = formatAircraft(name).replace(/\s/g, '');
+    return fallback.length > 4 ? fallback.substring(0, 4).toUpperCase() : fallback.toUpperCase();
+}
+
+
+function truncateText(str, maxLength) {
+    if (!str) return '—';
+    if (str.length <= maxLength) return str;
+    let truncated = str.substring(0, maxLength);
+    let lastSpaceIndex = truncated.lastIndexOf(' ');
+    if (lastSpaceIndex > -1) {
+        truncated = truncated.substring(0, lastSpaceIndex);
+    }
+    return truncated; 
+}
+
+window.closeAllFlightDetails = function() {
+    var detailRows = document.querySelectorAll('.details-row');
+    for (var i = 0; i < detailRows.length; i++) {
+        detailRows[i].style.display = 'none';
+    }
+    
+    var flightRows = document.querySelectorAll('.flight-row');
+    for (var j = 0; j < flightRows.length; j++) {
+        flightRows[j].classList.remove('active-row');
+    }
+
+    flightLayers.forEach(function(item) {
+        if (item && item.layers) {
+            item.layers.forEach(function(l) {
+                var targetOp = 0.5;
+                if (l.isTp && !tpVisible) targetOp = 0;
+                if (l.isAtc && !atcCircleVisible) targetOp = 0;
+                l.setStyle({ color: '#64c49a', weight: 1, opacity: targetOp });
+            });
+        }
+    });
+
+    window.selectedFlightIndices.clear();
+    window.hoveredFlightIndex = null;
+    window.updateGlows();
+};
+
+
+function renderVisibleRoutes(filteredFlights) {
+    var container = document.getElementById('sidebar-routes');
+    var countSpan = document.getElementById('visible-routes-count');
+    var timeSpan = document.getElementById('visible-flight-time');
+    var destSpan = document.getElementById('visible-unique-dest');
+
+// ── TOP STATS ──────────────────────────────────────────
+    (function() {
+        function getRankedList(vals) {
+            if (!vals.length) return [];
+            var counts = {};
+            vals.forEach(function(v) { if (v) counts[v] = (counts[v] || 0) + 1; });
+            
+            var sortedKeys = Object.keys(counts).sort(function(a, b) { 
+                // Sort by count descending, then alphabetically ascending
+                if (counts[b] !== counts[a]) return counts[b] - counts[a];
+                return a.localeCompare(b);
+            });
+
+            // Map the sorted keys into an object with the name and the count
+            return sortedKeys.map(function(key) {
+                return { name: key, count: counts[key] };
+            });
+        }
+        var airports = [];
+        filteredFlights.forEach(function(f) {
+            if (f.departure) airports.push(f.departure);
+            if (f.arrival)   airports.push(f.arrival);
+        });
+
+        window.statsData.airport.list = getRankedList(airports);
+        window.statsData.airport.index = 0;
+
+        // Skip ATC sessions for Aircraft stats
+        window.statsData.aircraft.list = getRankedList(filteredFlights.filter(f => !f.isATC).map(function(f){ return formatAircraft(f.aircraft); }));
+        window.statsData.aircraft.index = 0;
+
+        window.statsData.livery.list = getRankedList(filteredFlights.map(function(f){ return f.livery; }));
+        window.statsData.livery.index = 0;
+
+        updateStatDisplay('airport');
+        updateStatDisplay('aircraft');
+        updateStatDisplay('livery');
+    })();
+    // ── END TOP STATS ──────────────────────────────────────
+
+    var totalMinutes = 0;
+    var uniqueAirports = new Set(); // Changed variable name for clarity
+    var routeCount = 0;
+
+    filteredFlights.forEach(function(f) {
+        // 1. Add BOTH departures and arrivals to the Set, regardless of ATC status
+        if (f.departure) uniqueAirports.add(f.departure);
+        if (f.arrival) uniqueAirports.add(f.arrival);
+
+        // 2. Keep the route counting and flight time logic restricted to non-ATC flights
+        if (!f.isATC) {
+            routeCount++;
+            if (f.duration) {
+                var timeParts = f.duration.split(':');
+                if (timeParts.length === 2) {
+                    var hrs = parseInt(timeParts[0], 10);
+                    var mins = parseInt(timeParts[1], 10);
+                    if (!isNaN(hrs) && !isNaN(mins)) {
+                        totalMinutes += (hrs * 60) + mins;
+                    }
+                }
+            }
+        }
+    });
+
+    var totalHrs = Math.floor(totalMinutes / 60);
+    var totalMins = totalMinutes % 60;
+    var timeString = totalHrs + 'h ' + totalMins + 'm';
+
+    countSpan.textContent = routeCount;
+    timeSpan.textContent = timeString;
+    destSpan.textContent = uniqueAirports.size;
+
+    if (filteredFlights.length === 0) {
+        container.innerHTML = '<p style="color:var(--text-muted);text-align:center;margin-top:30px;font-size:12px;">No data.</p>';
+        return;
+    }
+
+    var routeCounts = {};
+    filteredFlights.forEach(function(f) {
+        var pair = [f.departure, f.arrival].sort();
+        var key = pair[0] + '-' + pair[1];
+        routeCounts[key] = (routeCounts[key] || 0) + 1;
+    });
+
+var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width: 90px;">Route</th><th style="width: 45px;">Aircraft</th><th style="width: 150px;">Livery</th></tr></thead><tbody>';
+    
+    filteredFlights.forEach(function(item, idx) {
+       var pair = [item.departure, item.arrival].sort();
+        var key = pair[0] + '-' + pair[1];
+        var isDuplicateOrBidirectional = routeCounts[key] > 1;
+        
+        var depColor = 'var(--text-main)';
+        var arrColor = 'var(--text-main)';
+        
+        var depIsFiltered = filterState.airport.includes.has(item.departure);
+        var arrIsFiltered = filterState.airport.includes.has(item.arrival);
+
+        var spokeColor = isDuplicateOrBidirectional ? '#5ba4ff' : 'var(--accent-green)';
+
+        if (depIsFiltered || arrIsFiltered) {
+            if (depIsFiltered && !arrIsFiltered) {
+                depColor = 'var(--text-main)';
+                arrColor = spokeColor;
+            } else if (!depIsFiltered && arrIsFiltered) {
+                arrColor = 'var(--text-main)';
+                depColor = spokeColor;
+            } else {
+                depColor = spokeColor;
+                arrColor = spokeColor;
+            }
+        } else if (isDuplicateOrBidirectional) {
+            depColor = '#5ba4ff';
+            arrColor = '#5ba4ff';
+        }
+
+        html += '<tr class="flight-row" data-index="'+idx+'">';
+        html += '<td>'+escapeHtml(item.date||'—')+'</td>'; 
+        
+        // MODIFIED: Formatting the Route column based on ATC session flag
+        if (item.isATC) {
+            html += '<td style="white-space: nowrap;"><b style="color: ' + depColor + ';">' + escapeHtml(item.departure) + '</b> <span style="color:var(--text-muted); font-size: 8px; margin-left: 4px;">(ATC)</span></td>';
+        } else {
+            html += '<td style="white-space: nowrap;"><b style="color: ' + depColor + ';">' + escapeHtml(item.departure) + '</b> <span style="color:var(--text-muted); margin: 0 4px;">></span> <b style="color: ' + arrColor + ';">' + escapeHtml(item.arrival) + '</b></td>';
+        }
+
+        html += '<td>'+escapeHtml(item.isATC ? '' : getIcaoCode(item.aircraft))+'</td>'; 
+
+
+
+        var c1 = 'transparent', c2 = 'transparent', c3 = 'transparent';
+        var logoUrl = null;
+        var includeName = true; // Default to true if not specified
+        
+        if (window.liveryColorMap && window.liveryColorMap[item.livery]) {
+            var lData = window.liveryColorMap[item.livery];
+            
+            // Backward compatibility just in case
+            if (Array.isArray(lData)) {
+                c1 = lData[0] || 'transparent';
+                c2 = lData[1] || 'transparent';
+                c3 = lData[2] || 'transparent';
+            } else {
+                var colors = lData.colors || [];
+                c1 = colors[0] || 'transparent';
+                c2 = colors[1] || 'transparent';
+                c3 = colors[2] || 'transparent';
+                
+                if (lData.logo && lData.logo.trim() !== '') {
+                logoUrl = 'https://en.wikipedia.org/wiki/Special:FilePath/' + encodeURIComponent(lData.logo.trim());
+                }
+                if (lData.includeName) {
+                    includeName = (lData.includeName.trim().toUpperCase() === 'T');
+                }
+            }
+        }
+        
+        var liveryContent = '';
+        if (logoUrl) {
+            // If we have a logo, render the image
+            var imgStyle = 'height: 14px; max-width: 90px; vertical-align: middle; object-fit: contain; ' + (includeName ? 'margin-right: 6px;' : '');
+            var imgTag = '<img src="' + logoUrl + '" style="' + imgStyle + '">';
+            
+            if (includeName) {
+                liveryContent = imgTag + escapeHtml(truncateText(item.livery, 22));
+            } else {
+                liveryContent = imgTag; // Skip the name if 'F'
+            }
+        } else {
+            // Fallback to standard color boxes
+            var colorBox = '';
+            if (c1 !== 'transparent') {
+                colorBox = `<span style="display:inline-block; width:12px; height:10px; margin-right:6px; vertical-align:-1px; border:1px solid var(--border-main); background: linear-gradient(to right, ${c1} 0%, ${c1} 50%, ${c2} 50%, ${c2} 80%, ${c3} 80%, ${c3} 100%);"></span>`;
+            }
+            liveryContent = colorBox + escapeHtml(truncateText(item.livery, 22));
+        }
+
+        html += '<td style="letter-spacing: -0.5px;" title="' + escapeHtml(item.livery || '') + '">' + liveryContent + '</td>';
+        
+        
+        
+        html += '</tr>';
+
+        html += '<tr class="details-row" id="details-'+idx+'" style="display:none;">';
+        html += '<td colspan="4">';
+        (function() {
+            var depAp = window.airportData && window.airportData[item.departure];
+            var arrAp = window.airportData && window.airportData[item.arrival];
+            var depLabel = item.departure + (depAp && depAp.municipality ? ' · ' + depAp.municipality : depAp && depAp.name ? ' · ' + depAp.name : '');
+            var arrLabel = item.arrival   + (arrAp && arrAp.municipality ? ' · ' + arrAp.municipality : arrAp && arrAp.name ? ' · ' + arrAp.name : '');
+            
+            // MODIFIED: Conditionally render the Details expanded view based on ATC flag
+            if (item.isATC) {
+                html += `
+                    <div style="font-size: 10px; line-height: 1.8; color: var(--text-main);">
+                        <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
+                            <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
+                            <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
+                            <span style="color: var(--text-muted);">AIRPORT</span><span style="grid-column: span 3;">${escapeHtml(depLabel)}</span>
+                            <span style="color: var(--text-muted);">STATION</span><span style="grid-column: span 3;">${escapeHtml(item.station)}</span>
+                            <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
+                            <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
+                            <span style="color: var(--text-muted);">OPS</span><span>${escapeHtml(item.ops || '0')}</span>
+<span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span><span style="color: var(--text-muted);">RMK</span><span style="grid-column: span 3; font-family: 'Shadows Into Light', cursive; letter-spacing: 1px;">${escapeHtml(item.remarks || '')}</span>                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div style="font-size: 10px; line-height: 1.8; color: var(--text-main);">
+                        <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
+                            <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
+                            <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
+                            <span style="color: var(--text-muted);">DEP</span><span style="grid-column: span 3;">${escapeHtml(depLabel)}</span>
+                            <span style="color: var(--text-muted);">ARR</span><span style="grid-column: span 3;">${escapeHtml(arrLabel)}</span>
+                            <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
+                            <span style="color: var(--text-muted);">MODEL</span><span>${escapeHtml(formatAircraft(item.aircraft))}</span>
+                            <span style="color: var(--text-muted);">LIVRY</span><span>${escapeHtml(item.livery, 18)}</span>
+                            <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
+                            <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
+                            <span style="color: var(--text-muted);">LDGS</span><span>${escapeHtml(item.ldgs || 'N/A')}</span>
+<span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span><span style="color: var(--text-muted);">RMK</span><span style="grid-column: span 3; font-family: 'Shadows Into Light', cursive; letter-spacing: 1px;">${escapeHtml(item.remarks || '')}</span>                        </div>
+                    </div>
+                `;
+            }
+        })();
+        html += '</td></tr>';
+    });
+    html += '</tbody></table>';
+
+    container.innerHTML = html;
+
+    container.querySelectorAll('.flight-row').forEach(function(row){
+        var idx = parseInt(row.getAttribute('data-index'));
+        
+        row.addEventListener('mouseenter', function(){
+            this.classList.add('active-row'); 
+            window.hoveredFlightIndex = idx;
+            if (flightLayers[idx]) {
+                flightLayers[idx].layers.forEach(function(l) { 
+                    l.setStyle({color:'#fa9822',weight:1,opacity:1}).bringToFront();
+                });
+            }
+            window.updateGlows();
+        });
+
+        row.addEventListener('mouseleave', function(){
+            if (window.hoveredFlightIndex === idx) {
+                window.hoveredFlightIndex = null;
+            }
+
+            if (!window.selectedFlightIndices.has(idx)) {
+                this.classList.remove('active-row');
+                if (flightLayers[idx]) {
+                    flightLayers[idx].layers.forEach(function(l) { 
+                        var targetOp = 0.5;
+                        if (l.isTp && !tpVisible) targetOp = 0;
+                        if (l.isAtc && !atcCircleVisible) targetOp = 0;
+                        l.setStyle({color:'#64c49a', weight:1, opacity: targetOp});
+                    });
+                }
+            }
+            window.updateGlows();
+        });
+
+        row.addEventListener('click', function(){
+            var detailsRow = document.getElementById('details-'+idx);
+            var isCurrentlyOpen = detailsRow.style.display !== 'none';
+
+            if (!isCurrentlyOpen) {
+                // Open the specific row
+                detailsRow.style.display = 'table-row';
+                this.classList.add('active-row'); 
+                window.selectedFlightIndices.add(idx);
+                window.hoveredFlightIndex = idx;
+                if (flightLayers[idx]) {
+                    flightLayers[idx].layers.forEach(function(l) { 
+                        l.setStyle({color:'#fa9822',weight:1,opacity:1}).bringToFront();
+                    });
+                }
+            } else {
+                // Close the specific row if clicked again
+                detailsRow.style.display = 'none';
+                this.classList.remove('active-row');
+                window.selectedFlightIndices.delete(idx);
+                if (flightLayers[idx]) {
+                    flightLayers[idx].layers.forEach(function(l) { 
+                        var targetOp = 0.5;
+                        if (l.isTp && !tpVisible) targetOp = 0;
+                        if (l.isAtc && !atcCircleVisible) targetOp = 0;
+                        l.setStyle({color:'#64c49a', weight:1, opacity: targetOp});
+                    });
+                }
+            }
+            window.updateGlows();
+        });
+    });
+}
+
+// ═══════════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════════
+// MODIFIED: Fetch BOTH standard flights and ATC logs concurrently
+Promise.all([
+    new Promise((resolve) => Papa.parse(googleSheetUrl, { download: true, header: false, complete: resolve, error: function(){ resolve({data:[]}); } })),
+    new Promise((resolve) => Papa.parse(atcSheetUrl, { download: true, header: false, complete: resolve, error: function(){ resolve({data:[]}); } }))
+]).then(function(results) {
+    var flightSheetResults = results[0];
+    var atcSheetResults = results[1];
+
+    var flights = [];
+    
+    var codeAliases = {
+        'EGOD': 'EGFD',
+        'NZIR': 'NZWD', 
+        'O5U': '05U', 
+        'VHHX': 'VHHH', 
+    };
+    
+    var originalIndex = 0;
+
+    // Process Flights
+    flightSheetResults.data.forEach(function(row){
+        if (row.length>=7 && row[5] && row[6] && row[5].trim()!=='' && row[6].trim()!=='') {
+            var rawDep = row[5].trim().toUpperCase();
+            var rawArr = row[6].trim().toUpperCase();
+
+            flights.push({
+                _rawIndex: originalIndex++,
+                isATC: false,
+                date:      (row[0]||'').trim() || 'Unknown',
+                duration:  (row[1]||'').trim(), 
+                aircraft:  ((row[2]||'').trim()+' '+(row[3]||'').trim()).trim(),
+                livery:    (row[4]&&row[4].trim()) ? row[4].trim() : 'Standard',
+                departure: codeAliases[rawDep] || rawDep,
+                arrival:   codeAliases[rawArr] || rawArr,
+                ldgs:      (row[7]||'').trim(), 
+                remarks:   (row[9]||'').trim()  
+            });
+        }
+    });
+
+    // Process ATC
+    atcSheetResults.data.forEach(function(row) {
+        // Expected Cols: 0=Date, 1=Duration, 2=Station, 3=Airport, 4=Ops Reports, 5=Additional Controllers, 6=Remarks
+        if (row.length >= 4 && row[3] && row[3].trim() !== '' && row[0].toLowerCase() !== 'date') {
+            var rawAp = row[3].trim().toUpperCase();
+            var remarksCombined = [];
+            
+            // Loop through column 5 (Additional Controllers) and beyond to catch all remarks/notes
+            for (var i = 5; i < row.length; i++) {
+                if (row[i] && row[i].trim() !== '') {
+                    remarksCombined.push(row[i].trim());
+                }
+            }
+
+            flights.push({
+                _rawIndex: originalIndex++,
+                isATC: true,
+                date:      (row[0]||'').trim() || 'Unknown',
+                duration:  (row[1]||'').trim(),
+                aircraft:  '', // Leave blank per request
+                livery:    (row[2]||'').trim(), // Station (Used for Livery rendering logic)
+                station:   (row[2]||'').trim(), 
+                departure: codeAliases[rawAp] || rawAp,
+                arrival:   codeAliases[rawAp] || rawAp, 
+                ops:       (row[4]||'').trim(),
+                remarks:   remarksCombined.join(", ") // Joins them with a comma and space
+            });
+        }
+    });
+    
+    // Unified sorting
+    flights.sort(function(a, b) {
+        var dateA = new Date(a.date);
+        var dateB = new Date(b.date);
+        if (isNaN(dateA)) return 1;
+        if (isNaN(dateB)) return -1;
+        
+        if (dateB.getTime() === dateA.getTime()) {
+            return b._rawIndex - a._rawIndex; 
+        }
+        
+        return dateB - dateA;
+    });
+
+    Papa.parse('https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv', {
+        download: true, header: true,
+        complete: function(airportResults) {
+            document.getElementById('loading').style.display='none';
+            window.airportData = {};
+            var airportData = window.airportData;
+            airportResults.data.forEach(function(row) {
+                if (!row.ident) return;
+                
+                var continentMap = {
+                    'NA': 'North America', 'SA': 'South America', 
+                    'EU': 'Europe', 'AS': 'Asia', 
+                    'AF': 'Africa', 'OC': 'Oceania', 'AN': 'Antarctica'
+                };
+
+                var countryName = row.iso_country;
+                if (row.iso_country) {
+                    try {
+                        countryName = new Intl.DisplayNames(['en'], {type: 'region'}).of(row.iso_country);
+                    } catch(e) { }
+                }
+
+                var apObj = { 
+                    lat: parseFloat(row.latitude_deg), 
+                    lon: parseFloat(row.longitude_deg), 
+                    name: row.name || row.ident,
+                    continent: continentMap[row.continent] || 'Unknown Region',
+                    country: countryName,
+                    municipality: (row.municipality || '').trim()
+                };
+                
+                airportData[row.ident.trim().toUpperCase()] = apObj;
+                
+                if (row.gps_code && row.gps_code.trim() !== '') {
+                    airportData[row.gps_code.trim().toUpperCase()] = apObj;
+                }
+                
+                if (row.iata_code && row.iata_code.trim() !== '') {
+                    airportData[row.iata_code.trim().toUpperCase()] = apObj;
+                }
+
+                if (row.local_code && row.local_code.trim() !== '') {
+                    airportData[row.local_code.trim().toUpperCase()] = apObj;
+                }
+            });
+
+            var mfrSet=new Set(), famSet=new Set(), spcSet=new Set(), airlineSet=new Set(), rmkSet=new Set();
+            var apSet=new Set(), regSet=new Set(), ctySet=new Set();
+
+            flights.forEach(function(f){
+                // Only compile aircraft stats for real flights
+                if (!f.isATC) {
+                    var d=getAircraftDetails(f.aircraft);
+                    if (d.mfr) mfrSet.add(d.mfr); if (d.family) famSet.add(d.family); if (d.specific) spcSet.add(d.specific);
+                }
+                
+                if (f.livery) airlineSet.add(f.livery); // Treat ATC station as livery
+                
+                if (f.remarks) rmkSet.add(f.remarks);
+
+                if (f.departure) {
+                    apSet.add(f.departure);
+                    if (airportData[f.departure]) {
+                        regSet.add(airportData[f.departure].continent);
+                        ctySet.add(airportData[f.departure].country);
+                    }
+                }
+                if (f.arrival) {
+                    apSet.add(f.arrival);
+                    if (airportData[f.arrival]) {
+                        regSet.add(airportData[f.arrival].continent);
+                        ctySet.add(airportData[f.arrival].country);
+                    }
+                }
+            });
+
+
+            var aircraftOptions=[];
+            Array.from(mfrSet).sort().forEach(function(v){ aircraftOptions.push({value:'mfr:'+v, label:v, badge:'Manufacturer'}); });
+            Array.from(famSet).sort().forEach(function(v){ aircraftOptions.push({value:'fam:'+v, label:v, badge:'Family'}); });
+            Array.from(spcSet).sort().forEach(function(v){ aircraftOptions.push({value:'spc:'+v, label:v, badge:'Type'}); });
+
+            var airlineOptions = Array.from(airlineSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+            
+            var remarksOptions = Array.from(rmkSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+
+            var airportOptions = [];
+            Array.from(regSet).sort().forEach(function(v){ if(v) airportOptions.push({value:'reg:'+v, label:v, badge:'Region'}); });
+            Array.from(ctySet).sort().forEach(function(v){ if(v) airportOptions.push({value:'cty:'+v, label:v, badge:'Country'}); });
+            Array.from(apSet).sort().forEach(function(icao){
+                var ap=airportData[icao];
+                var label = icao;
+                if (ap) {
+                    label = icao + ' - ' + ap.name;
+                    if (ap.municipality) label += ' (' + ap.municipality + ')';
+                }
+                airportOptions.push({value:icao, label: label, badge:'Airport'});
+            });
+
+            tagInputs.aircraft = new TagInput('aircraft', document.getElementById('aircraft-wrapper'), aircraftOptions);
+            tagInputs.airline  = new TagInput('airline',  document.getElementById('airline-wrapper'),  airlineOptions);
+            tagInputs.airport  = new TagInput('airport',  document.getElementById('airport-wrapper'),  airportOptions);
+            tagInputs.remarks  = new TagInput('remarks',  document.getElementById('remarks-wrapper'),  remarksOptions);
+
+            // Connect IFATC Buttons
+            document.getElementById('btn-ifatc-inc').addEventListener('click', function() {
+                filterState.ifatc.includes.add('true');
+                filterState.ifatc.excludes.delete('true');
+                filterHistory = filterHistory.filter(function(h) { return !(h.key === 'ifatc' && h.value === 'true'); });
+                filterHistory.push({ key: 'ifatc', value: 'true', mode: 'include' });
+                window.renderAllActiveFilters();
+                window.applyFiltersGlobal();
+            });
+
+            document.getElementById('btn-ifatc-exc').addEventListener('click', function() {
+                filterState.ifatc.excludes.add('true');
+                filterState.ifatc.includes.delete('true');
+                filterHistory = filterHistory.filter(function(h) { return !(h.key === 'ifatc' && h.value === 'true'); });
+                filterHistory.push({ key: 'ifatc', value: 'true', mode: 'exclude' });
+                window.renderAllActiveFilters();
+                window.applyFiltersGlobal();
+            });
+
+
+
+            ['start-date','end-date'].forEach(function(id){
+                document.getElementById(id).addEventListener('change', function(){
+                    if (window.renderAllActiveFilters) window.renderAllActiveFilters();
+                    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+                });
+            });
+
+            var drawnLayers = L.layerGroup().addTo(map);
+            
+            airportLabelGroup = L.layerGroup();
+
+            function renderMap(filteredFlights) {
+                window.closeAllFlightDetails(); 
+                drawnLayers.clearLayers();
+                flightLayers=[];
+                airportMarkers = [];
+                tpLayers = [];
+                atcCircleLayers = [];
+
+                airportLabelGroup.clearLayers();
+
+                var counts={};
+                filteredFlights.forEach(function(f){
+                    if (airportData[f.departure]&&airportData[f.arrival]) {
+                        counts[f.departure]=(counts[f.departure]||0)+1;
+                        counts[f.arrival]  =(counts[f.arrival]||0)+1;
+                    }
+                });
+
+                var drawn={};
+                var drawnAtcCircles = {};
+                var mapOffsets = [-360, 0, 360];
+
+                filteredFlights.forEach(function(f){
+                    var dep=airportData[f.departure], arr=airportData[f.arrival];
+                    if (!dep||!arr) { flightLayers.push(null); return; }
+
+                    [f.departure,f.arrival].forEach(function(id){
+                        if (drawn[id]) return;
+                        var cnt=counts[id]||0;
+
+                        mapOffsets.forEach(function(offset) {
+                            var marker=L.circleMarker([airportData[id].lat, airportData[id].lon + offset],{
+                                stroke: false, fillColor:'#7b8794', radius: 0, fillOpacity: 0
+                            });
+                            marker.flightCount = cnt; 
+                            airportMarkers.push(marker); 
+
+                            marker.on('mouseover', function() {
+                                document.getElementById('hover-airport-id').innerText = id;
+                                document.getElementById('hover-airport-count').innerText = cnt + ' RTES';
+                                document.getElementById('airport-hover-info').style.display = 'block';
+                            });
+                            marker.on('mouseout', function() { document.getElementById('airport-hover-info').style.display = 'none'; });
+                            marker.on('click', function() { tagInputs.airport.addTag(id, 'include'); });
+                            drawnLayers.addLayer(marker);
+                        });
+
+                        mapOffsets.forEach(function(offset) {
+                            var labelMarker = L.marker(
+                                [airportData[id].lat, airportData[id].lon + offset],
+                                {
+                                    icon: L.divIcon({
+                                        className: '',
+                                        html: '<div class="map-airport-label">' + escapeHtml(id) + '</div>',
+                                        iconSize: [0, 0],
+                                        iconAnchor: [-5, 5]
+                                    }),
+                                    interactive: false,
+                                    zIndexOffset: -100
+                                }
+                            
+                            );
+                            airportLabelGroup.addLayer(labelMarker);
+                        });
+
+                        drawn[id]=true;
+                    });
+                    
+
+                    var rawPts = greatCirclePoints(dep.lat, dep.lon, arr.lat, arr.lon, 50);
+                    var continuousPts = makeContinuous(rawPts);
+                    var linesForFlight = [];
+
+                    if (f.isATC) {
+    var existingCircleLayers = drawnAtcCircles[f.departure];
+    if (existingCircleLayers) {
+        // Airport already has a circle — just reference it, don't draw again
+        existingCircleLayers.forEach(function(c) { linesForFlight.push(c); });
+    } else {
+        // First time seeing this ATC airport — draw the circle
+        var newCircleLayers = [];
+        mapOffsets.forEach(function(offset) {
+            var circle = L.circle([dep.lat, dep.lon + offset], {
+                radius: 20000,
+                color: '#64c49a',
+                weight: 1,
+                fillColor: '#64c49a',
+                fillOpacity: 0.2,
+                opacity: atcCircleVisible ? 0.5 : 0,
+                interactive: false
+            });
+            circle.isAtc = true;
+            drawnLayers.addLayer(circle);
+            linesForFlight.push(circle);
+            newCircleLayers.push(circle);
+            atcCircleLayers.push(circle);
+        });
+        drawnAtcCircles[f.departure] = newCircleLayers;
+    }
+
+                    } else {
+                        // Standard Flight & Traffic Pattern Logic
+                        // Standard Flight & Traffic Pattern Logic
+                        var tpMatch = f.remarks ? f.remarks.match(/\bTP\s+at\s+([A-Z0-9]{3,4})\b/i) : null;
+                        var isTP = tpMatch || (f.departure === f.arrival);
+
+                        if (isTP) {
+                            var sz = getTpSize();
+                            
+                            // Default to the departure airport
+                            var targetAp = dep; 
+
+                            // If the remarks specify an airport (e.g., "TP at KSAN"), use that airport's data instead
+                            if (tpMatch && tpMatch[1]) {
+                                var extractedIcao = tpMatch[1].toUpperCase();
+                                if (airportData[extractedIcao]) {
+                                    targetAp = airportData[extractedIcao];
+                                }
+                            }
+
+                            // Draw the rectangle using the targeted airport's coordinates
+                            var tpLat = targetAp.lat + sz.halfH * 0.2;
+                            var tpLon = targetAp.lon + sz.halfW * 0.6;
+                            var rectPts = makeRoundedRectPoints(tpLat, tpLon, sz.halfH, sz.halfW, sz.cornerR, 12);
+                            
+                            mapOffsets.forEach(function(offset) {
+                                var shifted = rectPts.map(function(p) { return [p[0], p[1] + offset]; });
+                                var rectLine = L.polyline(shifted, { color: '#64c49a', weight: 1, opacity: tpVisible ? 0.5 : 0, interactive: false });
+                                
+                                rectLine.isTp = true; // Flag for hover visibility toggling
+                                rectLine.on('add', function() {
+                                    if (glowMode === 'on' && rectLine.getElement()) {
+                                        rectLine.getElement().classList.add('glow-path');
+                                    }
+                                });
+                                
+                                drawnLayers.addLayer(rectLine);
+                                linesForFlight.push(rectLine);
+                                tpLayers.push(rectLine);
+                            });
+                        }
+                        mapOffsets.forEach(function(offset) {
+                            var shiftedPts = continuousPts.map(function(p) { return [p[0], p[1] + offset]; });
+                            var line = L.polyline(shiftedPts, { color: '#64c49a', weight: 1, opacity: 0.5, interactive: false });
+                            
+                            line.on('add', function() {
+                                if (glowMode === 'on' && line.getElement()) {
+                                    line.getElement().classList.add('glow-path');
+                                }
+                            });
+
+                            drawnLayers.addLayer(line);
+                            linesForFlight.push(line);
+                        });
+                    }
+
+
+                    mapOffsets.forEach(function(offset) {
+                        var shiftedPts = continuousPts.map(function(p) { return [p[0], p[1] + offset]; });
+                        var line = L.polyline(shiftedPts, { color: '#64c49a', weight: 1, opacity: 0.5, interactive: false });
+                        
+                        line.on('add', function() {
+                            if (glowMode === 'on' && line.getElement()) {
+                                line.getElement().classList.add('glow-path');
+                            }
+                        });
+
+                        drawnLayers.addLayer(line);
+                        linesForFlight.push(line);
+                    });
+                    flightLayers.push({flight:f, layers: linesForFlight});
+                });
+                
+                window.updateCircles();
+                window.updateGlows();
+            }
+
+            window.applyFiltersGlobal = function() {
+                var sd = document.getElementById('start-date').value ? new Date(document.getElementById('start-date').value) : null;
+                var ed = document.getElementById('end-date').value   ? new Date(document.getElementById('end-date').value)   : null;
+                if (sd) sd.setHours(0,0,0,0);
+                if (ed) ed.setHours(23,59,59,999);
+                
+                var strictMatch = document.getElementById('airport-strict-match').checked;
+
+                var result = flights.filter(function(f){
+                    if (sd || ed) {
+                        var fd=new Date(f.date);
+                        if (sd && fd<sd) return false;
+                        if (ed && fd>ed) return false;
+                    }
+                    
+                    var ifatcF = filterState.ifatc;
+                    if (ifatcF.includes.size > 0 && !f.isATC) return false;
+                    if (ifatcF.excludes.size > 0 && f.isATC) return false;
+
+
+                    var acf = filterState.aircraft;
+                    // If it's an ATC session, it usually has no aircraft. Handle filter logic:
+                    if (acf.includes.size > 0 || acf.excludes.size > 0) {
+                        if (f.isATC) return false; // Hide ATC sessions if specifically filtering for aircraft attributes.
+                        
+                        var d = getAircraftDetails(f.aircraft);
+                        var isIncluded = false, isExcluded = false;
+                        function checkMatch(v) {
+                            if (v.startsWith('mfr:') && d.mfr === v.slice(4)) return true;
+                            if (v.startsWith('fam:') && d.family === v.slice(4)) return true;
+                            if (v.startsWith('spc:') && d.specific === v.slice(4)) return true;
+                            return false;
+                        }
+                        acf.includes.forEach(function(v){ if(checkMatch(v)) isIncluded = true; });
+                        acf.excludes.forEach(function(v){ if(checkMatch(v)) isExcluded = true; });
+                        if (acf.excludes.size > 0 && isExcluded) return false;
+                        if (acf.includes.size > 0 && !isIncluded) return false;
+                    }
+
+                    var alf = filterState.airline;
+                    if (alf.includes.size > 0 || alf.excludes.size > 0) {
+                        var isIncAl = alf.includes.has(f.livery);
+                        var isExcAl = alf.excludes.has(f.livery);
+                        if (alf.excludes.size > 0 && isExcAl) return false;
+                        if (alf.includes.size > 0 && !isIncAl) return false;
+                    }
+                    
+                    var rmf = filterState.remarks;
+                    if (rmf.includes.size > 0 || rmf.excludes.size > 0) {
+                        var isIncRm = rmf.includes.has(f.remarks);
+                        var isExcRm = rmf.excludes.has(f.remarks);
+                        if (rmf.excludes.size > 0 && isExcRm) return false;
+                        if (rmf.includes.size > 0 && !isIncRm) return false;
+                    }
+
+
+                    var apf = filterState.airport;
+                    if (apf.includes.size > 0 || apf.excludes.size > 0) {
+                        var depAp = airportData[f.departure] || {};
+                        var arrAp = airportData[f.arrival] || {};
+
+                        var depMatches = [];
+                        var arrMatches = [];
+                        var isExcludedDep = false, isExcludedArr = false;
+
+                        function checkApMatch(v, icao, apObj) {
+                            if (v.startsWith('reg:') && apObj.continent === v.slice(4)) return true;
+                            if (v.startsWith('cty:') && apObj.country === v.slice(4)) return true;
+                            if (v === icao) return true;
+                            return false;
+                        }
+
+                        apf.includes.forEach(function(v){
+                            if (checkApMatch(v, f.departure, depAp)) depMatches.push(v);
+                            if (checkApMatch(v, f.arrival, arrAp)) arrMatches.push(v);
+                        });
+
+                        apf.excludes.forEach(function(v){
+                            if (checkApMatch(v, f.departure, depAp)) isExcludedDep = true;
+                            if (checkApMatch(v, f.arrival, arrAp)) isExcludedArr = true;
+                        });
+
+                        var isExcAp = isExcludedDep || isExcludedArr;
+                        if (apf.excludes.size > 0 && isExcAp) return false;
+
+                        if (apf.includes.size > 0) {
+                            if (strictMatch && apf.includes.size >= 2) {
+                                if (depMatches.length === 0 || arrMatches.length === 0) return false;
+                                
+                                var crossedFilters = false;
+                                for (var i = 0; i < depMatches.length; i++) {
+                                    for (var j = 0; j < arrMatches.length; j++) {
+                                        if (depMatches[i] !== arrMatches[j]) {
+                                            crossedFilters = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!crossedFilters) return false;
+                                
+                            } else if (strictMatch && apf.includes.size === 1) {
+                                if (depMatches.length === 0 || arrMatches.length === 0) return false;
+                            } else {
+                                if (depMatches.length === 0 && arrMatches.length === 0) return false;
+                            }
+                        }
+                    }
+                    return true;
+                });
+
+                renderMap(result);
+                renderVisibleRoutes(result); 
+            };
+
+            window.resetFilters = function() {
+                document.getElementById('start-date').value='';
+                document.getElementById('end-date').value='';
+                document.getElementById('airport-strict-match').checked = false;
+                filterHistory = [];
+                ['aircraft','airline','airport','ifatc', 'remarks'].forEach(function(key){
+                    filterState[key].includes.clear(); filterState[key].excludes.clear();
+                });
+                window.renderAllActiveFilters();
+                window.applyFiltersGlobal();
+            };
+
+            Papa.parse('/Infinite Flight Aircraft Livery List.csv', {
+                download: true,
+                header: true,
+                complete: function(liveryResults) {
+                    liveryResults.data.forEach(function(row) {
+                        var name = row["Infinite Flight Livery Name"];
+                        if (name) {
+                            // Grabbing the logo filename (supporting the typo in the header)
+                            var logoFile = row["Logol or Wordmark"] || row["Logo or Wordmark"];
+                            
+                            window.liveryColorMap[name.trim()] = {
+                                colors: [
+                                    row["Color 1"], 
+                                    row["Color 2"], 
+                                    row["Color 3"]
+                                ],
+                                logo: logoFile,
+                                includeName: row["Include Name"]
+                            };
+                        }
+                    });
+                    
+                    window.renderAllActiveFilters();
+                    renderMap(flights);
+                    renderVisibleRoutes(flights);
+                },
+                error: function(err) {
+                    console.error('Could not load livery colors:', err);
+                    window.renderAllActiveFilters();
+                    renderMap(flights);
+                    renderVisibleRoutes(flights);
+                }
+            });
+
+        },
+        error: function(err) { document.getElementById('loading').innerText='ERR: APT DATA'; console.error(err); }
+    });
+});
+
+map.on('zoomend', function() {
+    window.updateCircles();
+    
+    // Copy the currently open flights before resetting
+    var savedSelections = new Set(window.selectedFlightIndices);
+    var sidebarContainer = document.getElementById('sidebar-routes');
+    var savedScroll = sidebarContainer ? sidebarContainer.scrollTop : 0;
+
+    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+    
+    // Re-click all previously opened flights to restore them
+    savedSelections.forEach(function(idx) {
+        var row = document.querySelector('.flight-row[data-index="' + idx + '"]');
+        if (row) row.click();
+    });
+    
+    if (sidebarContainer) {
+        sidebarContainer.scrollTop = savedScroll;
+    }
+});
+
+
+</script>
+
+
+
+</body>
+</html>
