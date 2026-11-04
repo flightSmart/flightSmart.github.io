@@ -99,23 +99,23 @@
             color: var(--text-main);
         }
 
-        /* ── AIRPORT LABELS ON MAP ── */
-        .map-airport-label {
-            font-family: var(--font-mono);
-            font-size: 9px;
-            color: rgb(180, 180, 180);
-            white-space: nowrap;
-            pointer-events: none;
-            /* Default dark mode shadow */
-            text-shadow: 0 0 1px rgb(30, 30, 30), 0 0 1px rgb(30, 30, 30), 0 0 1px rgb(30, 30, 30);
+        /* Render airline logos as solid white in dark mode */
+        /* Airline logos: knockout in dark mode by default, per-livery override via the "Dark Logo" CSV column */
+        .airline-logo            { filter: url(#logo-knockout); }
+        .airline-logo.logo-mono  { filter: brightness(0) invert(1); }
+        .airline-logo.logo-color { filter: none; }
+        .airline-logo.logo-chip  { filter: none; background: #ecece9; padding: 1px 3px; border-radius: 2px; }
+        [data-theme="light"] .airline-logo { filter: none; background: none; padding: 0; }
+        
+
+        [data-theme="light"] .airline-logo {
+            filter: none;
         }
 
-        [data-theme="light"] .map-airport-label {
-            color: rgb(70, 70, 70); /* Darker text so it reads well */
-            /* Clean white halo for light mode */
-            text-shadow: 0 0 1px rgb(255, 255, 255), 0 0 1px rgb(255, 255, 255), 0 0 1px rgb(255, 255, 255);
+        /* Hide GA livery color swatches in dark mode only */
+        [data-theme="dark"] .livery-color-box {
+            display: none !important;
         }
-
 
         /* ── GLOBAL RESET ── */
         *, *::before, *::after { 
@@ -159,8 +159,10 @@
         }
 
         #loading {
-            position: absolute; top: 10px; left: 50px; z-index: 1000;
-            background: var(--bg-light); padding: 9px 14px; 
+            position: absolute; top: 50%; left: 50%; z-index: 1000;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: var(--bg-light); padding: 9px 14px;
             border: 1px solid var(--border-main);
             color: var(--text-main);
             font-size: 10px; font-family: var(--font-mono);
@@ -186,25 +188,24 @@
         }
         .map-btn:hover {
             background-color: var(--bg-hover);   /* ← subtle, not full inversion */
-            color: var(--text-main);  
+            color: var(--text-main);
             border: 1px solid var(--text-main);
             outline: none;
 
         }
-        .glow-active {
-                    filter: drop-shadow(0 0 1px #fa9822) drop-shadow(0 0 4px #fa9822);
-                    transition: filter 0.3s ease, stroke-width 0.2s ease;
-                    z-index: 1000 !important;
+        @keyframes dice-roll {
+            0%   { transform: rotate(0deg) scale(1); }
+            25%  { transform: rotate(-22deg) scale(1.12); }
+            50%  { transform: rotate(18deg) scale(1.12); }
+            75%  { transform: rotate(-8deg) scale(1.05); }
+            100% { transform: rotate(0deg) scale(1); }
         }
-        .glow-inactive {
-            filter: drop-shadow(0 0 1px #64c49a) drop-shadow(0 0 4px #64c49a);
-            transition: filter 0.3s ease, stroke-width 0.2s ease;
+        #dice-icon.rolling {
+            animation: dice-roll 0.45s ease;
         }
-
-
         /* ── RIGHT SIDEBAR (FILTERS) ── */
         #sidebar {
-            width: 350px; height: 100%;
+            width: 290px; height: 100%;
             background: var(--bg-dark);
             display: flex; flex-direction: column; flex-shrink: 0;
             border-left: 1px solid var(--border-main);
@@ -212,15 +213,69 @@
             font-family: var(--font-mono);
         }
 
+        /* Fills all free height in the sidebar and scrolls internally, so it no longer
+           gets cropped on shorter / high-DPI-scaled screens (e.g. Windows at 125–150%). */
         #filter-container {
             padding: 4px 10px 2px;
             background: var(--bg-dark);
-            border-bottom: 1px solid var(--border-main);
-            flex-shrink: 0; overflow-y: auto; max-height: 65%;
+            flex: 1 1 auto;
+            min-height: 0;
+            overflow-y: auto;
+            position: relative;
+            scrollbar-width: thin;
+            scrollbar-color: var(--bg-light) var(--bg-dark);
         }
+        #filter-container::-webkit-scrollbar { width: 8px; }
+        #filter-container::-webkit-scrollbar-track { background: var(--bg-dark); }
+        #filter-container::-webkit-scrollbar-thumb {
+            background: var(--bg-light);
+            border: 1px solid var(--bg-dark);
+            border-radius: 4px;
+        }
+        #filter-container::-webkit-scrollbar-thumb:hover { background: var(--border-main); }
 
         .filter-section { margin-bottom: 4px; }
         .filter-header-row { margin-bottom: 2px; }
+
+        /* ── GROUPED FILTERS (bracket + rotated label) ── */
+        .filter-group {
+            display: flex;
+            align-items: stretch;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .filter-group-bracket {
+            width: 6px;
+            flex-shrink: 0;
+            margin-top: 11px; /* aligns bracket top with the vertical middle of the "O" in Organization */
+            border-left: 1px solid var(--border-main);
+            border-top: 1px solid var(--border-main);
+            border-bottom: 1px solid var(--border-main);
+            border-radius: 4px 0 0 4px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .filter-group-bracket span {
+            writing-mode: vertical-rl;
+            transform: rotate(180deg);
+            font-family: var(--font-sans);
+            font-weight: bold;
+            font-size: 9px;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+            background: var(--bg-dark);
+            padding: 3px 0;
+        }
+        .filter-group-fields {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .filter-group-fields .filter-section { margin-bottom: 0; }
 
         .filter-label {
             font-family: var(--font-sans);
@@ -291,9 +346,11 @@
         .action-btn.btn-inc:hover { background-color: var(--accent-green); color: var(--bg-dark); }
         .action-btn.btn-exc:hover { background-color: var(--exc-brd); color: var(--bg-dark); }
 
-        /* ── DROPDOWN ── */
+        /* ── DROPDOWN ──
+           Positioned via JS (fixed, anchored to the input's live bounding rect) so it
+           overlays the sidebar instead of being clipped by #filter-container's scroll box. */
         .tag-dropdown {
-            display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+            display: none; position: fixed;
             background: var(--bg-light);
             border: 1px solid var(--border-main);
             max-height: 350px; overflow-y: auto; z-index: 9999;
@@ -310,14 +367,32 @@
         }
 
         .dropdown-opt {
-            padding: 7px 10px; cursor: pointer; font-size: 10px;
+            padding: 6px 8px 6px 10px; cursor: pointer; font-size: 10px;
             font-family: var(--font-mono);
-            display: flex; align-items: center; justify-content: space-between;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px;
             color: var(--text-main); transition: background 0.1s;
         }
-        .dropdown-opt:hover { background: var(--bg-hover); }
+        .dropdown-opt .opt-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .dropdown-opt:hover, .dropdown-opt.highlighted { background: var(--bg-hover); }
 
         .opt-badge { font-size: 10px; color: var(--text-muted); }
+
+        /* Inline include/exclude actions on each dropdown row — lets a single click
+           on the row (or the +/- buttons) commit the value immediately, instead of
+           staging it for a separate button elsewhere. */
+        .dropdown-opt-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+        .opt-btn {
+            width: 16px; height: 16px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid; border-radius: 2px;
+            font-size: 11px; line-height: 1; font-family: var(--font-mono);
+            background: transparent; cursor: pointer; padding: 0;
+        }
+        .opt-btn-inc { border-color: var(--accent-green); color: var(--accent-green); }
+        .opt-btn-inc:hover { background: var(--accent-green); color: var(--bg-dark); }
+        .opt-btn-exc { border-color: var(--exc-brd); color: var(--exc-txt); }
+        .opt-btn-exc:hover { background: var(--exc-brd); color: var(--bg-dark); }
 
         .no-results {
             padding: 10px; font-size: 10px;
@@ -358,7 +433,7 @@
             border: 1px solid var(--border-main);
             cursor: pointer;
             font-size: 10px; font-family: var(--font-mono);
-            transition: 0.2s; margin-top: 10px; margin-bottom: 200px;;
+            transition: 0.2s; margin-top: 10px; margin-bottom: 10px;
         }
         .reset-btn:hover {
             background: var(--text-main); color: var(--bg-dark); border-color: var(--text-main);
@@ -506,6 +581,24 @@
             border-top: 1px solid rgba(250, 152, 34, 1.0);
         }
 
+        .route-cell {
+            position: relative;
+        }
+
+        .dup-badge {
+            position: absolute;
+            top: 1px;
+            right: 2px;
+            font-size: 14px;
+            line-height: 1;
+            color: #5ba4ff;
+            pointer-events: none;
+        }
+
+        .dup-badge.dup-badge-atc {
+            color: var(--accent-green);
+        }
+
         .details-row td {
             background-color: var(--bg-light);
             border-bottom: 1px solid var(--border-main);
@@ -513,18 +606,25 @@
             border: 1px solid rgba(250, 152, 34, 1.0);
         }
 
+        .filter-clickable {
+            cursor: pointer;
+            border-bottom: 1px dotted var(--text-muted);
+        }
+        .filter-clickable:hover {
+            color: rgba(250, 152, 34, 1.0);
+            border-bottom-color: rgba(250, 152, 34, 1.0);
+        }
+
         /* ── AIRPORT HOVER INFO ── */
         #hover-airport-id { color: var(--accent-green) !important; font-size: 15px !important; }
        
-       #sidebar-routes, 
-        #filter-container {
+        #sidebar-routes {
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;     /* Firefox */
         }
 
         /* Hide scrollbar for Chrome, Safari and Opera */
-        #sidebar-routes::-webkit-scrollbar, 
-        #filter-container::-webkit-scrollbar {
+        #sidebar-routes::-webkit-scrollbar {
             display: none;
         }
 
@@ -561,6 +661,7 @@
             align-items: center; 
             justify-content: space-between;
             gap: 6px;
+            flex-shrink: 0;
         }
 
         #hover-airport-id { 
@@ -584,36 +685,6 @@
         body.ui-hidden .map-overlay-btns {
             display: none !important;
         }
-
-        /* ── GLOW CONFIRMATION MODAL ── */
-        #glow-confirm-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 99999;
-            background: rgba(0, 0, 0, 0.5);
-            align-items: center;
-            justify-content: center;
-        }
-        #glow-confirm-overlay.open { display: flex; }
-        #glow-confirm-box {
-            background: var(--bg-dark);
-            border: 1px solid var(--border-main);
-            padding: 20px;
-            max-width: 300px;
-            width: 90%;
-            font-family: var(--font-mono);
-            font-size: 10px;
-            color: var(--text-main);
-            line-height: 1.7;
-        }
-        #glow-confirm-box p { margin: 0 0 16px 0; }
-        #glow-confirm-buttons { display: flex; gap: 8px;  }
-
-        #glow-confirm-buttons .action-btn {
-            padding: 4px 7px;
-        }
-
 
         /* ── MOBILE CLOSE BUTTON ── */
         .mobile-close-btn {
@@ -657,14 +728,12 @@
             #filter-container {
                 padding-top: 30px;
             }
+
+            #loading {
+                width: 80%;
+                max-width: 260px;
+            }
         }
-
-        /* Ensure the button is styled for the filter container context */
-        #filter-container {
-            position: relative;
-        }
-
-
 
     </style>
 </head>
@@ -737,7 +806,7 @@
 
 
 <div id="map-container">
-    <div id="loading">Loading data...</div>
+    <div id="loading">Loading data...<br>There are many flights and the website may be slow to load...</div>
     
     <div class="map-overlay-btns">
         <button id="left-toggle" class="map-btn" onclick="toggleLeftPanel()" title="Toggle Routes Panel"> < ROUTES </button>
@@ -773,23 +842,6 @@
             </svg>
         </button>
         
-        <button id="glow-toggle" class="map-btn" onclick="cycleGlowMode()" title="Cycle Glow Mode">
-            <svg style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
-                            <text id="A" xml:space="preserve" x="110" y="147" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
-                            <filter id="glow-filter-auto" x="0" y="0" width="152" height="152" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                                <feGaussianBlur stdDeviation="27"/>
-                                <feOffset dx="-0" dy="0" result="offsetblur"/>
-                                <feFlood flood-color="#d8d8d9" flood-opacity="1"/>
-                                <feComposite in2="offsetblur" operator="in"/>
-                                <feMerge>
-                                    <feMergeNode/>
-                                    <feMergeNode in="SourceGraphic"/>
-                                </feMerge>
-                            </filter>
-                            <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-filter-auto)" d="M 124 30 L 35 119"/>
-                        </svg>
-        </button>
-        
         <button id="circle-toggle" class="map-btn" onclick="cycleCircleMode()" title="Cycle Airport Mode">
             <svg id="toggle-icon" style="width: 24px; height: 24px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
                 <path id="Path-copy" fill="#99a7b6" fill-rule="evenodd" stroke="#838383" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" visibility="hidden" d="M 115 116 L 35 36"/>
@@ -805,6 +857,17 @@
         <button id="theme-toggle" class="map-btn" onclick="toggleTheme()" title="Toggle Light/Dark Mode">
             <svg id="theme-icon" style="width: 20; height: 20;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
                 <path transform="scale(1.2), translate(-8, -8)" d="M 98 42 A 42 42 0 1 0 98 110 A 28 28 0 1 1 98 42 Z" fill="#d8d8d9"/>
+            </svg>
+        </button>
+
+        <button id="random-flight-toggle" class="map-btn" onclick="selectRandomFlight()" title="Show Random Flight">
+            <svg id="dice-icon" style="width: 20px; height: 20px; transform-box: fill-box; transform-origin: center;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
+                <rect x="18" y="18" width="116" height="116" rx="20" ry="20" fill="none" stroke="#d8d8d9" stroke-width="11"/>
+                <circle cx="47" cy="47" r="11" fill="#d8d8d9"/>
+                <circle cx="105" cy="47" r="11" fill="#d8d8d9"/>
+                <circle cx="76" cy="76" r="11" fill="#d8d8d9"/>
+                <circle cx="47" cy="105" r="11" fill="#d8d8d9"/>
+                <circle cx="105" cy="105" r="11" fill="#d8d8d9"/>
             </svg>
         </button>
 
@@ -836,9 +899,6 @@
             <div class="filter-header-row"><span class="filter-label">Airline / Livery</span></div>
             <div class="tag-input-wrapper" id="airline-wrapper"></div>
         </div>
-        
-        
-
 
         <div class="filter-section">
             <div class="filter-header-row"><span class="filter-label">Airport</span></div>
@@ -850,24 +910,64 @@
         </div>
 
         <div class="filter-section">
-            <div class="filter-header-row"><span class="filter-label">IFATC Sessions</span></div>
-            <div class="tag-input-wrapper">
-                <div class="tag-input-row">
-                    <button id="btn-ifatc-inc" class="action-btn btn-inc" style="flex: 1;">INC</button>
-                    <button id="btn-ifatc-exc" class="action-btn btn-exc" style="flex: 1;">EXC</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="filter-section">
             <div class="filter-header-row"><span class="filter-label">Remarks</span></div>
             <div class="tag-input-wrapper" id="remarks-wrapper"></div>
         </div>
 
-        <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button> 
+        <div class="filter-group">
+            <div class="filter-group-bracket"></div>
+            <div class="filter-group-fields">
+                <div class="filter-section">
+                    <div class="filter-header-row"><span class="filter-label">IFATC Sessions</span></div>
+                    <div class="tag-input-wrapper">
+                        <div class="tag-input-row">
+                            <button id="btn-ifatc-inc" class="action-btn btn-inc" style="flex: 1;">INC</button>
+                            <button id="btn-ifatc-exc" class="action-btn btn-exc" style="flex: 1;">EXC</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <div class="filter-header-row"><span class="filter-label">Station</span></div>
+                    <div class="tag-input-wrapper" id="station-wrapper"></div>
+                </div>
+
+                <div class="filter-section">
+                    <div class="filter-header-row"><span class="filter-label">Controllers</span></div>
+                    <div class="tag-input-wrapper" id="controllers-wrapper"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-group">
+            <div class="filter-group-bracket"></div>
+            <div class="filter-group-fields">
+                <div class="filter-section">
+                    <div class="filter-header-row"><span class="filter-label">Live Flights</span></div>
+                    <div class="tag-input-wrapper">
+                        <div class="tag-input-row">
+                            <button id="btn-live-inc" class="action-btn btn-inc" style="flex: 1;">INC</button>
+                            <button id="btn-live-exc" class="action-btn btn-exc" style="flex: 1;">EXC</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <div class="filter-header-row"><span class="filter-label">Organization</span></div>
+                    <div class="tag-input-wrapper" id="org-wrapper"></div>
+                </div>
+
+                <div class="filter-section">
+                    <div class="filter-header-row"><span class="filter-label">Airframe</span></div>
+                    <div class="tag-input-wrapper" id="airframe-wrapper"></div>
+                </div>
+            </div>
+        </div>
+
+        <button class="reset-btn" onclick="resetFilters()">Reset All Filters</button>
     </div>
 
-    <div id="active-filters-section" style="padding: 12px 10px; flex-grow: 1; overflow-y: auto;">
+    <div id="active-filters-section" style="padding: 12px 10px; flex: 0 1 auto; max-height: 40%; overflow-y: auto; border-top: 1px solid var(--border-faint); transition: max-height 0.2s ease;">
         <div class="filter-header-row" style="margin-bottom: 8px;">
             <span class="filter-label">Active Filters</span>
         </div>
@@ -880,16 +980,6 @@
         </div>
 </div>
 
-
-<div id="glow-confirm-overlay">
-    <div id="glow-confirm-box">
-        <p>Turning on glow on all routes can be laggy. Are you sure you want to turn on glow?</p>
-        <div id="glow-confirm-buttons">
-            <button id="glow-confirm-yes" class="action-btn"         style="flex:1;">Turn on glow</button>
-            <button id="glow-confirm-no"  class="action-btn btn-inc" style="flex:1;">Cancel</button>
-        </div>
-    </div>
-</div>
 
 
 
@@ -934,6 +1024,10 @@ window.toggleTheme = function() {
     if (typeof mapBaseLayer !== 'undefined') {
         mapBaseLayer.setUrl(next === 'light' ? lightTileUrl : darkTileUrl);
     }
+
+    // Canvas labels don't react to CSS, so redraw them in the new theme's colors
+    if (airportLabelGroup && labelsVisible) airportLabelGroup.redraw();
+    if (window.updateCircles) window.updateCircles();
 };
 
 // ── Apply saved theme immediately, before map init ──
@@ -950,6 +1044,7 @@ _updateThemeIcon(_initTheme);
 // ═══════════════════════════════════════════════════════════
 var mapBounds = L.latLngBounds([[-90, -Infinity], [90, Infinity]]);
 var map = L.map('map', {
+    preferCanvas: true,   // draw routes / circles on a canvas instead of thousands of SVG nodes
     minZoom: 2, 
     maxBounds: mapBounds, 
     maxBoundsViscosity: 1.0,
@@ -984,11 +1079,119 @@ var atcCircleLayers = [];     // ADDED: array to hold the ATC circles
 var atcCircleVisible = true;  // ADDED: state for ATC circles
 
 // ═══════════════════════════════════════════════════════════
-// CIRCLE & GLOW VISIBILITY LOGIC
+// CANVAS AIRPORT LABEL LAYER
+// One canvas for all ICAO labels (instead of ~1,700 DOM markers).
+// Labels that would overlap are skipped, busiest airports win.
 // ═══════════════════════════════════════════════════════════
-var circleMode = 'auto'; 
-var glowMode = 'auto'; // NEW: 'auto', 'on', 'off'
+var AirportLabelLayer = L.Layer.extend({
+    initialize: function() { this._items = []; this.declutter = true; },
 
+    setItems: function(items) {
+        this._items = items.slice().sort(function(a, b) { return b.count - a.count; });
+        this._widthsDirty = true;
+        this.redraw();
+    },
+
+    onAdd: function(map) {
+        this._map = map;
+        var c = this._canvas = L.DomUtil.create('canvas', '', map.getContainer());
+        c.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:450;';
+        this._ctx = c.getContext('2d');
+        this._widthsDirty = true;
+        map.on('move resize zoomend', this.redraw, this);
+        map.on('zoomstart', this._hide, this);
+        if (document.fonts) document.fonts.ready.then(this.redraw.bind(this));
+        this.redraw();
+    },
+
+    onRemove: function(map) {
+        map.off('move resize zoomend', this.redraw, this);
+        map.off('zoomstart', this._hide, this);
+        if (this._frame) { cancelAnimationFrame(this._frame); this._frame = null; }
+        L.DomUtil.remove(this._canvas);
+        this._canvas = null;
+    },
+
+    _hide: function() { if (this._canvas) this._canvas.style.visibility = 'hidden'; },
+
+    redraw: function() {
+        if (!this._canvas || this._frame) return;
+        var self = this;
+        this._frame = requestAnimationFrame(function() { self._frame = null; self._draw(); });
+    },
+
+    _draw: function() {
+        if (!this._canvas) return;
+        var map = this._map, c = this._canvas, ctx = this._ctx;
+        var size = map.getSize(), dpr = window.devicePixelRatio || 1;
+        c.style.visibility = 'visible';
+        if (c.width !== Math.round(size.x * dpr) || c.height !== Math.round(size.y * dpr)) {
+            c.width = Math.round(size.x * dpr); c.height = Math.round(size.y * dpr);
+            c.style.width = size.x + 'px'; c.style.height = size.y + 'px';
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, size.x, size.y);
+
+        var light = document.documentElement.getAttribute('data-theme') === 'light';
+        ctx.font = '9px "B612 Mono", monospace';
+        ctx.textBaseline = 'middle';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = light ? 'rgba(255,255,255,0.75)' : 'rgba(30,30,30,0.9)';
+        ctx.fillStyle   = light ? 'rgb(70,70,70)' : 'rgb(180,180,180)';
+
+        if (this._widthsDirty) {
+            this._items.forEach(function(it) { it.w = ctx.measureText(it.id).width; });
+            this._widthsDirty = false;
+        }
+
+        var H = 10, CELL = 50, grid = {}, declutter = this.declutter;
+        function hit(x, y, w) {
+            var x0 = Math.floor(x / CELL), x1 = Math.floor((x + w) / CELL);
+            var y0 = Math.floor(y / CELL), y1 = Math.floor((y + H) / CELL);
+            var gx, gy;
+            for (gx = x0; gx <= x1; gx++) for (gy = y0; gy <= y1; gy++) {
+                var cell = grid[gx + ',' + gy];
+                if (!cell) continue;
+                for (var i = 0; i < cell.length; i++) {
+                    var r = cell[i];
+                    if (x < r.x + r.w + 3 && x + w + 3 > r.x && y < r.y + H && y + H > r.y) return true;
+                }
+            }
+            for (gx = x0; gx <= x1; gx++) for (gy = y0; gy <= y1; gy++) {
+                (grid[gx + ',' + gy] = grid[gx + ',' + gy] || []).push({ x: x, y: y, w: w });
+            }
+            return false;
+        }
+
+        var centerLng = map.getCenter().lng;
+        this._items.forEach(function(it) {
+            var lng = it.lon;
+            while (lng - centerLng > 180) lng -= 360;
+            while (centerLng - lng > 180) lng += 360;
+            [-360, 0, 360].forEach(function(off) {
+                var p = map.latLngToContainerPoint([it.lat, lng + off]);
+                var x = p.x + 5, y = p.y - H / 2;
+                if (x > size.x || x + it.w < 0 || y > size.y || y + H < 0) return;
+                if (declutter && hit(x, y, it.w)) return;
+                ctx.strokeText(it.id, x, p.y);
+                ctx.fillText(it.id, x, p.y);
+            });
+        });
+    }
+});
+
+// ═══════════════════════════════════════════════════════════
+// CIRCLE VISIBILITY LOGIC
+// ═══════════════════════════════════════════════════════════
+var circleMode = 'auto';
+
+var airportDotStyle = {
+    dark:  { fillColor: '#7b8794', stroke: false },
+    light: { fillColor: '#abb9c9', stroke: false }               // A. Graphite
+
+};
+    
 window.liveryColorMap = {};
 
 
@@ -1019,41 +1222,6 @@ const modeIcons = {
     </svg>`
 };
 
-
-const glowIcons = {
-    'auto': `<svg style="width: 23px; height: 23px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
-                <text id="A" xml:space="preserve" x="110" y="147" font-family="B612" font-size="50" font-weight="700" fill="#d8d8d9" letter-spacing="-4">A</text>
-                <filter id="glow-filter-auto" x="0" y="0" width="152" height="152" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                    <feGaussianBlur stdDeviation="27"/>
-                    <feOffset dx="-0" dy="0" result="offsetblur"/>
-                    <feFlood flood-color="#d8d8d9" flood-opacity="1"/>
-                    <feComposite in2="offsetblur" operator="in"/>
-                    <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                </filter>
-                <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-filter-auto)" d="M 124 30 L 35 119"/>
-            </svg>`,
-             
-    'on': `<svg style="width: 23px; height: 23px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
-                <filter id="glow-filter-on" x="0" y="0" width="152" height="152" filterUnits="userSpaceOnUse" primitiveUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
-                    <feGaussianBlur stdDeviation="27"/>
-                    <feOffset dx="-0" dy="0" result="offsetblur"/>
-                    <feFlood flood-color="#d8d8d9" flood-opacity="1"/>
-                    <feComposite in2="offsetblur" operator="in"/>
-                    <feMerge>
-                        <feMergeNode/>
-                        <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                </filter>
-                <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow-filter-on)" d="M 124 30 L 35 119"/>
-            </svg>`,
-           
-    'off': `<svg style="width: 23px; height: 23px;" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">
-                <path fill="none" stroke="#d8d8d9" stroke-width="24" stroke-linecap="round" stroke-linejoin="round" d="M 124 30 L 35 119"/>
-            </svg>`
-};
 
 const labelIcons = {
     'off': `<svg width="24" height="24" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -1127,59 +1295,18 @@ window.updateCircles = function() {
         op = isZoomedIn ? 1 : 0;
     }
     
+    var theme = document.documentElement.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    var dotStyle = airportDotStyle[theme];
+    
     airportMarkers.forEach(function(marker) {
         var scaledPart = Math.sqrt(marker.flightCount) * .9;
         var cappedScaledPart = Math.min(scaledPart, 3);
         var finalRadius = baseR === 0 ? 0 : baseR + cappedScaledPart;
-        
+    
         marker.setRadius(finalRadius);
-        marker.setStyle({ fillOpacity: op });
+        marker.setStyle(Object.assign({ fillOpacity: op, opacity: dotStyle.stroke ? op : 0 }, dotStyle));
     });
 };
-
-window.cycleGlowMode = function() {
-    if (glowMode === 'auto') {
-        // Check if any filters are currently active
-        var hasActiveFilters = false;
-        if (document.getElementById('start-date').value || document.getElementById('end-date').value) {
-            hasActiveFilters = true;
-        }
-        if (!hasActiveFilters) {
-            ['aircraft', 'airline', 'airport', 'ifatc', 'remarks'].forEach(function(key) {
-                if (filterState[key].includes.size > 0 || filterState[key].excludes.size > 0) {
-                    hasActiveFilters = true;
-                }
-            });
-        }
-
-        if (hasActiveFilters) {
-            // Filters are narrowing down the routes — skip the warning and just turn on
-            glowMode = 'on';
-            window.updateGlows();
-        } else {
-            // No filters, full route set could be laggy — show confirmation
-            document.getElementById('glow-confirm-overlay').classList.add('open');
-        }
-        return;
-    } else if (glowMode === 'on') {
-        glowMode = 'off';
-    } else {
-        glowMode = 'auto';
-    }
-    window.updateGlows();
-};
-
-document.getElementById('glow-confirm-no').addEventListener('click', function() {
-    document.getElementById('glow-confirm-overlay').classList.remove('open');
-});
-document.getElementById('glow-confirm-yes').addEventListener('click', function() {
-    document.getElementById('glow-confirm-overlay').classList.remove('open');
-    glowMode = 'on';
-    window.updateGlows();
-});
-document.getElementById('glow-confirm-overlay').addEventListener('click', function(e) {
-    if (e.target === this) this.classList.remove('open'); // Click outside to cancel
-});
 
 window.toggleAirportLabels = function() {
     labelsVisible = !labelsVisible;
@@ -1194,52 +1321,19 @@ window.toggleAirportLabels = function() {
 };
 
 
-window.updateGlows = function() {
-    const btn = document.getElementById('glow-toggle');
-    if (btn) {
-        btn.innerHTML = glowIcons[glowMode];
-    }
-
-    flightLayers.forEach(function(item, idx) {
-        if (!item || !item.layers) return;
-        
-        var isSelected = window.selectedFlightIndices.has(idx);
-        var isHovered = (window.hoveredFlightIndex === idx);
-        var isActive = isSelected || isHovered;
-
-        item.layers.forEach(function(l) {
-            var el = l.getElement();
-            if (!el) return;
-
-            if (glowMode === 'on') {
-                if (isActive) {
-                    el.classList.add('glow-active');
-                    el.classList.remove('glow-inactive');
-                } else {
-                    el.classList.add('glow-inactive');
-                    el.classList.remove('glow-active');
-                }
-            } else if (glowMode === 'auto') {
-                if (isActive) {
-                    el.classList.add('glow-active');
-                    el.classList.remove('glow-inactive');
-                } else {
-                    el.classList.remove('glow-active', 'glow-inactive');
-                }
-            } else {
-                el.classList.remove('glow-active', 'glow-inactive');
-            }
-        });
-    });
-};
 // ═══════════════════════════════════════════════════════════
 // FILTER STATE & TAG INPUT COMPONENT
 // ═══════════════════════════════════════════════════════════
 var filterState = {
     aircraft: { includes: new Set(), excludes: new Set() },
     airline:  { includes: new Set(), excludes: new Set() },
+    station:  { includes: new Set(), excludes: new Set() },
+    controllers: { includes: new Set(), excludes: new Set() },
     airport:  { includes: new Set(), excludes: new Set() },
     ifatc:    { includes: new Set(), excludes: new Set() },
+    live:     { includes: new Set(), excludes: new Set() },
+    org:      { includes: new Set(), excludes: new Set() },
+    airframe: { includes: new Set(), excludes: new Set() },
     remarks:  { includes: new Set(), excludes: new Set() }
 };
 var filterHistory = [];
@@ -1248,15 +1342,16 @@ var tagInputs = {};
 function TagInput(filterKey, wrapper, options) {
     this.filterKey = filterKey;
     this.wrapper   = wrapper;
-    this.options   = options; 
-    this.stagedValue = null; 
-    this.savedQuery = null; // NEW: Track the search query
+    this.options   = options;
+    this._currentFiltered = []; // options shown in the dropdown, in render order
+    this._highlightIndex  = -1; // which row Enter / Shift+Enter will act on
+    this._navigated = false;    // true once the user has arrow-key-browsed the list
     this._init();
 }
 
 TagInput.prototype._init = function() {
     var self = this;
-    this.wrapper.innerHTML = ''; 
+    this.wrapper.innerHTML = '';
 
     var row = document.createElement('div');
     row.className = 'tag-input-row';
@@ -1268,49 +1363,42 @@ TagInput.prototype._init = function() {
     input.type = 'text';
     input.className = 'tag-text-input';
     input.placeholder = 'Search...';
+    input.title = 'Click a result’s + / − to include/exclude it directly.\nOr: Enter = include top match, Shift+Enter = exclude.';
     box.appendChild(input);
-
-    var btnInc = document.createElement('button');
-    btnInc.className = 'action-btn btn-inc';
-    btnInc.textContent = 'INC';
-
-    var btnExc = document.createElement('button');
-    btnExc.className = 'action-btn btn-exc';
-    btnExc.textContent = 'EXC';
 
     var dropdown = document.createElement('div');
     dropdown.className = 'tag-dropdown';
 
     row.appendChild(box);
-    row.appendChild(btnInc);
-    row.appendChild(btnExc);
     this.wrapper.appendChild(row);
     this.wrapper.appendChild(dropdown);
 
     this._input    = input;
     this._dropdown = dropdown;
 
-    input.addEventListener('input', function() { 
-        self.stagedValue = null; 
-        self.savedQuery = null; // Clear saved query if they resume typing
-        this.style.color = 'var(--text-main)'; // Restore standard color
-        self._updateDropdown(this.value); 
+    input.addEventListener('input', function() {
+        self._navigated = false;
+        self._updateDropdown(this.value);
     });
-    input.addEventListener('focus', function() { 
-        // Prevent re-filtering the list if we just clicked and staged an item
-        if (self.stagedValue !== null) return; 
-        self._updateDropdown(this.value); 
-    });    
+    input.addEventListener('focus', function() {
+        self._updateDropdown(this.value);
+    });
     input.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') { 
-            dropdown.classList.remove('open'); 
-            input.blur(); 
-            // Restore query if they abort with Escape
-            if (self.savedQuery !== null) {
-                input.value = self.savedQuery;
-                self.savedQuery = null;
-                input.style.color = 'var(--text-main)';
-                self.stagedValue = null;
+        if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+            input.blur();
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            triggerAdd(e.shiftKey ? 'exclude' : 'include');
+        } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (!dropdown.classList.contains('open')) self._updateDropdown(input.value);
+            if (self._currentFiltered.length) {
+                self._navigated = true;
+                var dir = e.key === 'ArrowDown' ? 1 : -1;
+                var next = self._highlightIndex + dir;
+                self._highlightIndex = Math.max(0, Math.min(next, self._currentFiltered.length - 1));
+                self._applyHighlight();
             }
         }
     });
@@ -1318,13 +1406,6 @@ TagInput.prototype._init = function() {
     document.addEventListener('click', function(e) {
         if (!self.wrapper.contains(e.target)) {
             dropdown.classList.remove('open');
-            // Restore query if they click away
-            if (self.savedQuery !== null) {
-                self._input.value = self.savedQuery;
-                self.savedQuery = null;
-                self._input.style.color = 'var(--text-main)';
-                self.stagedValue = null;
-            }
         }
     });
 
@@ -1332,36 +1413,65 @@ TagInput.prototype._init = function() {
         if (e.target === box) input.focus();
     });
 
+    // Commits whichever value the input currently points at: the dropdown row
+    // the user arrowed/hovered to, its top match while a search is active, or
+    // (with no dropdown open) text that exactly matches an option's label.
     function triggerAdd(mode) {
-        var val = self.stagedValue;
-        if (!val) {
-            var q = input.value.toLowerCase().trim();
-            var exactMatch = self.options.find(function(o) { return o.label.toLowerCase() === q; });
+        var val = null;
+        var q = input.value.trim();
+        if (dropdown.classList.contains('open') && self._currentFiltered.length && (q !== '' || self._navigated)) {
+            var idx = self._highlightIndex >= 0 ? self._highlightIndex : 0;
+            val = self._currentFiltered[idx].value;
+        } else if (q) {
+            var exactMatch = self.options.find(function(o) { return o.label.toLowerCase() === q.toLowerCase(); });
             if (exactMatch) val = exactMatch.value;
         }
 
         if (val) {
             self.addTag(val, mode);
-            self.stagedValue = null;
-            
-            // Restore saved query so the user can quickly pick the next item
-            if (self.savedQuery !== null) {
-                input.value = self.savedQuery;
-                self.savedQuery = null;
-            } else {
-                input.value = '';
-            }
-            input.style.color = 'var(--text-main)'; // Restore text color
-            
             self._updateDropdown(input.value);
             input.focus();
         } else {
             input.focus();
         }
     }
+};
 
-    btnInc.addEventListener('click', function() { triggerAdd('include'); });
-    btnExc.addEventListener('click', function() { triggerAdd('exclude'); });
+// Anchors the (fixed-position) dropdown to the input's live screen position, flipping
+// above the input when there isn't enough room below — keeps it from being clipped by
+// #filter-container's own scroll box, since a fixed element ignores ancestor overflow.
+TagInput.prototype._positionDropdown = function() {
+    var rect = this.wrapper.getBoundingClientRect();
+    var dd = this._dropdown;
+    var maxDropdownHeight = 350;
+    var spaceBelow = window.innerHeight - rect.bottom - 8;
+    var spaceAbove = rect.top - 8;
+    var openAbove = spaceBelow < 120 && spaceAbove > spaceBelow;
+
+    dd.style.left  = rect.left + 'px';
+    dd.style.width = rect.width + 'px';
+
+    if (openAbove) {
+        dd.style.top = 'auto';
+        dd.style.bottom = (window.innerHeight - rect.top + 4) + 'px';
+        dd.style.maxHeight = Math.min(maxDropdownHeight, spaceAbove) + 'px';
+    } else {
+        dd.style.bottom = 'auto';
+        dd.style.top = (rect.bottom + 4) + 'px';
+        dd.style.maxHeight = Math.min(maxDropdownHeight, spaceBelow) + 'px';
+    }
+};
+
+TagInput.prototype._applyHighlight = function() {
+    var idx = this._highlightIndex;
+    this._dropdown.querySelectorAll('.dropdown-opt').forEach(function(rowEl, i) {
+        if (i === idx) {
+            rowEl.classList.add('highlighted');
+            if (rowEl.scrollIntoView) rowEl.scrollIntoView({ block: 'nearest' });
+        } else {
+            rowEl.classList.remove('highlighted');
+        }
+    });
 };
 
 TagInput.prototype._updateDropdown = function(query) {
@@ -1377,8 +1487,11 @@ TagInput.prototype._updateDropdown = function(query) {
     });
 
     if (filtered.length === 0) {
-        this._dropdown.innerHTML = '<div class="no-results">No matches</div>';
+        this._dropdown.innerHTML = '<div class="no-results">No flight in this condition</div>';
+        this._positionDropdown();
         this._dropdown.classList.add('open');
+        this._currentFiltered = [];
+        this._highlightIndex = -1;
         return;
     }
 
@@ -1391,38 +1504,56 @@ TagInput.prototype._updateDropdown = function(query) {
     var multipleGroups = groupOrder.length > 1;
 
     var html = '';
+    var renderedOrder = []; // flat list matching DOM row order (grouping can reorder `filtered`)
     groupOrder.forEach(function(grp) {
         if (multipleGroups && grp) {
             html += '<div class="dropdown-group-header">' + escapeHtml(grp) + '</div>';
         }
         groups[grp].forEach(function(opt) {
+            renderedOrder.push(opt);
             html += '<div class="dropdown-opt" data-value="' + escapeHtml(opt.value) + '">' +
                 '<span class="opt-label">' + escapeHtml(opt.label) + '</span>' +
+                '<span class="dropdown-opt-right">' +
                 (opt.badge && !multipleGroups ? '<span class="opt-badge">' + escapeHtml(opt.badge) + '</span>' : '') +
+                '<button type="button" class="opt-btn opt-btn-inc" title="Include">+</button>' +
+                '<button type="button" class="opt-btn opt-btn-exc" title="Exclude">−</button>' +
+                '</span>' +
                 '</div>';
         });
     });
 
     this._dropdown.innerHTML = html;
-    this._dropdown.querySelectorAll('.dropdown-opt').forEach(function(el) {
-        el.addEventListener('click', function(e) {
-            self.stagedValue = this.getAttribute('data-value');
-            
-            // Capture the current search term before we overwrite it
-            if (self.savedQuery === null) {
-                self.savedQuery = self._input.value;
-            }
-            // Display the selected item in the text box & turn it green
-            self._input.value = this.querySelector('.opt-label').textContent;
-            self._input.style.color = 'var(--accent-green)';
-            
-            self._dropdown.querySelectorAll('.dropdown-opt').forEach(function(opt) {
-                opt.style.background = ''; 
-            });
-            this.style.background = 'var(--bg-hover)';
+    this._currentFiltered = renderedOrder;
+    this._highlightIndex = 0;
+
+    // Clicking anywhere on a row includes it; its +/- buttons include/exclude
+    // it directly — no separate staging step, no need to reach for another button.
+    this._dropdown.querySelectorAll('.dropdown-opt').forEach(function(rowEl, i) {
+        var opt = renderedOrder[i];
+        rowEl.addEventListener('click', function() {
+            self.addTag(opt.value, 'include');
             self._input.focus();
+            self._updateDropdown(self._input.value);
+        });
+        rowEl.querySelector('.opt-btn-inc').addEventListener('click', function(e) {
+            e.stopPropagation();
+            self.addTag(opt.value, 'include');
+            self._input.focus();
+            self._updateDropdown(self._input.value);
+        });
+        rowEl.querySelector('.opt-btn-exc').addEventListener('click', function(e) {
+            e.stopPropagation();
+            self.addTag(opt.value, 'exclude');
+            self._input.focus();
+            self._updateDropdown(self._input.value);
+        });
+        rowEl.addEventListener('mouseenter', function() {
+            self._highlightIndex = i;
+            self._applyHighlight();
         });
     });
+    this._applyHighlight();
+    this._positionDropdown();
     this._dropdown.classList.add('open');
 };
 
@@ -1435,7 +1566,7 @@ TagInput.prototype.addTag = function(value, mode) {
         state.excludes.add(value);
         state.includes.delete(value);
     }
-    
+
     filterHistory = filterHistory.filter(function(h) { return !(h.key === this.filterKey && h.value === value); }.bind(this));
     filterHistory.push({ key: this.filterKey, value: value, mode: mode });
 
@@ -1452,6 +1583,28 @@ TagInput.prototype.removeTag = function(value, mode) {
     if (window.renderAllActiveFilters) window.renderAllActiveFilters();
     if (window.applyFiltersGlobal) window.applyFiltersGlobal();
 };
+
+window.addRouteFilterValue = function(filterKey, value) {
+    var state = filterState[filterKey];
+    if (!state || state.includes.has(value)) return;
+
+    state.includes.add(value);
+    state.excludes.delete(value);
+
+    filterHistory = filterHistory.filter(function(h) { return !(h.key === filterKey && h.value === value); });
+    filterHistory.push({ key: filterKey, value: value, mode: 'include' });
+
+    if (window.renderAllActiveFilters) window.renderAllActiveFilters();
+    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+};
+
+// Fixed-position dropdowns don't move with the sidebar's own scrolling, so close
+// whichever one is open rather than let it drift away from its input.
+function closeOpenDropdowns() {
+    document.querySelectorAll('.tag-dropdown.open').forEach(function(dd) { dd.classList.remove('open'); });
+}
+document.getElementById('filter-container').addEventListener('scroll', closeOpenDropdowns);
+window.addEventListener('resize', closeOpenDropdowns);
 
 function toggleFilterState(filterKey, value, currentMode) {
     var newMode = currentMode === 'include' ? 'exclude' : 'include';
@@ -1567,18 +1720,20 @@ window.renderAllActiveFilters = function() {
             if (window.applyFiltersGlobal) window.applyFiltersGlobal();
         }, null));
     }
-    ['aircraft', 'airline', 'airport', 'ifatc', 'remarks'].forEach(function(key) {
+    ['aircraft', 'airline', 'station', 'controllers', 'airport', 'ifatc', 'live', 'org', 'airframe', 'remarks'].forEach(function(key) {
         var state = filterState[key];
-        
+
         function renderTags(set, mode) {
             set.forEach(function(val) {
                 hasFilters = true;
-                filterCount++; 
-                
+                filterCount++;
+
                 var mainText, subText = null;
 
                 if (key === 'ifatc') {
                     mainText = "IFATC Session";
+                } else if (key === 'live') {
+                    mainText = "Live Flight";
                 } else {
                     var opt = tagInputs[key].options.find(function(o) { return o.value === val; });
                     var fullLabel = opt ? opt.label : val;
@@ -1592,10 +1747,10 @@ window.renderAllActiveFilters = function() {
                 }
 
                 container.appendChild(createGlobalChip(mainText, subText, mode, function() {
-                    // Custom remove handler for IFATC
-                    if (key === 'ifatc') {
-                        if (mode === 'include') filterState.ifatc.includes.delete(val);
-                        else filterState.ifatc.excludes.delete(val);
+                    // Custom remove handler for IFATC / Live (no TagInput backing them)
+                    if (key === 'ifatc' || key === 'live') {
+                        if (mode === 'include') filterState[key].includes.delete(val);
+                        else filterState[key].excludes.delete(val);
                         filterHistory = filterHistory.filter(function(h) { return !(h.key === key && h.value === val); });
                         window.renderAllActiveFilters();
                         if (window.applyFiltersGlobal) window.applyFiltersGlobal();
@@ -1686,6 +1841,19 @@ function getTpSize() {
         halfW: scale * 1.2,
         cornerR: scale * 1.0
     }
+}
+
+// Resizes existing traffic-pattern rectangles in place for the current zoom,
+// instead of rebuilding the whole map on every zoom.
+function resizeTrafficPatterns() {
+    var sz = getTpSize();
+    tpLayers.forEach(function(l) {
+        var c = l._tpCenter;
+        if (!c) return;
+        l.setLatLngs(makeRoundedRectPoints(
+            c.lat + sz.halfH * 0.2, c.lon + c.offset + sz.halfW * 0.6,
+            sz.halfH, sz.halfW, sz.cornerR, 12));
+    });
 }
 
 
@@ -1819,6 +1987,46 @@ function toggleLeftPanel() {
     setTimeout(function(){ map.invalidateSize(); }, 200);
 }
 
+function selectRandomFlight() {
+    var container = document.getElementById('sidebar-routes');
+    var rows = container ? container.querySelectorAll('.flight-row') : [];
+    if (!rows.length) return;
+
+    var diceIcon = document.getElementById('dice-icon');
+    if (diceIcon) {
+        diceIcon.classList.remove('rolling');
+        void diceIcon.offsetWidth; // restart animation on repeated clicks
+        diceIcon.classList.add('rolling');
+        setTimeout(function(){ diceIcon.classList.remove('rolling'); }, 450);
+    }
+
+    var lp = document.getElementById('left-panel');
+    if (lp && window.getComputedStyle(lp).display === 'none') {
+        toggleLeftPanel();
+    }
+
+    var row = rows[Math.floor(Math.random() * rows.length)];
+    var idx = row.getAttribute('data-index');
+    var detailsRow = document.getElementById('details-' + idx);
+
+    var lastIdx = window._lastRandomFlightIdx;
+    if (lastIdx !== undefined && lastIdx !== null && lastIdx !== idx) {
+        var lastRow = container.querySelector('.flight-row[data-index="' + lastIdx + '"]');
+        var lastDetails = document.getElementById('details-' + lastIdx);
+        if (lastRow && lastDetails && lastDetails.style.display !== 'none') {
+            lastRow.click(); // closes the previously auto-opened flight
+        }
+    }
+    window._lastRandomFlightIdx = idx;
+
+    setTimeout(function() {
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (detailsRow && detailsRow.style.display === 'none') {
+            row.click();
+        }
+    }, lp ? 210 : 0);
+}
+
 
 // ═══════════════════════════════════════════════════════════
 // ICAO CODE MAPPER
@@ -1914,7 +2122,6 @@ window.closeAllFlightDetails = function() {
 
     window.selectedFlightIndices.clear();
     window.hoveredFlightIndex = null;
-    window.updateGlows();
 };
 
 
@@ -2022,41 +2229,33 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
         var depIsFiltered = filterState.airport.includes.has(item.departure);
         var arrIsFiltered = filterState.airport.includes.has(item.arrival);
 
-        var spokeColor = isDuplicateOrBidirectional ? '#5ba4ff' : 'var(--accent-green)';
+        var mutedColor = 'var(--text-muted)';
 
-        if (depIsFiltered || arrIsFiltered) {
-            if (depIsFiltered && !arrIsFiltered) {
-                depColor = 'var(--text-main)';
-                arrColor = spokeColor;
-            } else if (!depIsFiltered && arrIsFiltered) {
-                arrColor = 'var(--text-main)';
-                depColor = spokeColor;
-            } else {
-                depColor = spokeColor;
-                arrColor = spokeColor;
-            }
-        } else if (isDuplicateOrBidirectional) {
-            depColor = '#5ba4ff';
-            arrColor = '#5ba4ff';
+        if (!item.isATC) {
+            if (depIsFiltered) depColor = mutedColor;
+            if (arrIsFiltered) arrColor = mutedColor;
         }
 
+        var atcCellStyle = '';
         html += '<tr class="flight-row" data-index="'+idx+'">';
-        html += '<td>'+escapeHtml(item.date||'—')+'</td>'; 
-        
+        html += '<td style="'+atcCellStyle+'">'+escapeHtml(item.date||'—')+'</td>';
+
         // MODIFIED: Formatting the Route column based on ATC session flag
+        var dupBadge = isDuplicateOrBidirectional ? '<span class="dup-badge' + (item.isATC ? ' dup-badge-atc' : '') + '" title="Duplicate route">&#8635;</span>' : '';
         if (item.isATC) {
-            html += '<td style="white-space: nowrap;"><b style="color: ' + depColor + ';">' + escapeHtml(item.departure) + '</b> <span style="color:var(--text-muted); font-size: 8px; margin-left: 4px;">(ATC)</span></td>';
+            html += '<td class="route-cell" style="white-space: nowrap;'+atcCellStyle+'"><b style="color: ' + depColor + ';">' + escapeHtml(item.departure) + '</b> <span style="color:var(--text-muted); font-size: 8px; margin-left: 4px;">(ATC)</span>' + dupBadge + '</td>';
         } else {
-            html += '<td style="white-space: nowrap;"><b style="color: ' + depColor + ';">' + escapeHtml(item.departure) + '</b> <span style="color:var(--text-muted); margin: 0 4px;">></span> <b style="color: ' + arrColor + ';">' + escapeHtml(item.arrival) + '</b></td>';
+            html += '<td class="route-cell" style="white-space: nowrap;"><b style="color: ' + depColor + ';">' + escapeHtml(item.departure) + '</b> <span style="color:var(--text-muted); margin: 0 4px;">></span> <b style="color: ' + arrColor + ';">' + escapeHtml(item.arrival) + '</b>' + dupBadge + '</td>';
         }
 
-        html += '<td>'+escapeHtml(item.isATC ? '' : getIcaoCode(item.aircraft))+'</td>'; 
+        html += '<td style="'+atcCellStyle+'">'+escapeHtml(item.isATC ? '' : getIcaoCode(item.aircraft))+'</td>';
 
 
 
         var c1 = 'transparent', c2 = 'transparent', c3 = 'transparent';
         var logoUrl = null;
         var includeName = true; // Default to true if not specified
+        var darkLogoMode = 'knockout';
         
         if (window.liveryColorMap && window.liveryColorMap[item.livery]) {
             var lData = window.liveryColorMap[item.livery];
@@ -2078,15 +2277,20 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 if (lData.includeName) {
                     includeName = (lData.includeName.trim().toUpperCase() === 'T');
                 }
+                if (lData.darkLogo && lData.darkLogo.trim() !== '') {
+                    darkLogoMode = lData.darkLogo.trim().toLowerCase();
+                }
             }
         }
         
         var liveryContent = '';
-        if (logoUrl) {
+        if (item.isATC) {
+            liveryContent = '';
+        } else if (logoUrl) {
             // If we have a logo, render the image
             var imgStyle = 'height: 14px; max-width: 90px; vertical-align: middle; object-fit: contain; ' + (includeName ? 'margin-right: 6px;' : '');
-            var imgTag = '<img src="' + logoUrl + '" style="' + imgStyle + '">';
-            
+            var imgTag = '<img class="airline-logo logo-' + darkLogoMode + '" src="' + logoUrl + '" style="' + imgStyle + '">';            
+
             if (includeName) {
                 liveryContent = imgTag + escapeHtml(truncateText(item.livery, 22));
             } else {
@@ -2096,12 +2300,12 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             // Fallback to standard color boxes
             var colorBox = '';
             if (c1 !== 'transparent') {
-                colorBox = `<span style="display:inline-block; width:12px; height:10px; margin-right:6px; vertical-align:-1px; border:1px solid var(--border-main); background: linear-gradient(to right, ${c1} 0%, ${c1} 50%, ${c2} 50%, ${c2} 80%, ${c3} 80%, ${c3} 100%);"></span>`;
+                colorBox = `<span class="livery-color-box" style="display:inline-block; width:12px; height:10px; margin-right:6px; vertical-align:-1px; border:1px solid var(--border-main); background: linear-gradient(to right, ${c1} 0%, ${c1} 50%, ${c2} 50%, ${c2} 80%, ${c3} 80%, ${c3} 100%);"></span>`;
             }
             liveryContent = colorBox + escapeHtml(truncateText(item.livery, 22));
         }
 
-        html += '<td style="letter-spacing: -0.5px;" title="' + escapeHtml(item.livery || '') + '">' + liveryContent + '</td>';
+        html += '<td style="letter-spacing: -0.5px;' + atcCellStyle + '" title="' + escapeHtml(item.livery || '') + '">' + liveryContent + '</td>';
         
         
         
@@ -2122,7 +2326,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                         <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
                             <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">AIRPORT</span><span style="grid-column: span 3;">${escapeHtml(depLabel)}</span>
+                            <span style="color: var(--text-muted);">AIRPORT</span><span class="filter-clickable" style="grid-column: span 3;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}</span>
                             <span style="color: var(--text-muted);">STATION</span><span style="grid-column: span 3;">${escapeHtml(item.station)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
@@ -2136,11 +2340,11 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                         <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
                             <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">DEP</span><span style="grid-column: span 3;">${escapeHtml(depLabel)}</span>
-                            <span style="color: var(--text-muted);">ARR</span><span style="grid-column: span 3;">${escapeHtml(arrLabel)}</span>
+                            <span style="color: var(--text-muted);">DEP</span><span class="filter-clickable" style="grid-column: span 3;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}</span>
+                            <span style="color: var(--text-muted);">ARR</span><span class="filter-clickable" style="grid-column: span 3;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">MODEL</span><span>${escapeHtml(formatAircraft(item.aircraft))}</span>
-                            <span style="color: var(--text-muted);">LIVRY</span><span>${escapeHtml(item.livery, 18)}</span>
+                            <span style="color: var(--text-muted);">MODEL</span><span class="filter-clickable" data-filter-key="aircraft" data-filter-value="spc:${escapeHtml(formatAircraft(item.aircraft))}" title="Click to filter by ${escapeHtml(formatAircraft(item.aircraft))}">${escapeHtml(formatAircraft(item.aircraft))}</span>
+                            <span style="color: var(--text-muted);">LIVRY</span><span class="filter-clickable" data-filter-key="airline" data-filter-value="${escapeHtml(item.livery)}" title="Click to filter by ${escapeHtml(item.livery)}">${escapeHtml(item.livery, 18)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
                             <span style="color: var(--text-muted);">LDGS</span><span>${escapeHtml(item.ldgs || 'N/A')}</span>
@@ -2155,6 +2359,18 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
 
     container.innerHTML = html;
 
+    if (!container._filterClickBound) {
+        container._filterClickBound = true;
+        container.addEventListener('click', function(e) {
+            var target = e.target.closest('.filter-clickable');
+            if (!target) return;
+            e.stopPropagation();
+            var key = target.getAttribute('data-filter-key');
+            var value = target.getAttribute('data-filter-value');
+            if (key && value && window.addRouteFilterValue) window.addRouteFilterValue(key, value);
+        });
+    }
+
     container.querySelectorAll('.flight-row').forEach(function(row){
         var idx = parseInt(row.getAttribute('data-index'));
         
@@ -2166,7 +2382,6 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                     l.setStyle({color:'#fa9822',weight:1,opacity:1}).bringToFront();
                 });
             }
-            window.updateGlows();
         });
 
         row.addEventListener('mouseleave', function(){
@@ -2185,7 +2400,6 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                     });
                 }
             }
-            window.updateGlows();
         });
 
         row.addEventListener('click', function(){
@@ -2217,7 +2431,6 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                     });
                 }
             }
-            window.updateGlows();
         });
     });
 }
@@ -2244,8 +2457,8 @@ Promise.all([
     
     var originalIndex = 0;
 
-    // Process Flights
-    flightSheetResults.data.forEach(function(row){
+    // Process Flights (skip the sheet's first 2 header rows: logo row + column-title row)
+    flightSheetResults.data.slice(2).forEach(function(row){
         if (row.length>=7 && row[5] && row[6] && row[5].trim()!=='' && row[6].trim()!=='') {
             var rawDep = row[5].trim().toUpperCase();
             var rawArr = row[6].trim().toUpperCase();
@@ -2259,21 +2472,26 @@ Promise.all([
                 livery:    (row[4]&&row[4].trim()) ? row[4].trim() : 'Standard',
                 departure: codeAliases[rawDep] || rawDep,
                 arrival:   codeAliases[rawArr] || rawArr,
-                ldgs:      (row[7]||'').trim(), 
-                remarks:   (row[9]||'').trim()  
+                ldgs:      (row[7]||'').trim(),
+                org:       (row[9]||'').trim(),
+                airframe:  (row[10]||'').trim(),
+                isLive:    !!((row[9]||'').trim() || (row[10]||'').trim()),
+                remarks:   (row[11]||'').trim()
             });
         }
     });
 
-    // Process ATC
-    atcSheetResults.data.forEach(function(row) {
-        // Expected Cols: 0=Date, 1=Duration, 2=Station, 3=Airport, 4=Ops Reports, 5=Additional Controllers, 6=Remarks
+    // Process ATC (skip the sheet's first row: column-title row)
+    atcSheetResults.data.slice(1).forEach(function(row) {
+        // Expected Cols: 0=Date, 1=Duration, 2=Station, 3=Airport, 4=Ops, 5=Reports, 6=Additional Controllers, 7=Remarks
         if (row.length >= 4 && row[3] && row[3].trim() !== '' && row[0].toLowerCase() !== 'date') {
             var rawAp = row[3].trim().toUpperCase();
             var remarksCombined = [];
-            
-            // Loop through column 5 (Additional Controllers) and beyond to catch all remarks/notes
+
+            // Loop through column 5 (Reports) and beyond to catch remaining notes, skipping
+            // column 6 (Additional Controllers) since it has its own dedicated filter/field.
             for (var i = 5; i < row.length; i++) {
+                if (i === 6) continue;
                 if (row[i] && row[i].trim() !== '') {
                     remarksCombined.push(row[i].trim());
                 }
@@ -2286,10 +2504,11 @@ Promise.all([
                 duration:  (row[1]||'').trim(),
                 aircraft:  '', // Leave blank per request
                 livery:    (row[2]||'').trim(), // Station (Used for Livery rendering logic)
-                station:   (row[2]||'').trim(), 
+                station:   (row[2]||'').trim(),
                 departure: codeAliases[rawAp] || rawAp,
-                arrival:   codeAliases[rawAp] || rawAp, 
+                arrival:   codeAliases[rawAp] || rawAp,
                 ops:       (row[4]||'').trim(),
+                controllers: (row[6]||'').trim(),
                 remarks:   remarksCombined.join(", ") // Joins them with a comma and space
             });
         }
@@ -2357,6 +2576,7 @@ Promise.all([
 
             var mfrSet=new Set(), famSet=new Set(), spcSet=new Set(), airlineSet=new Set(), rmkSet=new Set();
             var apSet=new Set(), regSet=new Set(), ctySet=new Set();
+            var orgSet=new Set(), airframeSet=new Set(), stationSet=new Set(), controllersSet=new Set();
 
             flights.forEach(function(f){
                 // Only compile aircraft stats for real flights
@@ -2364,10 +2584,14 @@ Promise.all([
                     var d=getAircraftDetails(f.aircraft);
                     if (d.mfr) mfrSet.add(d.mfr); if (d.family) famSet.add(d.family); if (d.specific) spcSet.add(d.specific);
                 }
-                
-                if (f.livery) airlineSet.add(f.livery); // Treat ATC station as livery
-                
+
+                if (f.livery && !f.isATC) airlineSet.add(f.livery);
+                if (f.isATC && f.station) stationSet.add(f.station);
+                if (f.isATC && f.controllers) controllersSet.add(f.controllers);
+
                 if (f.remarks) rmkSet.add(f.remarks);
+                if (f.org) orgSet.add(f.org);
+                if (f.airframe) airframeSet.add(f.airframe);
 
                 if (f.departure) {
                     apSet.add(f.departure);
@@ -2392,8 +2616,15 @@ Promise.all([
             Array.from(spcSet).sort().forEach(function(v){ aircraftOptions.push({value:'spc:'+v, label:v, badge:'Type'}); });
 
             var airlineOptions = Array.from(airlineSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
-            
+
+            var stationOptions = Array.from(stationSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+
+            var controllersOptions = Array.from(controllersSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+
             var remarksOptions = Array.from(rmkSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+
+            var orgOptions = Array.from(orgSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+            var airframeOptions = Array.from(airframeSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
 
             var airportOptions = [];
             Array.from(regSet).sort().forEach(function(v){ if(v) airportOptions.push({value:'reg:'+v, label:v, badge:'Region'}); });
@@ -2410,8 +2641,12 @@ Promise.all([
 
             tagInputs.aircraft = new TagInput('aircraft', document.getElementById('aircraft-wrapper'), aircraftOptions);
             tagInputs.airline  = new TagInput('airline',  document.getElementById('airline-wrapper'),  airlineOptions);
+            tagInputs.station  = new TagInput('station',  document.getElementById('station-wrapper'),  stationOptions);
+            tagInputs.controllers = new TagInput('controllers', document.getElementById('controllers-wrapper'), controllersOptions);
             tagInputs.airport  = new TagInput('airport',  document.getElementById('airport-wrapper'),  airportOptions);
             tagInputs.remarks  = new TagInput('remarks',  document.getElementById('remarks-wrapper'),  remarksOptions);
+            tagInputs.org      = new TagInput('org',      document.getElementById('org-wrapper'),      orgOptions);
+            tagInputs.airframe = new TagInput('airframe', document.getElementById('airframe-wrapper'), airframeOptions);
 
             // Connect IFATC Buttons
             document.getElementById('btn-ifatc-inc').addEventListener('click', function() {
@@ -2432,6 +2667,25 @@ Promise.all([
                 window.applyFiltersGlobal();
             });
 
+            // Connect Live Flights Buttons
+            document.getElementById('btn-live-inc').addEventListener('click', function() {
+                filterState.live.includes.add('true');
+                filterState.live.excludes.delete('true');
+                filterHistory = filterHistory.filter(function(h) { return !(h.key === 'live' && h.value === 'true'); });
+                filterHistory.push({ key: 'live', value: 'true', mode: 'include' });
+                window.renderAllActiveFilters();
+                window.applyFiltersGlobal();
+            });
+
+            document.getElementById('btn-live-exc').addEventListener('click', function() {
+                filterState.live.excludes.add('true');
+                filterState.live.includes.delete('true');
+                filterHistory = filterHistory.filter(function(h) { return !(h.key === 'live' && h.value === 'true'); });
+                filterHistory.push({ key: 'live', value: 'true', mode: 'exclude' });
+                window.renderAllActiveFilters();
+                window.applyFiltersGlobal();
+            });
+
 
 
             ['start-date','end-date'].forEach(function(id){
@@ -2443,7 +2697,7 @@ Promise.all([
 
             var drawnLayers = L.layerGroup().addTo(map);
             
-            airportLabelGroup = L.layerGroup();
+            airportLabelGroup = new AirportLabelLayer();
 
             function renderMap(filteredFlights) {
                 window.closeAllFlightDetails(); 
@@ -2453,7 +2707,7 @@ Promise.all([
                 tpLayers = [];
                 atcCircleLayers = [];
 
-                airportLabelGroup.clearLayers();
+                var labelItems = [];
 
                 var counts={};
                 filteredFlights.forEach(function(f){
@@ -2492,23 +2746,7 @@ Promise.all([
                             drawnLayers.addLayer(marker);
                         });
 
-                        mapOffsets.forEach(function(offset) {
-                            var labelMarker = L.marker(
-                                [airportData[id].lat, airportData[id].lon + offset],
-                                {
-                                    icon: L.divIcon({
-                                        className: '',
-                                        html: '<div class="map-airport-label">' + escapeHtml(id) + '</div>',
-                                        iconSize: [0, 0],
-                                        iconAnchor: [-5, 5]
-                                    }),
-                                    interactive: false,
-                                    zIndexOffset: -100
-                                }
-                            
-                            );
-                            airportLabelGroup.addLayer(labelMarker);
-                        });
+                        labelItems.push({ id: id, lat: airportData[id].lat, lon: airportData[id].lon, count: cnt });
 
                         drawn[id]=true;
                     });
@@ -2519,34 +2757,33 @@ Promise.all([
                     var linesForFlight = [];
 
                     if (f.isATC) {
-    var existingCircleLayers = drawnAtcCircles[f.departure];
-    if (existingCircleLayers) {
-        // Airport already has a circle — just reference it, don't draw again
-        existingCircleLayers.forEach(function(c) { linesForFlight.push(c); });
-    } else {
-        // First time seeing this ATC airport — draw the circle
-        var newCircleLayers = [];
-        mapOffsets.forEach(function(offset) {
-            var circle = L.circle([dep.lat, dep.lon + offset], {
-                radius: 20000,
-                color: '#64c49a',
-                weight: 1,
-                fillColor: '#64c49a',
-                fillOpacity: 0.2,
-                opacity: atcCircleVisible ? 0.5 : 0,
-                interactive: false
-            });
-            circle.isAtc = true;
-            drawnLayers.addLayer(circle);
-            linesForFlight.push(circle);
-            newCircleLayers.push(circle);
-            atcCircleLayers.push(circle);
-        });
-        drawnAtcCircles[f.departure] = newCircleLayers;
-    }
+                        var existingCircleLayers = drawnAtcCircles[f.departure];
+                        if (existingCircleLayers) {
+                            // Airport already has a circle — just reference it, don't draw again
+                            existingCircleLayers.forEach(function(c) { linesForFlight.push(c); });
+                        } else {
+                            // First time seeing this ATC airport — draw the circle
+                            var newCircleLayers = [];
+                            mapOffsets.forEach(function(offset) {
+                                var circle = L.circle([dep.lat, dep.lon + offset], {
+                                    radius: 20000,
+                                    color: '#64c49a',
+                                    weight: 1,
+                                    fillColor: '#64c49a',
+                                    fillOpacity: atcCircleVisible ? 0.2 : 0,
+                                    opacity: atcCircleVisible ? 0.5 : 0,
+                                    interactive: false
+                                });
+                                circle.isAtc = true;
+                                drawnLayers.addLayer(circle);
+                                linesForFlight.push(circle);
+                                newCircleLayers.push(circle);
+                                atcCircleLayers.push(circle);
+                            });
+                            drawnAtcCircles[f.departure] = newCircleLayers;
+                        }
 
                     } else {
-                        // Standard Flight & Traffic Pattern Logic
                         // Standard Flight & Traffic Pattern Logic
                         var tpMatch = f.remarks ? f.remarks.match(/\bTP\s+at\s+([A-Z0-9]{3,4})\b/i) : null;
                         var isTP = tpMatch || (f.departure === f.arrival);
@@ -2575,12 +2812,7 @@ Promise.all([
                                 var rectLine = L.polyline(shifted, { color: '#64c49a', weight: 1, opacity: tpVisible ? 0.5 : 0, interactive: false });
                                 
                                 rectLine.isTp = true; // Flag for hover visibility toggling
-                                rectLine.on('add', function() {
-                                    if (glowMode === 'on' && rectLine.getElement()) {
-                                        rectLine.getElement().classList.add('glow-path');
-                                    }
-                                });
-                                
+                                rectLine._tpCenter = { lat: targetAp.lat, lon: targetAp.lon, offset: offset }; // for resize on zoom
                                 drawnLayers.addLayer(rectLine);
                                 linesForFlight.push(rectLine);
                                 tpLayers.push(rectLine);
@@ -2589,37 +2821,16 @@ Promise.all([
                         mapOffsets.forEach(function(offset) {
                             var shiftedPts = continuousPts.map(function(p) { return [p[0], p[1] + offset]; });
                             var line = L.polyline(shiftedPts, { color: '#64c49a', weight: 1, opacity: 0.5, interactive: false });
-                            
-                            line.on('add', function() {
-                                if (glowMode === 'on' && line.getElement()) {
-                                    line.getElement().classList.add('glow-path');
-                                }
-                            });
-
                             drawnLayers.addLayer(line);
                             linesForFlight.push(line);
                         });
                     }
 
-
-                    mapOffsets.forEach(function(offset) {
-                        var shiftedPts = continuousPts.map(function(p) { return [p[0], p[1] + offset]; });
-                        var line = L.polyline(shiftedPts, { color: '#64c49a', weight: 1, opacity: 0.5, interactive: false });
-                        
-                        line.on('add', function() {
-                            if (glowMode === 'on' && line.getElement()) {
-                                line.getElement().classList.add('glow-path');
-                            }
-                        });
-
-                        drawnLayers.addLayer(line);
-                        linesForFlight.push(line);
-                    });
                     flightLayers.push({flight:f, layers: linesForFlight});
                 });
-                
+
+                airportLabelGroup.setItems(labelItems);
                 window.updateCircles();
-                window.updateGlows();
             }
 
             window.applyFiltersGlobal = function() {
@@ -2640,6 +2851,10 @@ Promise.all([
                     var ifatcF = filterState.ifatc;
                     if (ifatcF.includes.size > 0 && !f.isATC) return false;
                     if (ifatcF.excludes.size > 0 && f.isATC) return false;
+
+                    var liveF = filterState.live;
+                    if (liveF.includes.size > 0 && !f.isLive) return false;
+                    if (liveF.excludes.size > 0 && f.isLive) return false;
 
 
                     var acf = filterState.aircraft;
@@ -2669,6 +2884,38 @@ Promise.all([
                         if (alf.includes.size > 0 && !isIncAl) return false;
                     }
                     
+                    var stf = filterState.station;
+                    if (stf.includes.size > 0 || stf.excludes.size > 0) {
+                        var isIncSt = stf.includes.has(f.station);
+                        var isExcSt = stf.excludes.has(f.station);
+                        if (stf.excludes.size > 0 && isExcSt) return false;
+                        if (stf.includes.size > 0 && !isIncSt) return false;
+                    }
+
+                    var ctrf = filterState.controllers;
+                    if (ctrf.includes.size > 0 || ctrf.excludes.size > 0) {
+                        var isIncCtr = ctrf.includes.has(f.controllers);
+                        var isExcCtr = ctrf.excludes.has(f.controllers);
+                        if (ctrf.excludes.size > 0 && isExcCtr) return false;
+                        if (ctrf.includes.size > 0 && !isIncCtr) return false;
+                    }
+
+                    var orgf = filterState.org;
+                    if (orgf.includes.size > 0 || orgf.excludes.size > 0) {
+                        var isIncOrg = orgf.includes.has(f.org);
+                        var isExcOrg = orgf.excludes.has(f.org);
+                        if (orgf.excludes.size > 0 && isExcOrg) return false;
+                        if (orgf.includes.size > 0 && !isIncOrg) return false;
+                    }
+
+                    var afmf = filterState.airframe;
+                    if (afmf.includes.size > 0 || afmf.excludes.size > 0) {
+                        var isIncAfm = afmf.includes.has(f.airframe);
+                        var isExcAfm = afmf.excludes.has(f.airframe);
+                        if (afmf.excludes.size > 0 && isExcAfm) return false;
+                        if (afmf.includes.size > 0 && !isIncAfm) return false;
+                    }
+
                     var rmf = filterState.remarks;
                     if (rmf.includes.size > 0 || rmf.excludes.size > 0) {
                         var isIncRm = rmf.includes.has(f.remarks);
@@ -2737,15 +2984,34 @@ Promise.all([
             };
 
             window.resetFilters = function() {
+                // Remember which flights are selected (by their stable raw index) so we
+                // can restore the selection once filtering changes the visible order.
+                var savedRawIndices = [];
+                window.selectedFlightIndices.forEach(function(idx) {
+                    if (flightLayers[idx] && flightLayers[idx].flight) {
+                        savedRawIndices.push(flightLayers[idx].flight._rawIndex);
+                    }
+                });
+
                 document.getElementById('start-date').value='';
                 document.getElementById('end-date').value='';
                 document.getElementById('airport-strict-match').checked = false;
                 filterHistory = [];
-                ['aircraft','airline','airport','ifatc', 'remarks'].forEach(function(key){
+                ['aircraft','airline','station','controllers','airport','ifatc', 'live', 'org', 'airframe', 'remarks'].forEach(function(key){
                     filterState[key].includes.clear(); filterState[key].excludes.clear();
                 });
                 window.renderAllActiveFilters();
                 window.applyFiltersGlobal();
+
+                // Re-open the previously selected routes now that filters have been cleared.
+                if (savedRawIndices.length) {
+                    flightLayers.forEach(function(item, newIdx) {
+                        if (item && item.flight && savedRawIndices.indexOf(item.flight._rawIndex) !== -1) {
+                            var row = document.querySelector('.flight-row[data-index="' + newIdx + '"]');
+                            if (row) row.click();
+                        }
+                    });
+                }
             };
 
             Papa.parse('/Infinite Flight Aircraft Livery List.csv', {
@@ -2765,7 +3031,8 @@ Promise.all([
                                     row["Color 3"]
                                 ],
                                 logo: logoFile,
-                                includeName: row["Include Name"]
+                                includeName: row["Include Name"],
+                                darkLogo: row["Dark Logo"]
                             };
                         }
                     });
@@ -2787,31 +3054,25 @@ Promise.all([
     });
 });
 
+// Zooming no longer rebuilds the map/table — only airport dots and TP rectangles
+// need to adapt, so open flights and scroll position stay put naturally.
 map.on('zoomend', function() {
     window.updateCircles();
-    
-    // Copy the currently open flights before resetting
-    var savedSelections = new Set(window.selectedFlightIndices);
-    var sidebarContainer = document.getElementById('sidebar-routes');
-    var savedScroll = sidebarContainer ? sidebarContainer.scrollTop : 0;
-
-    if (window.applyFiltersGlobal) window.applyFiltersGlobal();
-    
-    // Re-click all previously opened flights to restore them
-    savedSelections.forEach(function(idx) {
-        var row = document.querySelector('.flight-row[data-index="' + idx + '"]');
-        if (row) row.click();
-    });
-    
-    if (sidebarContainer) {
-        sidebarContainer.scrollTop = savedScroll;
-    }
+    resizeTrafficPatterns();
 });
 
 
 </script>
 
+<!-- once, anywhere in <body> -->
+<svg width="0" height="0" style="position:absolute">
+ <filter id="logo-knockout" color-interpolation-filters="sRGB">
+  <feColorMatrix type="matrix" values="
+   0 0 0 0 0.878  0 0 0 0 0.882  0 0 0 0 0.886
+   -0.638 -2.146 -0.217 2.25 0"/>
+ </filter>
+</svg>
 
-
+            
 </body>
 </html>
