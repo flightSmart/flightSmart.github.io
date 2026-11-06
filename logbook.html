@@ -1145,12 +1145,15 @@ L.RadarSweep = L.Layer.extend({
         var beam = L.DomUtil.create('div', 'radar-beam', el);
         L.DomUtil.create('div', 'radar-art', beam);
         el.style.setProperty('--phase', this.options.phase);   // 0..1: where in the rotation this one starts
+        if (this._tinted) el.style.setProperty('--radar-rgb', '250, 152, 34');
         this.getPane().appendChild(el);
         this._reset();
     },
     onRemove: function () { L.DomUtil.remove(this._el); },
     getEvents: function () { return { zoom: this._reset, viewreset: this._reset, zoomanim: this._animateZoom }; },
 
+    // Tint the beam orange to match a highlighted circle; off restores the stylesheet's green.
+    setTint: function (on) { this._tinted = on; if (this._el) this._el.style.setProperty('--radar-rgb', on ? '250, 152, 34' : ''); },
     setVisible: function (v) { this._enabled = v; if (this._map) this._applyVisibility(this._map.getZoom()); },   // the ATC on/off toggle
     _applyVisibility: function (zoom) {
         if (this._el) this._el.style.display = (this._enabled !== false && zoom >= this.options.minZoom) ? '' : 'none';
@@ -1183,6 +1186,21 @@ function radarPhaseFor(id) {
     var h = 0;
     for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
     return (h % 1000) / 1000;
+}
+
+// Highlight (orange) / restore (green) one map layer belonging to a flight, from the route table's hover and click.
+// ATC circles also get their fill and radar sweep tinted to match the outline; every other layer behaves as before.
+function setFlightLayerHighlight(l, on) {
+    var color = on ? '#fa9822' : '#64c49a';
+    if (on) {
+        l.setStyle(l.isAtc ? { color: color, weight: 1, opacity: 1, fillColor: color } : { color: color, weight: 1, opacity: 1 }).bringToFront();
+    } else {
+        var targetOp = 0.5;
+        if (l.isTp && !tpVisible) targetOp = 0;
+        if (l.isAtc && !atcCircleVisible) targetOp = 0;
+        l.setStyle(l.isAtc ? { color: color, weight: 1, opacity: targetOp, fillColor: color } : { color: color, weight: 1, opacity: targetOp });
+    }
+    if (l._sweep) l._sweep.setTint(on);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2323,10 +2341,7 @@ window.closeAllFlightDetails = function() {
     flightLayers.forEach(function(item) {
         if (item && item.layers) {
             item.layers.forEach(function(l) {
-                var targetOp = 0.5;
-                if (l.isTp && !tpVisible) targetOp = 0;
-                if (l.isAtc && !atcCircleVisible) targetOp = 0;
-                l.setStyle({ color: '#64c49a', weight: 1, opacity: targetOp });
+                setFlightLayerHighlight(l, false);
             });
         }
     });
@@ -2590,7 +2605,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             window.hoveredFlightIndex = idx;
             if (flightLayers[idx]) {
                 flightLayers[idx].layers.forEach(function(l) { 
-                    l.setStyle({color:'#fa9822',weight:1,opacity:1}).bringToFront();
+                    setFlightLayerHighlight(l, true);
                 });
             }
         });
@@ -2604,10 +2619,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 this.classList.remove('active-row');
                 if (flightLayers[idx]) {
                     flightLayers[idx].layers.forEach(function(l) { 
-                        var targetOp = 0.5;
-                        if (l.isTp && !tpVisible) targetOp = 0;
-                        if (l.isAtc && !atcCircleVisible) targetOp = 0;
-                        l.setStyle({color:'#64c49a', weight:1, opacity: targetOp});
+                        setFlightLayerHighlight(l, false);
                     });
                 }
             }
@@ -2625,7 +2637,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 window.hoveredFlightIndex = idx;
                 if (flightLayers[idx]) {
                     flightLayers[idx].layers.forEach(function(l) { 
-                        l.setStyle({color:'#fa9822',weight:1,opacity:1}).bringToFront();
+                        setFlightLayerHighlight(l, true);
                     });
                 }
             } else {
@@ -2635,10 +2647,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 window.selectedFlightIndices.delete(idx);
                 if (flightLayers[idx]) {
                     flightLayers[idx].layers.forEach(function(l) { 
-                        var targetOp = 0.5;
-                        if (l.isTp && !tpVisible) targetOp = 0;
-                        if (l.isAtc && !atcCircleVisible) targetOp = 0;
-                        l.setStyle({color:'#64c49a', weight:1, opacity: targetOp});
+                        setFlightLayerHighlight(l, false);
                     });
                 }
             }
@@ -2999,6 +3008,7 @@ Promise.all([
                                 sweep.setVisible(atcCircleVisible);
                                 drawnLayers.addLayer(sweep);
                                 atcSweepLayers.push(sweep);
+                                circle._sweep = sweep;   // lets setFlightLayerHighlight() tint the sweep with its circle
                             });
                             drawnAtcCircles[f.departure] = newCircleLayers;
                         }
