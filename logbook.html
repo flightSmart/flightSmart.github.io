@@ -743,9 +743,9 @@
             --tl-year: rgb(214, 214, 214);
         }
         [data-theme="light"] {
-            --tl-bar: #c4c4c4;
-            --tl-bar-dim: #c4c4c4;
-            --tl-bar-hover: #969696;
+            --tl-bar: rgb(150, 150, 150);
+            --tl-bar-dim: rgb(196, 196, 196);
+            --tl-bar-hover: rgb(45, 45, 45);
             --tl-sel: rgb(100, 195, 153);          /* #64c399 */
             --tl-sel-hover: rgb(62, 160, 117);
             --tl-month: rgb(130, 130, 130);
@@ -2823,7 +2823,7 @@ function toggleTimeline() { Timeline.toggle(); }
 // The script only ever adds one new row per flight; it can't change or remove anything already logged.
 // ═══════════════════════════════════════════════════════════
 // Paste the Apps Script web app URL here (ends in /exec). Same URL on flightsmart.tools and flightsmart.github.io.
-var LOGBOOK_API_URL = 'https://script.google.com/macros/s/AKfycbzjeL2jrsRIJticdHIk9qBntK0EXMgw3OUa66y2ilpdazaZ2dLFlX3d9cpRKxGAImPIHA/exec';
+var LOGBOOK_API_URL = '';
 var LOGBOOK_TZ = 'America/New_York';
 var PINNED_ORGS = ['daydreamers', 'vela'];   // always listed first, in this order
 
