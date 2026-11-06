@@ -679,6 +679,51 @@
             white-space: nowrap;
         }
 
+        /* ── ATC RADAR SWEEP ──
+           A slow rotating beam over each ATC circle (see L.RadarSweep in the script). */
+        :root {
+            --radar-rgb: 100, 195, 153;   /* same green as the circle */
+            --radar-period: 17s;          /* time for one full revolution */
+            --radar-trail: 50deg;         /* length of the fading wake behind the leading edge */
+            --radar-alpha: 0.55;          /* wake brightness right behind the edge */
+            --radar-edge-alpha: 0.85;     /* brightness of the thin leading line */
+            --radar-edge-width: 0.5px;    /* thickness of the leading line */
+        }
+        .radar-sweep {
+            position: absolute; left: 0; top: 0;
+            border-radius: 50%;
+            overflow: hidden;
+            pointer-events: none;
+            transform-origin: 0 0;
+        }
+        .radar-beam {
+            position: absolute; inset: 0;
+            animation: radar-spin var(--radar-period) linear infinite;
+            animation-delay: calc(var(--radar-period) * -1 * var(--phase, 0));
+            will-change: transform;
+        }
+        .radar-art {
+            position: absolute; inset: 0;
+            /* Leading edge sits at 360deg; the wake fades out behind it. */
+            background: conic-gradient(from 0deg,
+                rgba(var(--radar-rgb), 0)                                0deg,
+                rgba(var(--radar-rgb), 0)                                calc(360deg - var(--radar-trail)),
+                rgba(var(--radar-rgb), calc(var(--radar-alpha) * 0.18))  calc(360deg - var(--radar-trail) * 0.5),
+                rgba(var(--radar-rgb), calc(var(--radar-alpha) * 0.55))  calc(360deg - var(--radar-trail) * 0.2),
+                rgba(var(--radar-rgb), var(--radar-alpha))               360deg);
+        }
+        /* Leading edge: a real constant-width line (anti-aliased as it rotates), fading toward the centre. */
+        .radar-art::after {
+            content: ''; position: absolute; left: 50%; top: 0; height: 50%;
+            width: var(--radar-edge-width); margin-left: calc(var(--radar-edge-width) / -2);
+            background: linear-gradient(to bottom,
+                rgba(var(--radar-rgb), var(--radar-edge-alpha)),
+                rgba(var(--radar-rgb), calc(var(--radar-edge-alpha) * 0.25)));
+        }
+        @keyframes radar-spin { to { transform: rotate(360deg); } }
+        /* Respect the OS "reduce motion" setting: no sweep at all for people who have it on. */
+        @media (prefers-reduced-motion: reduce) { .radar-sweep { display: none; } }
+
         /* ── ZEN MODE (Hide UI) ── */
         body.ui-hidden #left-panel,
         body.ui-hidden #sidebar,
@@ -1077,6 +1122,68 @@ var tpVisible = true;   // toggle state
 
 var atcCircleLayers = [];     // ADDED: array to hold the ATC circles
 var atcCircleVisible = true;  // ADDED: state for ATC circles
+var atcSweepLayers = [];      // radar sweeps over the ATC circles (kept apart from flightLayers: they have no setStyle)
+
+// ── RADAR SWEEP LAYER ───────────────────────────────────────────────────────
+// A DOM element (not canvas) so the rotation runs on the compositor and costs ~nothing per frame.
+// The circles live on the canvas renderer (preferCanvas), so the sweep sits in its own pane just above
+// it and tracks the circle's pixel radius through zoom/pan. Size is capped (and scaled up) so deep zooms
+// don't create a 20,000px element. Hidden below options.minZoom.
+map.createPane('radarPane');
+map.getPane('radarPane').style.zIndex = 405;          // overlayPane is 400, markers 600
+map.getPane('radarPane').style.pointerEvents = 'none';
+
+L.RadarSweep = L.Layer.extend({
+    options: { radius: 20000, pane: 'radarPane', phase: 0, maxPx: 3000, minZoom: 4 },
+
+    initialize: function (latlng, options) {
+        this._latlng = L.latLng(latlng);
+        L.setOptions(this, options);
+    },
+    onAdd: function () {
+        var el = this._el = L.DomUtil.create('div', 'radar-sweep leaflet-zoom-animated');
+        var beam = L.DomUtil.create('div', 'radar-beam', el);
+        L.DomUtil.create('div', 'radar-art', beam);
+        el.style.setProperty('--phase', this.options.phase);   // 0..1: where in the rotation this one starts
+        this.getPane().appendChild(el);
+        this._reset();
+    },
+    onRemove: function () { L.DomUtil.remove(this._el); },
+    getEvents: function () { return { zoom: this._reset, viewreset: this._reset, zoomanim: this._animateZoom }; },
+
+    setVisible: function (v) { this._enabled = v; if (this._map) this._applyVisibility(this._map.getZoom()); },   // the ATC on/off toggle
+    _applyVisibility: function (zoom) {
+        if (this._el) this._el.style.display = (this._enabled !== false && zoom >= this.options.minZoom) ? '' : 'none';
+    },
+
+    // metres -> CSS pixels at a given zoom (same maths Leaflet uses for L.circle)
+    _pxRadius: function (zoom) {
+        var mpp = 2 * Math.PI * L.CRS.Earth.R * Math.cos(this._latlng.lat * Math.PI / 180) / (256 * Math.pow(2, zoom));
+        return this.options.radius / mpp;
+    },
+    _layout: function (r, zoomScale, center) {
+        var size = Math.min(2 * r, this.options.maxPx), s = (2 * r) / size;
+        this._el.style.width = this._el.style.height = size + 'px';
+        L.DomUtil.setTransform(this._el, center.subtract([r * zoomScale, r * zoomScale]), s * zoomScale);
+    },
+    _reset: function () {
+        this._layout(this._pxRadius(this._map.getZoom()), 1, this._map.latLngToLayerPoint(this._latlng));
+        this._applyVisibility(this._map.getZoom());
+    },
+    _animateZoom: function (e) {
+        var center = this._map._latLngToNewLayerPoint(this._latlng, e.zoom, e.center);
+        this._layout(this._pxRadius(this._map.getZoom()), this._map.getZoomScale(e.zoom), center);
+        this._applyVisibility(e.zoom);   // react to the zoom we're heading to, not the one we're leaving
+    }
+});
+L.radarSweep = function (latlng, options) { return new L.RadarSweep(latlng, options); };
+
+// Stable 0..1 start phase per airport, so sweeps aren't all in sync and don't jump on re-render.
+function radarPhaseFor(id) {
+    var h = 0;
+    for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+    return (h % 1000) / 1000;
+}
 
 // ═══════════════════════════════════════════════════════════
 // CANVAS AIRPORT LABEL LAYER
@@ -1636,6 +1743,7 @@ function toggleAtcVisibility() {
     atcCircleVisible = !atcCircleVisible;
     var btn = document.getElementById('atc-toggle');
     btn.innerHTML = atcIcons[atcCircleVisible ? 'on' : 'off'];
+    atcSweepLayers.forEach(function(s) { s.setVisible(atcCircleVisible); });
     atcCircleLayers.forEach(function(l) {
         l.setStyle({ 
             opacity: atcCircleVisible ? 0.5 : 0, 
@@ -2810,6 +2918,7 @@ Promise.all([
                 airportMarkers = [];
                 tpLayers = [];
                 atcCircleLayers = [];
+                atcSweepLayers = [];
 
                 var labelItems = [];
 
@@ -2883,6 +2992,13 @@ Promise.all([
                                 linesForFlight.push(circle);
                                 newCircleLayers.push(circle);
                                 atcCircleLayers.push(circle);
+
+                                // Radar sweep over the circle. Deliberately NOT added to linesForFlight:
+                                // those layers get setStyle()/bringToFront() calls on hover that a DOM layer doesn't have.
+                                var sweep = L.radarSweep([dep.lat, dep.lon + offset], { radius: 20000, phase: radarPhaseFor(f.departure) });
+                                sweep.setVisible(atcCircleVisible);
+                                drawnLayers.addLayer(sweep);
+                                atcSweepLayers.push(sweep);
                             });
                             drawnAtcCircles[f.departure] = newCircleLayers;
                         }
