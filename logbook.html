@@ -3997,6 +3997,12 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             var arrAp = window.airportData && window.airportData[item.arrival];
             var depLabel = item.departure + (depAp && depAp.municipality ? ' · ' + depAp.municipality : depAp && depAp.name ? ' · ' + depAp.name : '');
             var arrLabel = item.arrival   + (arrAp && arrAp.municipality ? ' · ' + arrAp.municipality : arrAp && arrAp.name ? ' · ' + arrAp.name : '');
+            // Full airport name on a second line under the code · city (only when the city was shown above)
+            function fullNameRow(ap) {
+                if (!ap || !ap.municipality || !ap.name) return '';
+                return '<span style="display: block; margin-top: -3px; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="' +
+                       escapeHtml(ap.name) + '">' + escapeHtml(ap.name) + '</span>';
+            }
             
             // MODIFIED: Conditionally render the Details expanded view based on ATC flag
             if (item.isATC) {
@@ -4005,7 +4011,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                         <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
                             <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">AIRPORT</span><span class="filter-clickable" style="grid-column: span 3;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}</span>
+                            <span style="color: var(--text-muted);">AIRPORT</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}${fullNameRow(depAp)}</span>
                             <span style="color: var(--text-muted);">STATION</span><span style="grid-column: span 3;">${escapeHtml(item.station)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
@@ -4019,8 +4025,8 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                         <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
                             <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">DEP</span><span class="filter-clickable" style="grid-column: span 3;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}</span>
-                            <span style="color: var(--text-muted);">ARR</span><span class="filter-clickable" style="grid-column: span 3;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}</span>
+                            <span style="color: var(--text-muted);">DEP</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}${fullNameRow(depAp)}</span>
+                            <span style="color: var(--text-muted);">ARR</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}${fullNameRow(arrAp)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">MODEL</span><span class="filter-clickable" data-filter-key="aircraft" data-filter-value="spc:${escapeHtml(formatAircraft(item.aircraft))}" title="Click to filter by ${escapeHtml(formatAircraft(item.aircraft))}">${escapeHtml(formatAircraft(item.aircraft))}</span>
                             <span style="color: var(--text-muted);">LIVRY</span><span class="filter-clickable" data-filter-key="airline" data-filter-value="${escapeHtml(item.livery)}" title="Click to filter by ${escapeHtml(item.livery)}">${escapeHtml(item.livery, 18)}</span>
