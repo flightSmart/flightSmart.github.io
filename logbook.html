@@ -791,6 +791,8 @@
         .map-overlay-btns { z-index: 1500; }          /* stay sharp & clickable above the blurred map */
         #log-toggle { display: inline-flex; align-items: center; gap: 4px; }
         #log-toggle svg { width: 16px; height: 16px; }
+        /* Handwriting in the log form: the system's built-in handwriting font, so it never has to download */
+        :root { --lb-hand: cursive; }
         .lb-overlay {
             position: absolute; inset: 0; z-index: 1400;
             display: flex; align-items: flex-start; justify-content: center;
@@ -856,7 +858,7 @@
             background: transparent;
             border: none; border-radius: 0;
             color: var(--text-main);
-            font-family: 'Shadows Into Light', cursive;
+            font-family: var(--lb-hand);
             font-size: 11px; letter-spacing: 1px;
             padding: 0 2px; height: 20px;
             outline: none;
@@ -878,7 +880,7 @@
         /* Pattern work chips */
         .lb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; min-height: 20px; cursor: text; }
         .lb-card .lb-chips .lb-input { flex: 1; min-width: 100px; width: auto; }
-        .lb-chip { font-family: 'Shadows Into Light', cursive; font-size: 11px; letter-spacing: 1px; white-space: nowrap; }
+        .lb-chip { font-family: var(--lb-hand); font-size: 11px; letter-spacing: 1px; white-space: nowrap; }
         .lb-chip button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 8px; padding: 0 2px; }
         .lb-chip button:hover { color: var(--exc-txt); }
 
@@ -886,7 +888,7 @@
             width: 100%; min-height: 72px; resize: vertical; display: block;
             background: var(--bg-light); color: var(--text-main);
             border: none; border-radius: 0;
-            font-family: 'Shadows Into Light', cursive; font-size: 11px; letter-spacing: 1px; line-height: 1.5;
+            font-family: var(--lb-hand); font-size: 11px; letter-spacing: 1px; line-height: 1.5;
             padding: 5px 7px; outline: none;
         }
         [data-theme="light"] .lb-card { background: #eeeeee; }    /* lighter than the #dcdcdc entries so they stay visible */
@@ -3337,15 +3339,19 @@ var Logbook = (function() {
         settingsVer++;
         try { localStorage.setItem('logbook-settings', JSON.stringify(settings)); } catch (e) {}
     }
+    var lastFetch = 0;
     function loadSettings() {
-        if (settingsRequested) return;
-        settingsRequested = true;
-        try { var cached = JSON.parse(localStorage.getItem('logbook-settings') || 'null'); if (cached) applySettings(cached); } catch (e) {}
-        if (!LOGBOOK_API_URL) return;
+        if (!settingsRequested) {
+            settingsRequested = true;
+            try { var cached = JSON.parse(localStorage.getItem('logbook-settings') || 'null'); if (cached) applySettings(cached); } catch (e) {}
+        }
+        // Also wakes the Apps Script up while you fill in the form, so SUBMIT doesn't pay for a cold start.
+        if (!LOGBOOK_API_URL || Date.now() - lastFetch < 60000) return;
+        lastFetch = Date.now();
         fetch(LOGBOOK_API_URL + '?action=settings')
             .then(function(r) { return r.json(); })
             .then(function(res) { if (res && res.ok) applySettings(res.settings); })
-            .catch(function() { settingsRequested = false; });
+            .catch(function() { lastFetch = 0; });
     }
 
     // ── Submit ──
@@ -3378,10 +3384,19 @@ var Logbook = (function() {
         return { flight: f, errs: errs };
     }
 
+    // The three steps share the expected server time evenly (learned from past submissions), and the
+    // sequence speeds up as soon as the server answers, so no single step hangs while the others fly by.
     function playSequence(statusEl, work) {
         var seq = SEQUENCES[Math.floor(Math.random() * SEQUENCES.length)];
-        var settled = null;
-        work.then(function(r) { settled = r; }, function(e) { settled = { ok: false, error: e.message || 'Network error' }; });
+        var t0 = Date.now(), settled = null, onSettle;
+        var settledP = new Promise(function(r) { onSettle = r; });
+        work.then(function(r) { settled = r || { ok: false }; onSettle(); },
+                  function(e) { settled = { ok: false, error: e.message || 'Network error' }; onSettle(); });
+        var expected = 3000;
+        try { expected = +localStorage.getItem('logbook-api-ms') || 3000; } catch (e) {}
+        var stepMs = Math.max(450, Math.min(2000, expected / seq.length));
+        var TAIL = 250;   // how long a step lingers once the server has answered
+
         statusEl.innerHTML = '';
         function add(text, cls) {
             if (statusEl.childNodes.length) {
@@ -3390,20 +3405,27 @@ var Logbook = (function() {
             var s = document.createElement('span'); s.className = 'lb-step ' + (cls || ''); s.textContent = text; statusEl.appendChild(s);
             return s;
         }
+        function stepWait(last) {
+            if (settled) return sleep(TAIL);
+            var afterAnswer = settledP.then(function() { return sleep(TAIL); });
+            return last ? afterAnswer : Promise.race([sleep(stepMs), afterAnswer]);
+        }
         var i = 0;
         function next() {
             if (i >= seq.length || (settled && !settled.ok)) return finish();
             var s = add(seq[i++], 'lb-busy');
-            return sleep(600 + Math.random() * 550).then(function() {
-                if (i < seq.length || settled) s.classList.remove('lb-busy');
-                return next();
-            });
+            return stepWait(i === seq.length).then(function() { s.classList.remove('lb-busy'); return next(); });
         }
         function finish() {
-            return work.catch(function(e) { return { ok: false, error: e.message || 'Network error' }; }).then(function(res) {
+            return settledP.then(function() {
+                var res = settled;
+                if (res.ok) {
+                    var took = Date.now() - t0;
+                    try { localStorage.setItem('logbook-api-ms', String(Math.round(expected * 0.5 + took * 0.5))); } catch (e) {}
+                }
                 statusEl.querySelectorAll('.lb-busy').forEach(function(s) { s.classList.remove('lb-busy'); });
-                if (res && res.ok) add('FILED, GOOD DAY!', 'lb-done');
-                else add('NOT FILED: ' + String(res && res.error || 'unknown error').toUpperCase(), 'lb-fail');
+                if (res.ok) add('FILED, GOOD DAY!', 'lb-done');
+                else add('NOT FILED: ' + String(res.error || 'unknown error').toUpperCase(), 'lb-fail');
                 return res;
             });
         }
