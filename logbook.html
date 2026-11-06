@@ -795,114 +795,129 @@
             position: absolute; inset: 0; z-index: 1400;
             display: flex; align-items: flex-start; justify-content: center;
             padding: 56px 12px 12px;
-            background: rgba(18, 18, 18, 0.35);
+            background-color: rgba(18, 18, 18, 0.35);
+            /* subtle static film grain */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
+            background-size: 180px 180px;
             -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
             overflow-y: auto;
         }
-        [data-theme="light"] .lb-overlay { background: rgba(248, 247, 244, 0.35); }
+        #timeline-panel.open ~ .lb-overlay { bottom: 128px; }   /* leave the timeline unblurred */
+        [data-theme="light"] .lb-overlay { background-color: rgba(248, 247, 244, 0.35); }
         .lb-overlay[hidden] { display: none; }
         .lb-card {
             position: relative;
-            width: 100%; max-width: 540px;
+            width: 100%; max-width: 480px;
             margin: auto 0;
             background: var(--bg-dark);
             border: 1px solid var(--border-main);
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
             color: var(--text-main);
             font-family: var(--font-mono);
-            padding: 18px 26px 22px;
+            letter-spacing: 0;
+            padding: 14px 22px 18px;
         }
-        .lb-head { position: relative; text-align: center; margin-bottom: 18px; }
-        .lb-pilot { font-size: 9px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0; }
-        .lb-pilot img { width: 11px; height: 11px; border-radius: 50%; }
-        .lb-title { font-size: 20px; letter-spacing: 0; line-height: 1.2; }
-        .lb-num { position: absolute; right: 22px; top: 2px; font-size: 11px; letter-spacing: 0; }
+        .lb-head { position: relative; text-align: center; margin-bottom: 22px; }
+        /* same as the "darkeyes" in the top-left of the page */
+        .lb-pilot { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-sans); font-weight: bold; font-size: 10px; color: var(--text-main); }
+        .lb-pilot img { width: 15px; border-radius: 50%; transform: translateY(1px); }
+        .lb-title { font-size: 17px; line-height: 1.25; }
+        .lb-num { position: absolute; right: 20px; top: 0; font-size: 10px; }
         .lb-icon-btn {
             position: absolute; top: -4px;
             background: none; border: 1px solid transparent; color: var(--text-muted);
-            width: 24px; height: 24px; padding: 0; cursor: pointer;
+            width: 22px; height: 22px; padding: 0; cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            font-family: var(--font-mono); font-size: 14px; line-height: 1;
+            font-family: var(--font-mono); font-size: 12px; line-height: 1;
         }
         .lb-icon-btn:hover, .lb-icon-btn:focus-visible { color: var(--text-main); border-color: var(--border-main); outline: none; }
-        .lb-icon-btn svg { width: 14px; height: 14px; }
+        .lb-icon-btn svg { width: 13px; height: 13px; }
         #lb-settings-btn { left: -10px; }
         #lb-close-btn { right: -12px; }
 
-        .lb-row { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; margin-bottom: 14px; align-items: end; }
-        .lb-row.lb-one { grid-template-columns: 1fr; }
-        .lb-field { min-width: 0; position: relative; }
-        .lb-inline { display: flex; align-items: baseline; gap: 10px; }
-        .lb-inline .lb-input { flex: 1; min-width: 0; }
-        .lb-label { font-size: 12px; letter-spacing: 0; text-transform: uppercase; white-space: nowrap; color: var(--text-main); }
-        .lb-stack .lb-label { display: block; margin-bottom: 2px; }
-        .lb-hint { font-size: 8px; color: var(--text-muted); letter-spacing: 0; text-transform: none; margin-left: 6px; }
+        .lb-label { font-size: 11px; text-transform: uppercase; white-space: nowrap; color: var(--text-main); }
+        .lb-label.lb-err-label { color: var(--exc-txt); }
+        .lb-section { margin-bottom: 16px; }
+        .lb-labels, .lb-line, .lb-box { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
+        .lb-labels { margin-bottom: 3px; }
+        .lb-line { border-bottom: 1px dotted var(--border-main); }
+        .lb-one { grid-template-columns: 1fr; }
+        .lb-under { border-bottom: 1px dotted var(--border-main); }
+        .lb-card [data-field] { min-width: 0; }
+        .lb-card [data-field].lb-err { box-shadow: inset 0 -1px 0 var(--exc-brd); }
+
+        /* Date / flight time share one label column so their lines start at the same x */
+        .lb-top { display: grid; grid-template-columns: max-content 118px 1fr max-content 26px; column-gap: 8px; row-gap: 12px; align-items: end; margin-bottom: 18px; }
+        .lb-top .lb-label { justify-self: end; }
 
         .lb-card .lb-input {
             width: 100%;
+            flex: none;
             background: transparent;
-            border: none; border-bottom: 1px dotted var(--border-main);
-            border-radius: 0;
+            border: none; border-radius: 0;
             color: var(--text-main);
             font-family: 'Shadows Into Light', cursive;
-            font-size: 15px; letter-spacing: 1px;
-            padding: 2px 4px 0; height: 26px;
+            font-size: 11px; letter-spacing: 1px;
+            padding: 0 2px; height: 20px;
             outline: none;
         }
-        .lb-card .lb-input::placeholder { color: var(--text-muted); opacity: 0.55; }
-        .lb-card .lb-input:focus { border-bottom: 1px solid var(--text-main); }
+        .lb-card .lb-input:focus { border: none; background: rgba(255, 255, 255, 0.035); }
+        [data-theme="light"] .lb-card .lb-input:focus { background: rgba(0, 0, 0, 0.04); }
+        .lb-card .lb-input::placeholder { color: var(--text-muted); opacity: 0.5; }
         .lb-card input[type="date"].lb-input { color-scheme: dark; cursor: text; }
         [data-theme="light"] .lb-card input[type="date"].lb-input { color-scheme: light; }
-        .lb-card .lb-short { max-width: 130px; }
-        .lb-card .lb-ldgs { width: 40px; text-align: center; }
-        .lb-err .lb-input, .lb-err .lb-chips, .lb-err .lb-box { border-bottom: 1px solid var(--exc-brd) !important; }
-        .lb-err .lb-label { color: var(--exc-txt); }
+        .lb-card input[type="date"].lb-input::-webkit-calendar-picker-indicator { opacity: 0.45; width: 10px; height: 10px; margin-left: 2px; cursor: pointer; }
+        .lb-card #lb-ldgs { text-align: center; }
 
         /* Live org / airframe: one filled bar, two pick-only dropdowns */
-        .lb-box { background: var(--bg-light); display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; padding: 0 4px; border-bottom: 1px dotted transparent; }
-        .lb-card .lb-box .lb-input { border-bottom: none; height: 30px; }
+        .lb-box { background: var(--bg-light); padding: 0 4px; }
+        .lb-card .lb-box .lb-input { height: 24px; }
         .lb-card .lb-pick { cursor: pointer; caret-color: transparent; }
         .lb-card .lb-pick:focus { caret-color: auto; }
 
         /* Pattern work chips */
-        .lb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; border-bottom: 1px dotted var(--border-main); min-height: 26px; padding: 0 4px; cursor: text; }
-        .lb-chips:focus-within { border-bottom: 1px solid var(--text-main); }
-        .lb-card .lb-chips .lb-input { border: none; flex: 1; min-width: 120px; width: auto; padding: 2px 0 0; }
-        .lb-chip { font-family: 'Shadows Into Light', cursive; font-size: 15px; letter-spacing: 1px; white-space: nowrap; }
-        .lb-chip button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 10px; padding: 0 2px; }
+        .lb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; min-height: 20px; cursor: text; }
+        .lb-card .lb-chips .lb-input { flex: 1; min-width: 100px; width: auto; }
+        .lb-chip { font-family: 'Shadows Into Light', cursive; font-size: 11px; letter-spacing: 1px; white-space: nowrap; }
+        .lb-chip button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 8px; padding: 0 2px; }
         .lb-chip button:hover { color: var(--exc-txt); }
 
         .lb-card textarea.lb-remarks {
-            width: 100%; min-height: 90px; resize: vertical;
+            width: 100%; min-height: 72px; resize: vertical; display: block;
             background: var(--bg-light); color: var(--text-main);
-            border: none; border-bottom: 1px dotted transparent; border-radius: 0;
-            font-family: 'Shadows Into Light', cursive; font-size: 15px; letter-spacing: 1px; line-height: 1.35;
-            padding: 6px 8px; outline: none; display: block;
+            border: none; border-radius: 0;
+            font-family: 'Shadows Into Light', cursive; font-size: 11px; letter-spacing: 1px; line-height: 1.5;
+            padding: 5px 7px; outline: none;
         }
-        .lb-card textarea.lb-remarks:focus { border-bottom: 1px solid var(--text-main); }
+        [data-theme="light"] .lb-card { background: #eeeeee; }    /* lighter than the #dcdcdc entries so they stay visible */
+        [data-theme="light"] .lb-box,
+        [data-theme="light"] .lb-card textarea.lb-remarks,
+        [data-theme="light"] .lb-dropdown { background: #dcdcdc; }
 
-        /* Signature (= password). The real input is invisible; a written signature appears as you type. */
+        /* Signature = password entry shown as *****. The real input is invisible underneath. */
+        .lb-bottom { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: end; }
         .lb-sig { position: relative; }
-        .lb-card .lb-sig .lb-input { color: transparent; caret-color: transparent; height: 34px; }
+        .lb-card .lb-sig .lb-input { color: transparent; caret-color: transparent; }
         .lb-sig-ink {
-            position: absolute; left: 6px; bottom: 3px; pointer-events: none;
-            font-family: 'Shadows Into Light', cursive; font-size: 22px; letter-spacing: 1px; line-height: 1;
+            position: absolute; left: 3px; bottom: 1px; right: 0; overflow: hidden; pointer-events: none;
+            font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; line-height: 18px;
             color: var(--text-main); white-space: nowrap;
         }
-        .lb-sig .lb-input:focus + .lb-sig-ink:empty::after { content: '|'; font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); animation: lb-blink 1s steps(1) infinite; }
+        .lb-sig .lb-input:focus + .lb-sig-ink::after { content: '|'; color: var(--text-muted); animation: lb-blink 1s steps(1) infinite; }
         @keyframes lb-blink { 50% { opacity: 0; } }
 
         .lb-btn {
             background: var(--bg-light); color: var(--text-main);
             border: 1px solid var(--bg-light);
-            font-family: var(--font-mono); font-size: 13px; letter-spacing: 0;
-            height: 40px; width: 100%; cursor: pointer; transition: 0.15s;
+            font-family: var(--font-mono); font-size: 11px; letter-spacing: 0;
+            height: 36px; width: 100%; cursor: pointer; transition: 0.15s;
         }
         .lb-btn:hover, .lb-btn:focus-visible { border-color: var(--text-main); outline: none; background: var(--bg-hover); }
         .lb-btn:disabled { opacity: 0.5; cursor: default; }
-        .lb-btn-small { height: 24px; width: auto; padding: 0 10px; font-size: 10px; }
+        .lb-btn-small { height: 22px; width: auto; padding: 0 9px; font-size: 9px; }
 
-        .lb-status { min-height: 16px; margin-top: 12px; font-size: 10px; letter-spacing: 0; line-height: 1.6; color: var(--text-muted); text-transform: uppercase; }
+        .lb-status { min-height: 14px; margin-top: 12px; font-size: 9px; letter-spacing: 0; line-height: 1.7; color: var(--text-muted); text-transform: uppercase; }
+        .lb-status:empty { min-height: 0; margin-top: 0; }
         .lb-status .lb-arrow { color: var(--border-main); margin: 0 6px; }
         .lb-status .lb-step { animation: lb-in 0.25s ease; white-space: nowrap; display: inline-block; }
         .lb-status .lb-step.lb-busy::after { content: ''; animation: lb-dots 1.2s steps(4) infinite; }
@@ -913,26 +928,27 @@
 
         /* Dropdowns reuse the filter tab's .tag-dropdown look */
         .lb-dropdown { z-index: 10000; }
-        .lb-dropdown .opt-label { font-family: var(--font-mono); }
+        .lb-dropdown .opt-badge { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+        .lb-dd-full .opt-label { flex-shrink: 0; overflow: visible; }      /* airframe registrations never get cut off */
+        [data-theme="light"] .lb-dropdown .dropdown-opt:hover,
+        [data-theme="light"] .lb-dropdown .dropdown-opt.highlighted { background: #cfcfcf; }
 
         /* Settings */
-        .lb-set-section { margin-bottom: 18px; }
-        .lb-set-note { font-size: 9px; color: var(--text-muted); letter-spacing: 0; margin: -10px 0 16px; text-align: center; }
+        .lb-set-note { font-size: 9px; color: var(--text-muted); margin: -16px 0 16px; text-align: center; }
         .lb-org { border: 1px solid var(--border-faint); padding: 8px 10px 10px; margin-bottom: 8px; }
-        .lb-org-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
-        .lb-af { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.3fr 18px; gap: 6px; align-items: end; margin-bottom: 4px; }
-        .lb-af-head { font-size: 8px; color: var(--text-muted); letter-spacing: 0; }
-        .lb-card .lb-af .lb-input, .lb-card .lb-org-head .lb-input { font-size: 13px; height: 22px; }
-        .lb-x { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 11px; padding: 0; }
+        .lb-org-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; border-bottom: 1px dotted var(--border-main); }
+        .lb-af { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.3fr 14px; column-gap: 6px; align-items: end; margin-bottom: 4px; }
+        .lb-af:not(.lb-af-head) .lb-input { border-bottom: 1px dotted var(--border-main); }
+        .lb-af-head { font-size: 8px; color: var(--text-muted); }
+        .lb-x { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 9px; padding: 0; }
         .lb-x:hover { color: var(--exc-txt); }
-        .lb-friends { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 8px; }
-        .lb-set-actions { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; align-items: end; }
 
         @media (max-width: 768px) {
+            #timeline-panel.open ~ .lb-overlay { bottom: 0; }
             .lb-overlay { padding-top: 70px; }
-            .lb-card { padding: 16px 16px 18px; }
-            .lb-row { column-gap: 14px; }
-            .lb-af { grid-template-columns: 1fr 1fr 18px; }
+            .lb-card { padding: 14px 14px 16px; }
+            .lb-labels, .lb-line, .lb-box, .lb-bottom { column-gap: 14px; }
+            .lb-top { grid-template-columns: max-content 104px 1fr max-content 24px; }
         }
 
         /* ── ZEN MODE (Hide UI) ── */
@@ -1156,10 +1172,10 @@
     <div id="lb-overlay" class="lb-overlay" hidden>
         <form id="lb-card" class="lb-card" autocomplete="off" novalidate>
             <div class="lb-head">
-                <button type="button" class="lb-icon-btn" id="lb-settings-btn" title="Live orgs, airframes &amp; friends" tabindex="-1">
+                <button type="button" class="lb-icon-btn" id="lb-settings-btn" title="Live orgs &amp; airframes" tabindex="-1">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 </button>
-                <div class="lb-pilot"><img src="/images/pfp.png" alt="">darkeyes</div>
+                <div class="lb-pilot"><img src="/images/pfp.png" alt=" "><span>darkeyes</span></div>
                 <div class="lb-title" id="lb-title">LOGBOOK</div>
                 <div class="lb-num" id="lb-num">#</div>
                 <button type="button" class="lb-icon-btn" id="lb-close-btn" title="Close (Esc)" tabindex="-1">✕</button>
@@ -1167,99 +1183,81 @@
 
             <!-- ── FORM VIEW ── -->
             <div id="lb-form-view">
-                <div class="lb-row lb-one" style="justify-items: center;">
-                    <div class="lb-field lb-inline" data-field="date" style="width: 240px;">
-                        <label class="lb-label" for="lb-date">Date</label>
+                <div class="lb-top">
+                    <label class="lb-label" for="lb-date" style="grid-row: 1; grid-column: 1;">Date</label>
+                    <div class="lb-under" data-field="date" style="grid-row: 1; grid-column: 2;">
                         <input class="lb-input" id="lb-date" type="date">
                     </div>
-                </div>
-                <div class="lb-row">
-                    <div class="lb-field lb-inline" data-field="time">
-                        <label class="lb-label" for="lb-time">Flight Time</label>
-                        <input class="lb-input lb-short" id="lb-time" type="text" placeholder="h:mm" inputmode="numeric" maxlength="6">
+                    <label class="lb-label" for="lb-time" style="grid-row: 2; grid-column: 1;">Flight Time</label>
+                    <div class="lb-under" data-field="time" style="grid-row: 2; grid-column: 2;">
+                        <input class="lb-input" id="lb-time" type="text" placeholder="h:mm" inputmode="numeric" maxlength="6">
                     </div>
-                    <div class="lb-field lb-inline" data-field="ldgs" style="justify-content: flex-end;">
-                        <label class="lb-label" for="lb-ldgs">Landings</label>
-                        <input class="lb-input lb-ldgs" id="lb-ldgs" type="text" inputmode="numeric" maxlength="3" value="1">
+                    <label class="lb-label" for="lb-ldgs" style="grid-row: 2; grid-column: 4;">Landings</label>
+                    <div class="lb-under" data-field="ldgs" style="grid-row: 2; grid-column: 5;">
+                        <input class="lb-input" id="lb-ldgs" type="text" inputmode="numeric" maxlength="3" value="1">
                     </div>
                 </div>
-                <div class="lb-row">
-                    <div class="lb-field lb-stack" data-field="dep">
-                        <label class="lb-label" for="lb-dep">Departure</label>
-                        <input class="lb-input" id="lb-dep" type="text" placeholder="search airports">
-                    </div>
-                    <div class="lb-field lb-stack" data-field="arr">
-                        <label class="lb-label" for="lb-arr">Arrival</label>
-                        <input class="lb-input" id="lb-arr" type="text" placeholder="search airports">
+
+                <div class="lb-section">
+                    <div class="lb-labels"><label class="lb-label" for="lb-dep">Departure</label><label class="lb-label" for="lb-arr">Arrival</label></div>
+                    <div class="lb-line">
+                        <div data-field="dep"><input class="lb-input" id="lb-dep" type="text"></div>
+                        <div data-field="arr"><input class="lb-input" id="lb-arr" type="text"></div>
                     </div>
                 </div>
-                <div class="lb-row lb-one">
-                    <div class="lb-field lb-stack" data-field="tp">
-                        <label class="lb-label" for="lb-tp">Pattern Work <span class="lb-hint">adds “TP at …” to remarks</span></label>
-                        <div class="lb-chips" id="lb-tp-chips"><input class="lb-input" id="lb-tp" type="text"></div>
+
+                <div class="lb-section">
+                    <div class="lb-labels lb-one"><label class="lb-label" for="lb-tp">Pattern Work</label></div>
+                    <div class="lb-line lb-one lb-chips" id="lb-tp-chips" data-field="tp"><input class="lb-input" id="lb-tp" type="text"></div>
+                </div>
+
+                <div class="lb-section">
+                    <div class="lb-labels"><label class="lb-label" for="lb-org">Live Org</label><label class="lb-label" for="lb-af">Airframe</label></div>
+                    <div class="lb-box">
+                        <div data-field="org"><input class="lb-input lb-pick" id="lb-org" type="text"></div>
+                        <div data-field="af"><input class="lb-input lb-pick" id="lb-af" type="text"></div>
                     </div>
                 </div>
-                <div class="lb-row lb-one" style="margin-bottom: 14px;">
-                    <div class="lb-field" data-field="org">
-                        <div class="lb-row" style="margin-bottom: 2px;">
-                            <label class="lb-label" for="lb-org">Live Org</label>
-                            <label class="lb-label" for="lb-af">Airframe</label>
-                        </div>
-                        <div class="lb-box">
-                            <input class="lb-input lb-pick" id="lb-org" type="text" placeholder="—">
-                            <input class="lb-input lb-pick" id="lb-af" type="text" placeholder="—">
-                        </div>
+
+                <div class="lb-section">
+                    <div class="lb-labels"><label class="lb-label" for="lb-aircraft">Aircraft</label><label class="lb-label" for="lb-livery">Livery</label></div>
+                    <div class="lb-line">
+                        <div data-field="aircraft"><input class="lb-input" id="lb-aircraft" type="text"></div>
+                        <div data-field="livery"><input class="lb-input" id="lb-livery" type="text"></div>
                     </div>
                 </div>
-                <div class="lb-row">
-                    <div class="lb-field lb-stack" data-field="aircraft">
-                        <label class="lb-label" for="lb-aircraft">Aircraft</label>
-                        <input class="lb-input" id="lb-aircraft" type="text">
-                    </div>
-                    <div class="lb-field lb-stack" data-field="livery">
-                        <label class="lb-label" for="lb-livery">Livery</label>
-                        <input class="lb-input" id="lb-livery" type="text">
-                    </div>
+
+                <div class="lb-section">
+                    <div class="lb-labels lb-one"><label class="lb-label" for="lb-remarks">Remarks</label></div>
+                    <div data-field="remarks"><textarea class="lb-remarks" id="lb-remarks" rows="4" spellcheck="true"></textarea></div>
                 </div>
-                <div class="lb-row lb-one">
-                    <div class="lb-field lb-stack" data-field="remarks">
-                        <label class="lb-label" for="lb-remarks">Remarks <span class="lb-hint">@ to add a friend</span></label>
-                        <textarea class="lb-remarks" id="lb-remarks" rows="4" spellcheck="true"></textarea>
-                    </div>
-                </div>
-                <div class="lb-row" style="margin-bottom: 0;">
-                    <div class="lb-field lb-stack" data-field="sig">
-                        <label class="lb-label" for="lb-sig">Signature</label>
+
+                <div class="lb-bottom">
+                    <div>
+                        <div class="lb-labels lb-one"><label class="lb-label" for="lb-sig">Signature</label></div>
                         <input type="text" name="username" value="darkeyes" autocomplete="username" hidden>
-                        <div class="lb-sig">
+                        <div class="lb-under lb-sig" data-field="sig">
                             <input class="lb-input" id="lb-sig" type="password" name="password" autocomplete="current-password">
                             <span class="lb-sig-ink" id="lb-sig-ink"></span>
                         </div>
                     </div>
-                    <div class="lb-field">
-                        <button type="submit" class="lb-btn" id="lb-submit">SUBMIT</button>
-                    </div>
+                    <button type="submit" class="lb-btn" id="lb-submit">SUBMIT</button>
                 </div>
                 <div class="lb-status" id="lb-status" aria-live="polite"></div>
             </div>
 
             <!-- ── SETTINGS VIEW ── -->
             <div id="lb-settings-view" hidden>
-                <div class="lb-set-note">Saved with your Apps Script, never in the logbook sheet.</div>
-                <div class="lb-set-section">
+                <div class="lb-set-note">(not saved in logbook sheet)</div>
+                <div class="lb-section">
                     <div class="lb-label" style="margin-bottom: 8px;">Live Orgs &amp; Airframes</div>
                     <div id="lb-orgs-editor"></div>
                     <button type="button" class="lb-btn lb-btn-small" id="lb-add-org">+ ORG</button>
                 </div>
-                <div class="lb-set-section">
-                    <div class="lb-label">Friends <span class="lb-hint">for @ in remarks</span></div>
-                    <div class="lb-friends" id="lb-friends-editor"></div>
-                    <input class="lb-input" id="lb-friend-new" type="text" placeholder="add a name, press Enter" style="max-width: 260px;">
-                </div>
-                <div class="lb-set-actions">
-                    <div class="lb-field lb-stack">
-                        <label class="lb-label" for="lb-set-sig">Signature</label>
-                        <div class="lb-sig">
+                <div class="lb-bottom">
+                    <div>
+                        <div class="lb-labels lb-one"><label class="lb-label" for="lb-set-sig">Signature</label></div>
+                        <div class="lb-under lb-sig">
                             <input class="lb-input" id="lb-set-sig" type="password" autocomplete="current-password">
                             <span class="lb-sig-ink" id="lb-set-sig-ink"></span>
                         </div>
@@ -2858,9 +2856,9 @@ function toggleTimeline() { Timeline.toggle(); }
 // The script only ever adds one new row per flight; it can't change or remove anything already logged.
 // ═══════════════════════════════════════════════════════════
 // Paste the Apps Script web app URL here (ends in /exec). Same URL on flightsmart.tools and flightsmart.github.io.
-var LOGBOOK_API_URL = 'https://script.google.com/macros/s/AKfycbzjeL2jrsRIJticdHIk9qBntK0EXMgw3OUa66y2ilpdazaZ2dLFlX3d9cpRKxGAImPIHA/exec';
+var LOGBOOK_API_URL = '';
 var LOGBOOK_TZ = 'America/New_York';
-var PINNED_ORGS = ['daydreamers', 'VELA'];   // always listed first, in this order
+var PINNED_ORGS = ['daydreamers', 'vela'];   // always listed first, in this order
 
 // Live orgs in display order: daydreamers, Vela, then most flown, then A–Z. (Also used by the filter tab.)
 function orderOrgNames(names, flightList) {
@@ -2875,12 +2873,6 @@ function orderOrgNames(names, flightList) {
 }
 
 var Logbook = (function() {
-    // Used until friends are saved in Settings (pulled from past remarks).
-    var SEED_FRIENDS = ['j_vonl', 'GarlicIceCream', 'captaincrazy', 'Evan', 'ev.an9671', 'Olivia', 'samtheboss', 'Skyler',
-        'alvaroM', 'AdamCallow', 'Eggs_Aviation', 'cathaypacific2025', 'Canton_HK', 'thatonavgeek1', 'SlipperyBooney',
-        'AV-Booney', 'CX-01ProjectDread', 'sierracharlie24', 'Gwengo', 'Maya', 'CitrusAviatrix', 'Atlas', 'Hello_Kitty',
-        'falcon.ccp', 'RTCarter1', 'TaiXipø', 'MAcostaPR', 'Tyler_Shelton', '3D-THI'];
-
     // Three random steps, then always "FILED, GOOD DAY!"
     var SEQUENCES = [
         ['DISPATCHING', 'APPROVING', 'AWAITING CHIEF PILOT'],
@@ -2897,12 +2889,10 @@ var Logbook = (function() {
         ['CALCULATING LANDING RATE', 'RECONCILING FUEL BURN', 'NOTIFYING DISPATCH'],
         ['DOWNLINKING', 'VALIDATING', 'STAMPING']
     ];
-    var SIGNATURE_NAME = 'darkeyes';
 
     var $ = function(id) { return document.getElementById(id); };
     var els = {}, menus = [], opened = false, busy = false;
     var settings = null, settingsVer = 0, settingsRequested = false;
-    var friends = SEED_FRIENDS.slice(), friendsDirty = false;
     var state = { dep: null, arr: null, tp: [], org: '', af: '', aircraft: null };
     var cache = null, apIndex = null, submissionId = null, draft = null;
     var combos = {};
@@ -2917,8 +2907,8 @@ var Logbook = (function() {
         var fl = window.logbookFlights || [];
         if (cache && cache.n === fl.length && cache.v === settingsVer) return cache;
         var c = { n: fl.length, v: settingsVer, flown: {}, flownCodeByObj: new Map(), aircraft: {}, liveries: {},
-                  orgs: [], flightCount: 0, remarksText: '' };
-        var orgMap = {}, rmk = [];
+                  orgs: [], flightCount: 0 };
+        var orgMap = {};
         fl.forEach(function(f) {   // newest first
             if (f.isATC) return;
             c.flightCount++;
@@ -2941,9 +2931,7 @@ var Logbook = (function() {
                     o.airframes.push({ id: f.airframe, manufacturer: f.mfr, type: f.type, livery: f.livery === 'Standard' ? '' : f.livery });
                 }
             }
-            if (f.remarks) rmk.push(f.remarks);
         });
-        c.remarksText = rmk.join('\n').toLowerCase();
         var orgs = (settings && Array.isArray(settings.orgs)) ? clone(settings.orgs) : Object.keys(orgMap).map(function(k) { return orgMap[k]; });
         var byName = {};
         orgs.forEach(function(o) { byName[o.name] = o; });
@@ -2984,11 +2972,11 @@ var Logbook = (function() {
     }
 
     // ── Dropdown menu (same look as the filter tab's) ──
-    function Menu(onPick) {
+    function Menu(onPick, cls) {
         var self = this;
         this.items = []; this.hi = -1; this.onPick = onPick; this.anchor = null;
         this.dd = document.createElement('div');
-        this.dd.className = 'tag-dropdown lb-dropdown';
+        this.dd.className = 'tag-dropdown lb-dropdown' + (cls ? ' ' + cls : '');
         document.body.appendChild(this.dd);
         this.dd.addEventListener('mousedown', function(e) {
             e.preventDefault();                       // keep focus in the field
@@ -3045,13 +3033,14 @@ var Logbook = (function() {
     // o.source(q) -> [{value, label, badge, group, data}]; o.strict = only listed values; o.onPick(opt); o.anchor
     function Combo(input, o) {
         var self = this;
-        this.input = input; this.o = o; this.value = null; this.text = '';
-        this.menu = new Menu(function(opt) { self.pick(opt); });
+        this.input = input; this.o = o; this.value = null; this.text = ''; this.locked = false;
+        this.menu = new Menu(function(opt) { self.pick(opt); }, o.menuClass);
         input.addEventListener('focus', function() { self.open(self.dirty() ? input.value : ''); });
         input.addEventListener('click', function() { if (!self.menu.isOpen()) self.open(self.dirty() ? input.value : ''); });
         input.addEventListener('input', function() { self.open(input.value); });
         input.addEventListener('keydown', function(e) {
             var m = self.menu;
+            if (self.locked) return;
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
                 if (!m.isOpen()) self.open(self.dirty() ? input.value : '');
@@ -3078,8 +3067,15 @@ var Logbook = (function() {
     }
     Combo.prototype.dirty = function() { return this.input.value !== this.text; };
     Combo.prototype.open = function(q) {
-        if (document.activeElement !== this.input) return;
+        if (this.locked || document.activeElement !== this.input) return;
         this.menu.open(this.o.source(q || ''), this.o.anchor || this.input, this.o.emptyText);
+    };
+    // Invisible lock: looks the same, but can't be edited and Tab skips it
+    Combo.prototype.lock = function(on) {
+        this.locked = !!on;
+        this.input.readOnly = !!on;
+        this.input.tabIndex = on ? -1 : 0;
+        if (on) this.menu.close();
     };
     Combo.prototype.set = function(value, text) { this.value = value; this.text = text || ''; this.input.value = this.text; };
     Combo.prototype.pick = function(opt) {
@@ -3093,8 +3089,7 @@ var Logbook = (function() {
     // ── Sources ──
     function airportOpt(a, flown, group, asCode) {
         var code = asCode || a.code;
-        return { value: code, label: code + ' - ' + a.name + (a.muni && a.name.indexOf(a.muni) < 0 ? ' (' + a.muni + ')' : ''),
-                 badge: flown ? flown + (flown === 1 ? ' flight' : ' flights') : '', group: group };
+        return { value: code, label: code + ' - ' + a.name + (a.muni && a.name.indexOf(a.muni) < 0 ? ' (' + a.muni + ')' : '') };
     }
     function searchAirports(q, extra) {
         var d = data(), idx = airportIndex(), out = [];
@@ -3166,6 +3161,9 @@ var Logbook = (function() {
     function setAirframe(af, orgName) {
         state.af = af ? af.id : '';
         combos['lb-af'].set(state.af, state.af);
+        var lock = !!(af && af.manufacturer && af.type);
+        combos['lb-aircraft'].lock(lock);
+        combos['lb-livery'].lock(lock && !!af.livery);
         if (af) {
             if (orgName && !ci(orgName, state.org)) setOrg(orgName);
             if (af.manufacturer && af.type) setAircraft({ mfr: af.manufacturer, type: af.type });
@@ -3226,7 +3224,8 @@ var Logbook = (function() {
                 d.orgs.forEach(function(o) {
                     if (state.org && !ci(o.name, state.org)) return;
                     o.airframes.forEach(function(a) {
-                        opts.push({ value: a.id, label: a.id, badge: [a.type, a.livery].filter(Boolean).join(' · '),
+                        var icao = a.type ? getIcaoCode((a.manufacturer || '') + ' ' + a.type) : '';
+                        opts.push({ value: a.id, label: a.id, badge: [icao, a.livery].filter(Boolean).join(' · '),
                                     group: state.org ? null : o.name, af: a, org: o.name });
                     });
                 });
@@ -3234,13 +3233,14 @@ var Logbook = (function() {
                 if (!q) opts.unshift({ value: '', label: '— none —' });
                 return opts;
             },
+            menuClass: 'lb-dd-full',
             onPick: function(opt) { if (opt.af) setAirframe(opt.af, opt.org); else setAirframe(null); },
             emptyText: 'Add airframes in settings (⚙)'
         });
         combos.aircraft = new Combo(els.aircraft, {
             source: function(q) {
                 var opts = data().aircraftList.map(function(a) {
-                    return { value: a.mfr + '|' + a.type, label: aircraftLabel(a), badge: a.count ? a.count + (a.count === 1 ? ' flight' : ' flights') : '', a: a };
+                    return { value: a.mfr + '|' + a.type, label: aircraftLabel(a), a: a };
                 });
                 opts = filterLabel(opts, q);
                 var t = q.trim();
@@ -3257,11 +3257,11 @@ var Logbook = (function() {
                 if (a) {
                     Object.keys(a.liveries).sort(function(x, y) { return a.liveries[y] - a.liveries[x]; }).forEach(function(l) {
                         seen[l] = 1;
-                        opts.push({ value: l, label: l, group: 'On the ' + a.type, badge: a.liveries[l] ? a.liveries[l] + '×' : '' });
+                        opts.push({ value: l, label: l });
                     });
                 }
                 Object.keys(d.liveries).sort(function(x, y) { return d.liveries[y] - d.liveries[x]; }).forEach(function(l) {
-                    if (!seen[l]) opts.push({ value: l, label: l, group: a ? 'All liveries' : null });
+                    if (!seen[l]) opts.push({ value: l, label: l });
                 });
                 opts = filterLabel(opts, q);
                 var t = q.trim();
@@ -3288,42 +3288,6 @@ var Logbook = (function() {
         els.tp.placeholder = state.tp.length ? '' : 'none';
     }
 
-    // ── @friends in remarks ──
-    var mention = { start: -1 };
-    function friendsSorted() {
-        var t = data().remarksText;
-        function count(n) { var k = n.toLowerCase(), c = 0, i = t.indexOf(k); while (i >= 0) { c++; i = t.indexOf(k, i + k.length); } return c; }
-        var withCount = friends.map(function(n) { return { n: n, c: count(n) }; });
-        withCount.sort(function(a, b) { return b.c - a.c || a.n.localeCompare(b.n); });
-        return withCount.map(function(x) { return x.n; });
-    }
-    function checkMention() {
-        var ta = els.remarks, pos = ta.selectionStart;
-        var m = ta.selectionStart === ta.selectionEnd && /(^|[\s,;(\/])@([^\s@,;()\/]*)$/.exec(ta.value.slice(0, pos));
-        if (!m) { mention.menu.close(); mention.start = -1; return; }
-        var q = m[2], ql = q.toLowerCase();
-        mention.start = pos - q.length - 1;
-        var all = friendsSorted();
-        var items = all.filter(function(n) { return n.toLowerCase().indexOf(ql) === 0; })
-            .concat(all.filter(function(n) { return n.toLowerCase().indexOf(ql) > 0; }))
-            .slice(0, 8).map(function(n) { return { value: n, label: n }; });
-        if (q && !friends.some(function(n) { return ci(n, q); })) items.push({ value: q, label: '+ add “' + q + '” as a friend', add: true });
-        if (!items.length) { mention.menu.close(); return; }
-        mention.menu.open(items, ta);
-    }
-    function pickMention(opt) {
-        var ta = els.remarks, pos = ta.selectionStart;
-        if (mention.start < 0) return;
-        if (opt.add && !friends.some(function(n) { return ci(n, opt.value); })) { friends.push(opt.value); friendsDirty = true; }
-        var before = ta.value.slice(0, mention.start), after = ta.value.slice(pos);
-        var insert = opt.value + (after.charAt(0) === ' ' ? '' : ' ');
-        ta.value = before + insert + after;
-        var caret = before.length + insert.length;
-        ta.setSelectionRange(caret, caret);
-        mention.menu.close(); mention.start = -1;
-        ta.focus();
-    }
-
     // ── Helpers for fields ──
     function todayISO() {
         try { return new Intl.DateTimeFormat('en-CA', { timeZone: LOGBOOK_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
@@ -3338,12 +3302,23 @@ var Logbook = (function() {
         if (m) return (+m[1]) + ':' + ('0' + m[2]).slice(-2);
         return v;
     }
-    function fieldOf(el) { return el.closest('.lb-field[data-field]') || el.closest('.lb-field'); }
-    function setErr(el) { var f = fieldOf(el); if (f) f.classList.add('lb-err'); }
-    function clearErr(el) { var f = fieldOf(el); if (f) f.classList.remove('lb-err'); }
+    function labelOf(el) { return el.id ? document.querySelector('label[for="' + el.id + '"]') : null; }
+    function setErr(el) {
+        var f = el.closest('[data-field]'), l = labelOf(el);
+        if (f) f.classList.add('lb-err');
+        if (l) l.classList.add('lb-err-label');
+    }
+    function clearErr(el) {
+        var f = el.closest('[data-field]'), l = labelOf(el);
+        if (f) f.classList.remove('lb-err');
+        if (l) l.classList.remove('lb-err-label');
+    }
+    function clearAllErr() {
+        document.querySelectorAll('#lb-form-view .lb-err').forEach(function(n) { n.classList.remove('lb-err'); });
+        document.querySelectorAll('#lb-form-view .lb-err-label').forEach(function(n) { n.classList.remove('lb-err-label'); });
+    }
     function sigInk(input, ink) {
-        var n = input.value.length;
-        ink.textContent = n ? SIGNATURE_NAME.slice(0, Math.min(n, SIGNATURE_NAME.length)) : '';
+        ink.textContent = '*'.repeat(input.value.length);
     }
     function flightNumberGuess() { var n = data().flightCount; return n ? '#' + (n + 1) : '#'; }
     function newSubmissionId() {
@@ -3360,7 +3335,6 @@ var Logbook = (function() {
     function applySettings(s) {
         settings = s || null;
         settingsVer++;
-        if (!friendsDirty) friends = (settings && Array.isArray(settings.friends)) ? settings.friends.slice() : SEED_FRIENDS.slice();
         try { localStorage.setItem('logbook-settings', JSON.stringify(settings)); } catch (e) {}
     }
     function loadSettings() {
@@ -3438,7 +3412,7 @@ var Logbook = (function() {
 
     function submit() {
         if (busy) return;
-        document.querySelectorAll('#lb-form-view .lb-err').forEach(function(n) { n.classList.remove('lb-err'); });
+        clearAllErr();
         var c = collect();
         if (c.errs.length) {
             c.errs.forEach(function(e) { setErr(e[0]); });
@@ -3450,7 +3424,6 @@ var Logbook = (function() {
         els.submit.disabled = true;
         if (!submissionId) submissionId = newSubmissionId();
         var body = { action: 'log', password: els.sig.value, submissionId: submissionId, flight: c.flight };
-        if (friendsDirty) body.friends = friends.slice();
         playSequence(els.status, api(body)).then(function(res) {
             busy = false;
             els.submit.disabled = false;
@@ -3459,7 +3432,6 @@ var Logbook = (function() {
                 return;
             }
             submissionId = null;
-            if (body.friends) { friendsDirty = false; settings = settings || {}; settings.friends = body.friends; applySettings(settings); }
             var f = c.flight;
             if (window.addLoggedFlight) {
                 window.addLoggedFlight([f.date, f.flightTime, f.manufacturer, f.type, f.livery, f.depart, f.dest, f.ldgs, '-', f.org, f.airframe, f.remarks]);
@@ -3484,7 +3456,7 @@ var Logbook = (function() {
         els.remarks.value = '';
         els.sig.value = ''; sigInk(els.sig, els.sigInk);
         els.status.innerHTML = '';
-        document.querySelectorAll('#lb-form-view .lb-err').forEach(function(n) { n.classList.remove('lb-err'); });
+        clearAllErr();
         submissionId = null;
     }
 
@@ -3532,17 +3504,6 @@ var Logbook = (function() {
             box.appendChild(div);
         });
     }
-    function renderFriends() {
-        var box = $('lb-friends-editor');
-        box.innerHTML = '';
-        draft.friends.forEach(function(n, i) {
-            var chip = document.createElement('span');
-            chip.className = 'lb-chip';
-            chip.innerHTML = esc(n) + '<button type="button" title="Remove">✕</button>';
-            chip.querySelector('button').addEventListener('click', function() { draft.friends.splice(i, 1); renderFriends(); });
-            box.appendChild(chip);
-        });
-    }
     function showSettings(on) {
         menus.forEach(function(m) { m.close(); });
         els.formView.hidden = on;
@@ -3552,10 +3513,9 @@ var Logbook = (function() {
             var d = data();
             draft = {
                 orgs: d.orgs.map(function(o) { return { name: o.name, airframes: o.airframes.map(function(a) {
-                    return { id: a.id, manufacturer: a.manufacturer || '', type: a.type || '', livery: a.livery || '' }; }) }; }),
-                friends: friendsSorted()
+                    return { id: a.id, manufacturer: a.manufacturer || '', type: a.type || '', livery: a.livery || '' }; }) }; })
             };
-            fillDatalists(); renderOrgs(); renderFriends();
+            fillDatalists(); renderOrgs();
             $('lb-set-status').innerHTML = '';
             $('lb-set-sig').value = ''; sigInk($('lb-set-sig'), $('lb-set-sig-ink'));
         }
@@ -3567,14 +3527,12 @@ var Logbook = (function() {
                 return { name: o.name.trim(), airframes: o.airframes.map(function(a) {
                     return { id: a.id.trim(), manufacturer: a.manufacturer.trim(), type: a.type.trim(), livery: a.livery.trim() }; })
                     .filter(function(a) { return a.id; }) };
-            }).filter(function(o) { return o.name; }),
-            friends: draft.friends.slice()
+            }).filter(function(o) { return o.name; })
         };
         if (!sig.value) { st.innerHTML = '<span class="lb-fail">CHECK: SIGNATURE</span>'; sig.focus(); return; }
         st.innerHTML = '<span class="lb-step lb-busy">SAVING</span>';
         api({ action: 'saveSettings', password: sig.value, settings: clean }).then(function(res) {
             if (!res.ok) throw new Error(res.error);
-            friendsDirty = false;
             applySettings(res.settings);
             st.innerHTML = '<span class="lb-step">SAVING</span><span class="lb-arrow">-->></span><span class="lb-done">SAVED</span>';
             setTimeout(function() { showSettings(false); }, 900);
@@ -3591,7 +3549,7 @@ var Logbook = (function() {
         els.overlay.hidden = false;
         if (!busy) els.num.textContent = flightNumberGuess();
         if (!els.date.value) els.date.value = todayISO();
-        setTimeout(function() { (els.setView.hidden ? els.time : $('lb-friend-new')).focus(); }, 30);   // date fills itself in; start at flight time
+        setTimeout(function() { if (els.setView.hidden) els.time.focus(); }, 30);   // date fills itself in; start at flight time
     }
     function close() {
         if (!opened) return;
@@ -3614,19 +3572,6 @@ var Logbook = (function() {
         combos['lb-org'] = combos.org; combos['lb-af'] = combos.af;
         renderTp();
 
-        mention.menu = new Menu(pickMention);
-        els.remarks.addEventListener('input', checkMention);
-        els.remarks.addEventListener('click', checkMention);
-        els.remarks.addEventListener('blur', function() { mention.menu.close(); });
-        els.remarks.addEventListener('keydown', function(e) {
-            var m = mention.menu;
-            if (!m.isOpen()) return;
-            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); m.move(e.key === 'ArrowDown' ? 1 : -1); }
-            else if (e.key === 'Enter' || e.key === 'Tab') { if (m.current()) { e.preventDefault(); pickMention(m.current()); } }
-            else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); m.close(); }
-        });
-        els.remarks.addEventListener('keyup', function(e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') checkMention(); });
-
         els.time.addEventListener('blur', function() { if (els.time.value.trim()) els.time.value = normalizeTime(els.time.value); });
         els.ldgs.addEventListener('input', function() { els.ldgs.value = els.ldgs.value.replace(/\D/g, ''); });
         els.sig.addEventListener('input', function() { sigInk(els.sig, els.sigInk); });
@@ -3642,7 +3587,6 @@ var Logbook = (function() {
             // Enter only submits from the signature field or the button (not from half-filled fields)
             if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target !== els.sig && !e.defaultPrevented) {
                 e.preventDefault();
-                if (e.target.id === 'lb-friend-new') addFriendFromInput();
                 if (e.target.id === 'lb-set-sig') saveSettings();
             }
         });
@@ -3661,12 +3605,6 @@ var Logbook = (function() {
             var heads = $('lb-orgs-editor').querySelectorAll('.lb-org-head input');
             heads[heads.length - 1].focus();
         });
-        function addFriendFromInput() {
-            var inp = $('lb-friend-new'), v = inp.value.replace(/^@/, '').trim();
-            if (v && !draft.friends.some(function(n) { return ci(n, v); })) { draft.friends.push(v); renderFriends(); }
-            inp.value = '';
-        }
-
         els.date.value = todayISO();
         if (LOGBOOK_API_URL) setTimeout(loadSettings, 4000);
     }
