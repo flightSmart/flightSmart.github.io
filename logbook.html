@@ -148,8 +148,9 @@
         }
 
         /* ── MAP SECTION ── */
-        #map-container { flex-grow: 1; height: 100%; position: relative; }
-        #map { width: 100%; height: 100%; background: var(--bg-dark); }
+        /* Column layout so the (optional) timeline panel can take space under the map */
+        #map-container { flex-grow: 1; min-width: 0; height: 100%; position: relative; display: flex; flex-direction: column; }
+        #map { width: 100%; flex: 1 1 auto; min-height: 0; background: var(--bg-dark); }
 
         .leaflet-layer,
         .leaflet-control-zoom-in,
@@ -724,7 +725,70 @@
         /* Respect the OS "reduce motion" setting: no sweep at all for people who have it on. */
         @media (prefers-reduced-motion: reduce) { .radar-sweep { display: none; } }
 
+        /* ── TIMELINE (monthly histogram under the map) ── */
+        :root {
+            --tl-bar: rgb(176, 176, 176);          /* month bar */
+            --tl-bar-dim: rgb(118, 118, 118);      /* the non-matching part of a bar while filters are on */
+            --tl-bar-hover: rgb(250, 250, 250);
+            --tl-trend: rgb(108, 108, 108);        /* smoothed trend line behind the bars */
+            --tl-sel: rgb(152, 198, 166);          /* the part of a bar that matches the filters */
+            --tl-sel-hover: rgb(196, 232, 208);
+            --tl-sel-trend: rgba(100, 195, 153, 0.45);
+            --tl-month: rgb(135, 135, 135);
+            --tl-year: rgb(214, 214, 214);
+        }
+        [data-theme="light"] {
+            --tl-bar: rgb(150, 150, 150);
+            --tl-bar-dim: rgb(196, 196, 196);
+            --tl-bar-hover: rgb(45, 45, 45);
+            --tl-trend: rgb(196, 196, 196);
+            --tl-sel: rgb(70, 170, 125);
+            --tl-sel-hover: rgb(0, 115, 70);
+            --tl-sel-trend: rgba(0, 148, 90, 0.35);
+            --tl-month: rgb(130, 130, 130);
+            --tl-year: rgb(70, 70, 70);
+        }
+        #timeline-panel {
+            display: none;
+            flex: 0 0 128px;
+            position: relative;
+            z-index: 1001;                 /* above Leaflet panes so the tooltip can overhang the map */
+            background: var(--bg-dark);
+            border-top: 1px solid var(--border-main);
+            font-family: var(--font-mono);
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #timeline-panel.open { display: block; }
+        #timeline-svg { position: absolute; left: 0; top: 0; display: block; width: 100%; height: 100%; overflow: visible; }
+        #timeline-svg.tl-pointer { cursor: pointer; }
+        #timeline-svg text { font-family: var(--font-mono); }
+        .tl-month { fill: var(--tl-month); }
+        .tl-year  { fill: var(--tl-year); }
+        .tl-trend { fill: none; stroke: var(--tl-trend); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .tl-trend.tl-trend-sel { stroke: var(--tl-sel-trend); }
+        .tl-bar { fill: var(--tl-bar); }
+        .tl-filtered .tl-bar { fill: var(--tl-bar-dim); }
+        .tl-sel { fill: var(--tl-sel); }
+        .tl-hover .tl-bar, .tl-filtered .tl-hover .tl-bar { fill: var(--tl-bar-hover); }
+        .tl-hover .tl-sel { fill: var(--tl-sel-hover); }
+        #timeline-tip {
+            position: absolute; left: 0; top: 0;
+            display: none;
+            pointer-events: none;
+            white-space: nowrap;
+            background: var(--bg-light);
+            border: 1px solid var(--border-faint);
+            border-radius: 0;
+            color: var(--text-main);
+            font-size: 10px;
+            letter-spacing: -0.3px;
+            padding: 4px 8px;
+            transform: translate(-50%, -100%);
+        }
+
         /* ── ZEN MODE (Hide UI) ── */
+        body.ui-hidden #timeline-panel,
         body.ui-hidden #left-panel,
         body.ui-hidden #sidebar,
         body.ui-hidden .map-overlay-btns {
@@ -777,6 +841,12 @@
             #loading {
                 width: 80%;
                 max-width: 260px;
+            }
+
+            /* No timeline on phones */
+            #timeline-toggle,
+            #timeline-panel {
+                display: none !important;
             }
         }
 
@@ -856,6 +926,8 @@
     <div class="map-overlay-btns">
         <button id="left-toggle" class="map-btn" onclick="toggleLeftPanel()" title="Toggle Routes Panel"> < ROUTES </button>
 
+        <button id="timeline-toggle" class="map-btn" onclick="toggleTimeline()" title="Toggle Timeline"> v TIMELINE </button>
+
         <button id="tp-toggle" class="map-btn" onclick="toggleTpVisibility()" title="Toggle Traffic Patterns">
                     <svg width="23" height="23" viewBox="0 0 152 152" xmlns="http://www.w3.org/2000/svg">  
                                 <path id="Pill" fill="none" stroke="#d8d8d9" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" d="M 99.027512 97.369141 C 99.032455 110.081856 88.730751 120.391579 76.018036 120.396515 C 63.305321 120.401459 52.995602 110.099747 52.990662 97.387039 L 52.972485 50.630859 C 52.967545 37.918144 63.269249 27.608421 75.981964 27.603485 C 88.694679 27.598541 99.004402 37.900246 99.009338 50.612961 L 99.027512 97.369141 Z"/>
@@ -921,6 +993,11 @@
     </div>
 
     <div id="map"></div>
+
+    <div id="timeline-panel">
+        <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        <div id="timeline-tip"></div>
+    </div>
 </div>
 <div id="sidebar" style="display: none;">
     <div id="filter-container">     
@@ -2216,6 +2293,271 @@ function toggleLeftPanel() {
     setTimeout(function(){ map.invalidateSize(); }, 200);
 }
 
+// ═══════════════════════════════════════════════════════════
+// TIMELINE — monthly histogram under the map
+// Grey bars = all logged flights per month. While filters are on, the matching part of each
+// bar turns green (stacked at the bottom) and the trend line follows the filtered flights.
+// Clicking a month sets the Date Range filter to that month (click again to clear it).
+// ═══════════════════════════════════════════════════════════
+var Timeline = (function() {
+    // Axis starts a few empty months before the first logged flight (11 Dec 2017) as a lead-in.
+    var START_Y = 2017, START_M = 7;        // August 2017 (JS months are 0-based)
+    var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var SMOOTH_SIGMA = 1.5;                 // trend line smoothing, in months
+    var PANEL_PAD_X = 22, PANEL_PAD_TOP = 22, BASELINE_FROM_BOTTOM = 46;
+
+    var panel, svg, tip;
+    var allRef = null, totals = [], selected = [], filtered = false;
+    var lastIdx = -1;                       // last month that gets a trend line (current month or last flight)
+    var geom = null, hoverIdx = -1, rafId = 0;
+
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+    function pad2(n) { return (n < 10 ? '0' : '') + n; }
+    function idxToYM(i) { var t = START_M + i; return { y: START_Y + Math.floor(t / 12), m: t % 12 }; }
+
+    function monthIndexOf(f) {
+        if (f._tlMonth !== undefined) return f._tlMonth;
+        var d = new Date(f.date);
+        f._tlMonth = isNaN(d) ? -1 : (d.getFullYear() - START_Y) * 12 + d.getMonth() - START_M;
+        return f._tlMonth;
+    }
+
+    function countByMonth(list, n) {
+        var arr = new Array(n).fill(0);
+        for (var k = 0; k < list.length; k++) {
+            var i = monthIndexOf(list[k]);
+            if (i >= 0 && i < n) arr[i]++;
+        }
+        return arr;
+    }
+
+    // Gaussian smoothing, renormalised at the edges so the ends aren't dragged toward zero.
+    function smooth(arr, upto) {
+        var out = [], r = Math.ceil(SMOOTH_SIGMA * 3), w = [];
+        for (var k = -r; k <= r; k++) w.push(Math.exp(-(k * k) / (2 * SMOOTH_SIGMA * SMOOTH_SIGMA)));
+        for (var i = 0; i <= upto; i++) {
+            var s = 0, ws = 0;
+            for (var j = -r; j <= r; j++) {
+                var x = i + j;
+                if (x < 0 || x > upto) continue;
+                s += arr[x] * w[j + r]; ws += w[j + r];
+            }
+            out.push(ws ? s / ws : 0);
+        }
+        return out;
+    }
+
+    // Monotone cubic curve through the points: smooth, but never overshoots (so it can't dip below the baseline).
+    function monotonePath(p) {
+        var n = p.length;
+        if (!n) return '';
+        if (n === 1) return 'M' + p[0][0].toFixed(2) + ',' + p[0][1].toFixed(2);
+        var dx = [], m = [], t = [], i;
+        for (i = 0; i < n - 1; i++) { dx[i] = p[i + 1][0] - p[i][0]; m[i] = (p[i + 1][1] - p[i][1]) / dx[i]; }
+        t[0] = m[0]; t[n - 1] = m[n - 2];
+        for (i = 1; i < n - 1; i++) {
+            t[i] = (m[i - 1] * m[i] <= 0) ? 0
+                 : 3 * (dx[i - 1] + dx[i]) / ((2 * dx[i] + dx[i - 1]) / m[i - 1] + (dx[i] + 2 * dx[i - 1]) / m[i]);
+        }
+        var d = 'M' + p[0][0].toFixed(2) + ',' + p[0][1].toFixed(2);
+        for (i = 0; i < n - 1; i++) {
+            var h = dx[i] / 3;
+            d += 'C' + (p[i][0] + h).toFixed(2) + ',' + (p[i][1] + t[i] * h).toFixed(2) + ' '
+               + (p[i + 1][0] - h).toFixed(2) + ',' + (p[i + 1][1] - t[i + 1] * h).toFixed(2) + ' '
+               + p[i + 1][0].toFixed(2) + ',' + p[i + 1][1].toFixed(2);
+        }
+        return d;
+    }
+
+    function rect(x, y, w, h, cls) {
+        var r = Math.min(w, h) / 2;
+        return '<rect class="' + cls + '" x="' + x.toFixed(2) + '" y="' + y.toFixed(2) + '" width="' + w.toFixed(2)
+             + '" height="' + h.toFixed(2) + '" rx="' + r.toFixed(2) + '" ry="' + r.toFixed(2) + '"/>';
+    }
+
+    function isOpen() { return panel && panel.classList.contains('open') && panel.offsetParent !== null; }
+
+    function render() {
+        if (!isOpen()) return;
+        var W = panel.clientWidth, H = panel.clientHeight, n = totals.length;
+        if (!W || !H || !n) { svg.innerHTML = ''; geom = null; return; }
+
+        var padL = PANEL_PAD_X, padR = PANEL_PAD_X, padT = PANEL_PAD_TOP;
+        var baseY = H - BASELINE_FROM_BOTTOM, maxBarH = baseY - padT;
+        var colW = (W - padL - padR) / n;                 // every month gets exactly the same width
+        var barW = clamp(colW * 0.48, 1.5, 7);
+        var minH = Math.max(1.5, barW * 0.6);             // a month with 1 flight still shows a small pill
+        var gap = clamp(barW * 0.4, 1.5, 3);              // space between the green and grey segments
+        var maxTotal = Math.max(1, Math.max.apply(null, totals));
+        function hOf(c) { return c > 0 ? Math.max(minH, c / maxTotal * maxBarH) : 0; }
+        function cx(i) { return padL + (i + 0.5) * colW; }
+
+        var out = [], barTop = [], i;
+
+        // Trend line (drawn first so it sits behind the bars)
+        var series = filtered ? selected : totals;
+        if (lastIdx >= 0) {
+            var sm = smooth(series, lastIdx), pts = [];
+            for (i = 0; i <= lastIdx; i++) pts.push([cx(i), Math.min(baseY - 1, baseY - sm[i] / maxTotal * maxBarH)]);
+            out.push('<path class="tl-trend' + (filtered ? ' tl-trend-sel' : '') + '" d="' + monotonePath(pts) + '"/>');
+        }
+
+        // Bars
+        out.push('<g class="' + (filtered ? 'tl-filtered' : '') + '">');
+        for (i = 0; i < n; i++) {
+            var tot = totals[i];
+            barTop[i] = baseY;
+            if (!tot) continue;
+            var x = cx(i) - barW / 2, g = '<g data-i="' + i + '">';
+            if (filtered) {
+                var s = selected[i], rest = tot - s, hs = s ? hOf(s) : 0;
+                if (s) { g += rect(x, baseY - hs, barW, hs, 'tl-sel'); barTop[i] = baseY - hs; }
+                if (rest) {
+                    var bottom = s ? baseY - hs - gap : baseY;
+                    var hh = Math.max(minH, bottom - (baseY - hOf(tot)));
+                    g += rect(x, bottom - hh, barW, hh, 'tl-bar');
+                    barTop[i] = bottom - hh;
+                }
+            } else {
+                var h = hOf(tot);
+                g += rect(x, baseY - h, barW, h, 'tl-bar');
+                barTop[i] = baseY - h;
+            }
+            out.push(g + '</g>');
+        }
+        out.push('</g>');
+
+        // Month labels: all months if they fit, otherwise quarters (1 4 7 10), otherwise none.
+        var monthFont = Math.min(8.5, colW / 1.15), monthStep = 1;
+        if (monthFont < 6) {
+            monthFont = Math.min(8, colW * 3 / 1.6);
+            monthStep = monthFont >= 6 ? 3 : 0;
+        }
+        var monthY = baseY + 15;
+        if (monthStep) {
+            for (i = 0; i < n; i++) {
+                var ym = idxToYM(i);
+                if (ym.m % monthStep !== 0) continue;
+                var label = ym.m + 1;
+                out.push('<text class="tl-month" x="' + cx(i).toFixed(2) + '" y="' + monthY + '" text-anchor="middle" style="font-size:'
+                    + monthFont.toFixed(2) + 'px;letter-spacing:' + (label >= 10 ? '-0.09em' : '0') + '">' + label + '</text>');
+            }
+        }
+
+        // Year labels, left-aligned with January. Shortened to '18 (or every other year) when space runs out.
+        var yearFont = 9, yearSpan = colW * 12, yearY = monthStep ? baseY + 29 : baseY + 17;
+        var yearShort = yearSpan < 28, yearEvery = yearSpan < 19 ? 2 : 1;
+        if (yearEvery === 2) yearShort = false;
+        for (i = 0; i < n; i++) {
+            var ymy = idxToYM(i);
+            if (ymy.m !== 0 || (ymy.y % yearEvery) !== 0) continue;
+            var yx = monthStep ? cx(i) - monthFont * 0.3 : cx(i) - barW / 2;
+            out.push('<text class="tl-year" x="' + yx.toFixed(2) + '" y="' + yearY + '" style="font-size:' + yearFont
+                + 'px;letter-spacing:0">' + (yearShort ? '’' + String(ymy.y).slice(2) : ymy.y) + '</text>');
+        }
+
+        svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+        svg.innerHTML = out.join('');
+        geom = { padL: padL, colW: colW, cx: cx, barTop: barTop, baseY: baseY, W: W };
+        if (hoverIdx >= 0) setHover(hoverIdx, true);
+    }
+
+    function scheduleRender() {
+        if (rafId) return;
+        rafId = requestAnimationFrame(function() { rafId = 0; render(); });
+    }
+
+    function setHover(i, force) {
+        if (!geom || i > lastIdx || i >= totals.length) i = -1;
+        if (i === hoverIdx && !force) return;
+        var prev = svg.querySelector('.tl-hover');
+        if (prev) prev.classList.remove('tl-hover');
+        hoverIdx = i;
+        svg.classList.toggle('tl-pointer', i >= 0);
+        if (i < 0) { tip.style.display = 'none'; return; }
+
+        var el = svg.querySelector('g[data-i="' + i + '"]');
+        if (el) el.classList.add('tl-hover');
+
+        var ym = idxToYM(i), tot = totals[i];
+        var txt = MONTH_NAMES[ym.m] + ' ' + ym.y + ' · ';
+        txt += filtered ? (selected[i] + ' of ' + tot + ' flights') : (tot + (tot === 1 ? ' flight' : ' flights'));
+        tip.textContent = txt;
+        tip.style.display = 'block';
+        var half = tip.offsetWidth / 2;
+        var x = clamp(geom.cx(i), half + 4, geom.W - half - 4);
+        tip.style.left = x + 'px';
+        tip.style.top = (geom.barTop[i] - 7) + 'px';
+    }
+
+    function indexFromEvent(e) {
+        if (!geom) return -1;
+        var r = svg.getBoundingClientRect();
+        var i = Math.floor((e.clientX - r.left - geom.padL) / geom.colW);
+        return (i < 0 || i >= totals.length) ? -1 : i;
+    }
+
+    // Clicking a month filters the map/table to that month; clicking the same month again clears it.
+    function toggleMonthFilter(i) {
+        var sdEl = document.getElementById('start-date'), edEl = document.getElementById('end-date');
+        if (!sdEl || !edEl) return;
+        var ym = idxToYM(i);
+        var first = ym.y + '-' + pad2(ym.m + 1) + '-01';
+        var last = ym.y + '-' + pad2(ym.m + 1) + '-' + pad2(new Date(ym.y, ym.m + 1, 0).getDate());
+        if (sdEl.value === first && edEl.value === last) { sdEl.value = ''; edEl.value = ''; }
+        else { sdEl.value = first; edEl.value = last; }
+        if (window.renderAllActiveFilters) window.renderAllActiveFilters();
+        if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+    }
+
+    function init() {
+        panel = document.getElementById('timeline-panel');
+        svg = document.getElementById('timeline-svg');
+        tip = document.getElementById('timeline-tip');
+        if (!panel) return;
+        svg.addEventListener('mousemove', function(e) { setHover(indexFromEvent(e)); });
+        svg.addEventListener('mouseleave', function() { setHover(-1); });
+        svg.addEventListener('click', function(e) {
+            var i = indexFromEvent(e);
+            if (i >= 0 && i <= lastIdx && totals[i]) toggleMonthFilter(i);
+        });
+        if (window.ResizeObserver) new ResizeObserver(scheduleRender).observe(panel);
+        else window.addEventListener('resize', scheduleRender);
+    }
+
+    // all: every logged entry; shown: what's left after the current filters.
+    function update(all, shown) {
+        if (all !== allRef) {
+            allRef = all;
+            var now = new Date(), maxIdx = -1;
+            for (var k = 0; k < all.length; k++) maxIdx = Math.max(maxIdx, monthIndexOf(all[k]));
+            var nowIdx = (now.getFullYear() - START_Y) * 12 + now.getMonth() - START_M;
+            lastIdx = Math.max(nowIdx, maxIdx);
+            var endYear = idxToYM(lastIdx).y;               // axis runs to December of the last year shown
+            var n = (endYear - START_Y) * 12 + 12 - START_M;
+            totals = countByMonth(all, n);
+        }
+        selected = countByMonth(shown, totals.length);
+        filtered = shown.length !== all.length;
+        render();
+    }
+
+    function toggle() {
+        if (!panel) return;
+        panel.classList.toggle('open');
+        if (!panel.classList.contains('open')) setHover(-1);
+        render();
+        if (typeof map !== 'undefined') map.invalidateSize();
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+
+    return { update: update, toggle: toggle, render: render };
+})();
+
+function toggleTimeline() { Timeline.toggle(); }
+
 function selectRandomFlight() {
     var container = document.getElementById('sidebar-routes');
     var rows = container ? container.querySelectorAll('.flight-row') : [];
@@ -3065,8 +3407,10 @@ Promise.all([
             }
 
             window.applyFiltersGlobal = function() {
-                var sd = document.getElementById('start-date').value ? new Date(document.getElementById('start-date').value) : null;
-                var ed = document.getElementById('end-date').value   ? new Date(document.getElementById('end-date').value)   : null;
+                // 'T00:00:00' makes the browser read the date in local time (a bare YYYY-MM-DD is read as UTC,
+                // which shifted the range back a day for anyone west of UTC)
+                var sd = document.getElementById('start-date').value ? new Date(document.getElementById('start-date').value + 'T00:00:00') : null;
+                var ed = document.getElementById('end-date').value   ? new Date(document.getElementById('end-date').value + 'T00:00:00')   : null;
                 if (sd) sd.setHours(0,0,0,0);
                 if (ed) ed.setHours(23,59,59,999);
                 
@@ -3211,7 +3555,8 @@ Promise.all([
                 });
 
                 renderMap(result);
-                renderVisibleRoutes(result); 
+                renderVisibleRoutes(result);
+                Timeline.update(flights, result);
             };
 
             window.resetFilters = function() {
@@ -3271,12 +3616,14 @@ Promise.all([
                     window.renderAllActiveFilters();
                     renderMap(flights);
                     renderVisibleRoutes(flights);
+                    Timeline.update(flights, flights);
                 },
                 error: function(err) {
                     console.error('Could not load livery colors:', err);
                     window.renderAllActiveFilters();
                     renderMap(flights);
                     renderVisibleRoutes(flights);
+                    Timeline.update(flights, flights);
                 }
             });
 
