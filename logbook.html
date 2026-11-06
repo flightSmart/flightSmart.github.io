@@ -737,21 +737,17 @@
             --tl-bar: rgb(176, 176, 176);          /* month bar */
             --tl-bar-dim: rgb(118, 118, 118);      /* the non-matching part of a bar while filters are on */
             --tl-bar-hover: rgb(250, 250, 250);
-            --tl-trend: rgb(108, 108, 108);        /* smoothed trend line behind the bars */
             --tl-sel: rgb(121, 175, 145);          /* #79af91 — the part of a bar that matches the filters (same in both themes) */
             --tl-sel-hover: rgb(160, 205, 179);
-            --tl-sel-trend: rgba(121, 175, 145, 0.45);
             --tl-month: rgb(135, 135, 135);
             --tl-year: rgb(214, 214, 214);
         }
         [data-theme="light"] {
-            --tl-bar: rgb(150, 150, 150);
-            --tl-bar-dim: rgb(196, 196, 196);
-            --tl-bar-hover: rgb(45, 45, 45);
-            --tl-trend: rgb(196, 196, 196);
+            --tl-bar: #c4c4c4;
+            --tl-bar-dim: #c4c4c4;
+            --tl-bar-hover: #969696;
             --tl-sel: rgb(100, 195, 153);          /* #64c399 */
             --tl-sel-hover: rgb(62, 160, 117);
-            --tl-sel-trend: rgba(100, 195, 153, 0.45);
             --tl-month: rgb(130, 130, 130);
             --tl-year: rgb(70, 70, 70);
         }
@@ -772,8 +768,6 @@
         #timeline-svg text { font-family: var(--font-mono); }
         .tl-month { fill: var(--tl-month); }
         .tl-year  { fill: var(--tl-year); }
-        .tl-trend { fill: none; stroke: var(--tl-trend); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .tl-trend.tl-trend-sel { stroke: var(--tl-sel-trend); }
         .tl-bar { fill: var(--tl-bar); }
         .tl-filtered .tl-bar { fill: var(--tl-bar-dim); }
         .tl-sel { fill: var(--tl-sel); }
@@ -825,7 +819,7 @@
             letter-spacing: 0;
             padding: 14px 22px 18px;
         }
-        .lb-head { position: relative; text-align: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px dotted var(--border-main); }
+        .lb-head { position: relative; text-align: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-main); }
         /* same as the "darkeyes" in the top-left of the page */
         .lb-pilot { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-sans); font-weight: bold; font-size: 10px; color: var(--text-main); }
         .lb-pilot img { width: 15px; border-radius: 50%; transform: translateY(1px); }
@@ -2615,12 +2609,11 @@ var Timeline = (function() {
     // Axis starts a few empty months before the first logged flight (11 Dec 2017) as a lead-in.
     var START_Y = 2017, START_M = 7;        // August 2017 (JS months are 0-based)
     var MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    var SMOOTH_SIGMA = 1.5;                 // trend line smoothing, in months
     var PANEL_PAD_X = 22, PANEL_PAD_TOP = 22, BASELINE_FROM_BOTTOM = 46;
 
     var panel, svg, tip;
     var allRef = null, allLen = 0, totals = [], selected = [], filtered = false;
-    var lastIdx = -1;                       // last month that gets a trend line (current month or last flight)
+    var lastIdx = -1;                       // last month that can be hovered (current month or last flight)
     var geom = null, hoverIdx = -1, rafId = 0;
 
     function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -2641,44 +2634,6 @@ var Timeline = (function() {
             if (i >= 0 && i < n) arr[i]++;
         }
         return arr;
-    }
-
-    // Gaussian smoothing, renormalised at the edges so the ends aren't dragged toward zero.
-    function smooth(arr, upto) {
-        var out = [], r = Math.ceil(SMOOTH_SIGMA * 3), w = [];
-        for (var k = -r; k <= r; k++) w.push(Math.exp(-(k * k) / (2 * SMOOTH_SIGMA * SMOOTH_SIGMA)));
-        for (var i = 0; i <= upto; i++) {
-            var s = 0, ws = 0;
-            for (var j = -r; j <= r; j++) {
-                var x = i + j;
-                if (x < 0 || x > upto) continue;
-                s += arr[x] * w[j + r]; ws += w[j + r];
-            }
-            out.push(ws ? s / ws : 0);
-        }
-        return out;
-    }
-
-    // Monotone cubic curve through the points: smooth, but never overshoots (so it can't dip below the baseline).
-    function monotonePath(p) {
-        var n = p.length;
-        if (!n) return '';
-        if (n === 1) return 'M' + p[0][0].toFixed(2) + ',' + p[0][1].toFixed(2);
-        var dx = [], m = [], t = [], i;
-        for (i = 0; i < n - 1; i++) { dx[i] = p[i + 1][0] - p[i][0]; m[i] = (p[i + 1][1] - p[i][1]) / dx[i]; }
-        t[0] = m[0]; t[n - 1] = m[n - 2];
-        for (i = 1; i < n - 1; i++) {
-            t[i] = (m[i - 1] * m[i] <= 0) ? 0
-                 : 3 * (dx[i - 1] + dx[i]) / ((2 * dx[i] + dx[i - 1]) / m[i - 1] + (dx[i] + 2 * dx[i - 1]) / m[i]);
-        }
-        var d = 'M' + p[0][0].toFixed(2) + ',' + p[0][1].toFixed(2);
-        for (i = 0; i < n - 1; i++) {
-            var h = dx[i] / 3;
-            d += 'C' + (p[i][0] + h).toFixed(2) + ',' + (p[i][1] + t[i] * h).toFixed(2) + ' '
-               + (p[i + 1][0] - h).toFixed(2) + ',' + (p[i + 1][1] - t[i + 1] * h).toFixed(2) + ' '
-               + p[i + 1][0].toFixed(2) + ',' + p[i + 1][1].toFixed(2);
-        }
-        return d;
     }
 
     function rect(x, y, w, h, cls) {
@@ -2705,14 +2660,6 @@ var Timeline = (function() {
         function cx(i) { return padL + (i + 0.5) * colW; }
 
         var out = [], barTop = [], i;
-
-        // Trend line (drawn first so it sits behind the bars)
-        var series = filtered ? selected : totals;
-        if (lastIdx >= 0) {
-            var sm = smooth(series, lastIdx), pts = [];
-            for (i = 0; i <= lastIdx; i++) pts.push([cx(i), Math.min(baseY - 1, baseY - sm[i] / maxTotal * maxBarH)]);
-            out.push('<path class="tl-trend' + (filtered ? ' tl-trend-sel' : '') + '" d="' + monotonePath(pts) + '"/>');
-        }
 
         // Bars
         out.push('<g class="' + (filtered ? 'tl-filtered' : '') + '">');
@@ -3443,7 +3390,7 @@ var Logbook = (function() {
                 (function tick() {
                     el.textContent = text.slice(0, ++k);
                     if (k >= text.length) return done();
-                    setTimeout(tick, 14);
+                    setTimeout(tick, 8);
                 })();
             });
         }
@@ -3455,7 +3402,8 @@ var Logbook = (function() {
             } catch (e) { return new Date().toLocaleString(); }
         }
         rule();
-        var printed = type(feed('lb-stamp'), stamp());
+        feed('lb-stamp').textContent = stamp();
+        var printed = Promise.resolve();
 
         var i = 0;
         function next() {
@@ -3482,7 +3430,7 @@ var Logbook = (function() {
                 var end = res.ok ? type(feed('lb-done'), 'FILED, GOOD DAY.')
                                  : type(feed('lb-fail'), 'NOT FILED: ' + String(res.error || 'unknown error').toUpperCase());
                 return end.then(function() {
-                    if (res.ok && !res.emailed) feed('lb-note').textContent = '(confirmation email not sent: ' + (res.emailError || 'unknown') + ')';
+                    if (res.ok && !res.emailed && !res.emailDeferred) feed('lb-note').textContent = '(confirmation email not sent: ' + (res.emailError || 'unknown') + ')';
                     rule();
                     return res;
                 });
@@ -3504,7 +3452,7 @@ var Logbook = (function() {
         busy = true;
         els.submit.disabled = true;
         if (!submissionId) submissionId = newSubmissionId();
-        var body = { action: 'log', password: els.sig.value, submissionId: submissionId, flight: c.flight };
+        var body = { action: 'log', password: els.sig.value, submissionId: submissionId, flight: c.flight, deferEmail: true };
         playSequence(els.status, api(body)).then(function(res) {
             busy = false;
             els.submit.disabled = false;
@@ -3519,6 +3467,18 @@ var Logbook = (function() {
             }
             els.num.textContent = '#' + res.flightNumber;
             setFiled(true);
+            if (res.emailDeferred) {
+                api({ action: 'notify', password: body.password, submissionId: body.submissionId }).then(function(r) {
+                    if (!r.ok) throw new Error(r.error);
+                }).catch(function(e) {
+                    var receipt = els.status.querySelector('.lb-receipt');
+                    if (!receipt || !filed) return;
+                    var note = document.createElement('div');
+                    note.className = 'lb-rl lb-note';
+                    note.textContent = '(confirmation email not sent: ' + (e.message || e) + ')';
+                    receipt.insertBefore(note, receipt.lastChild);
+                });
+            }
         });
     }
 
@@ -4529,27 +4489,27 @@ Promise.all([
 
                     } else {
                         // Standard Flight & Traffic Pattern Logic
-                        var tpMatch = f.remarks ? f.remarks.match(/\bTP\s+at\s+([A-Z0-9]{3,4})\b/i) : null;
-                        var isTP = tpMatch || (f.departure === f.arrival);
-
-                        if (isTP) {
-                            var sz = getTpSize();
-                            
-                            // Default to the departure airport
-                            var targetAp = dep; 
-
-                            // If the remarks specify an airport (e.g., "TP at KSAN"), use that airport's data instead
-                            if (tpMatch && tpMatch[1]) {
-                                var extractedIcao = tpMatch[1].toUpperCase();
-                                if (airportData[extractedIcao]) {
-                                    targetAp = airportData[extractedIcao];
-                                }
-                            }
-
-                            // Orient the pattern along the runway. Optional remark hint: "TP at KSAN RWY 27L"
+                        // Every "TP at XXXX" in the remarks gets its own pattern (e.g. "TP at KBOS, TP at KDCA").
+                        // A runway right after the airport ("TP at KSAN RWY 27L") orients that pattern; a runway
+                        // mentioned elsewhere in the remarks is used when there's only one pattern.
+                        var tpTargets = [], seenTp = {};
+                        var tpRe = /\bTP\s+at\s+([A-Z0-9]{3,4})\b(?:\s*(?:,|;)?\s*(?:RWY|RW|RUNWAY)\s*0?(\d{1,2}[LRC]?)\b)?/gi, tpM;
+                        while (f.remarks && (tpM = tpRe.exec(f.remarks))) {
+                            var tpCode = tpM[1].toUpperCase();
+                            if (seenTp[tpCode] || !airportData[tpCode]) continue;
+                            seenTp[tpCode] = true;
+                            tpTargets.push({ ap: airportData[tpCode], rwy: tpM[2] ? tpM[2].toUpperCase() : null });
+                        }
+                        var hasTpRemark = /\bTP\s+at\s+[A-Z0-9]{3,4}\b/i.test(f.remarks || '');
+                        if (!tpTargets.length && (hasTpRemark || f.departure === f.arrival)) tpTargets.push({ ap: dep, rwy: null });
+                        if (tpTargets.length === 1 && !tpTargets[0].rwy) {
                             var rwyMatch = f.remarks ? f.remarks.match(/\b(?:RWY|RW|RUNWAY)\s*0?(\d{1,2}[LRC]?)\b/i) : null;
-                            var rwyHint = rwyMatch ? rwyMatch[1].toUpperCase() : null;
-                            var rectPts = makeTpPoints(targetAp.lat, targetAp.lon, sz, getTpHeading(targetAp.ident, rwyHint));
+                            tpTargets[0].rwy = rwyMatch ? rwyMatch[1].toUpperCase() : null;
+                        }
+
+                        tpTargets.forEach(function(t) {
+                            var targetAp = t.ap, rwyHint = t.rwy;
+                            var rectPts = makeTpPoints(targetAp.lat, targetAp.lon, getTpSize(), getTpHeading(targetAp.ident, rwyHint));
 
                             mapOffsets.forEach(function(offset) {
                                 var shifted = rectPts.map(function(p) { return [p[0], p[1] + offset]; });
@@ -4562,7 +4522,7 @@ Promise.all([
                                 linesForFlight.push(rectLine);
                                 tpLayers.push(rectLine);
                             });
-                        }
+                        });
                         mapOffsets.forEach(function(offset) {
                             var shiftedPts = continuousPts.map(function(p) { return [p[0], p[1] + offset]; });
                             var line = L.polyline(shiftedPts, { color: '#64c49a', weight: 1, opacity: 0.5, interactive: false });
