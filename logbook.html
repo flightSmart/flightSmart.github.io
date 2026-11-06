@@ -787,6 +787,154 @@
             transform: translate(-50%, -100%);
         }
 
+        /* ── LOGBOOK (log a flight) ── */
+        .map-overlay-btns { z-index: 1500; }          /* stay sharp & clickable above the blurred map */
+        #log-toggle { display: inline-flex; align-items: center; gap: 4px; }
+        #log-toggle svg { width: 16px; height: 16px; }
+        .lb-overlay {
+            position: absolute; inset: 0; z-index: 1400;
+            display: flex; align-items: flex-start; justify-content: center;
+            padding: 56px 12px 12px;
+            background: rgba(18, 18, 18, 0.35);
+            -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+            overflow-y: auto;
+        }
+        [data-theme="light"] .lb-overlay { background: rgba(248, 247, 244, 0.35); }
+        .lb-overlay[hidden] { display: none; }
+        .lb-card {
+            position: relative;
+            width: 100%; max-width: 540px;
+            margin: auto 0;
+            background: var(--bg-dark);
+            border: 1px solid var(--border-main);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            padding: 18px 26px 22px;
+        }
+        .lb-head { position: relative; text-align: center; margin-bottom: 18px; }
+        .lb-pilot { font-size: 9px; color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px; letter-spacing: 0; }
+        .lb-pilot img { width: 11px; height: 11px; border-radius: 50%; }
+        .lb-title { font-size: 20px; letter-spacing: 0; line-height: 1.2; }
+        .lb-num { position: absolute; right: 22px; top: 2px; font-size: 11px; letter-spacing: 0; }
+        .lb-icon-btn {
+            position: absolute; top: -4px;
+            background: none; border: 1px solid transparent; color: var(--text-muted);
+            width: 24px; height: 24px; padding: 0; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono); font-size: 14px; line-height: 1;
+        }
+        .lb-icon-btn:hover, .lb-icon-btn:focus-visible { color: var(--text-main); border-color: var(--border-main); outline: none; }
+        .lb-icon-btn svg { width: 14px; height: 14px; }
+        #lb-settings-btn { left: -10px; }
+        #lb-close-btn { right: -12px; }
+
+        .lb-row { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; margin-bottom: 14px; align-items: end; }
+        .lb-row.lb-one { grid-template-columns: 1fr; }
+        .lb-field { min-width: 0; position: relative; }
+        .lb-inline { display: flex; align-items: baseline; gap: 10px; }
+        .lb-inline .lb-input { flex: 1; min-width: 0; }
+        .lb-label { font-size: 12px; letter-spacing: 0; text-transform: uppercase; white-space: nowrap; color: var(--text-main); }
+        .lb-stack .lb-label { display: block; margin-bottom: 2px; }
+        .lb-hint { font-size: 8px; color: var(--text-muted); letter-spacing: 0; text-transform: none; margin-left: 6px; }
+
+        .lb-card .lb-input {
+            width: 100%;
+            background: transparent;
+            border: none; border-bottom: 1px dotted var(--border-main);
+            border-radius: 0;
+            color: var(--text-main);
+            font-family: 'Shadows Into Light', cursive;
+            font-size: 15px; letter-spacing: 1px;
+            padding: 2px 4px 0; height: 26px;
+            outline: none;
+        }
+        .lb-card .lb-input::placeholder { color: var(--text-muted); opacity: 0.55; }
+        .lb-card .lb-input:focus { border-bottom: 1px solid var(--text-main); }
+        .lb-card input[type="date"].lb-input { color-scheme: dark; cursor: text; }
+        [data-theme="light"] .lb-card input[type="date"].lb-input { color-scheme: light; }
+        .lb-card .lb-short { max-width: 130px; }
+        .lb-card .lb-ldgs { width: 40px; text-align: center; }
+        .lb-err .lb-input, .lb-err .lb-chips, .lb-err .lb-box { border-bottom: 1px solid var(--exc-brd) !important; }
+        .lb-err .lb-label { color: var(--exc-txt); }
+
+        /* Live org / airframe: one filled bar, two pick-only dropdowns */
+        .lb-box { background: var(--bg-light); display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; padding: 0 4px; border-bottom: 1px dotted transparent; }
+        .lb-card .lb-box .lb-input { border-bottom: none; height: 30px; }
+        .lb-card .lb-pick { cursor: pointer; caret-color: transparent; }
+        .lb-card .lb-pick:focus { caret-color: auto; }
+
+        /* Pattern work chips */
+        .lb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; border-bottom: 1px dotted var(--border-main); min-height: 26px; padding: 0 4px; cursor: text; }
+        .lb-chips:focus-within { border-bottom: 1px solid var(--text-main); }
+        .lb-card .lb-chips .lb-input { border: none; flex: 1; min-width: 120px; width: auto; padding: 2px 0 0; }
+        .lb-chip { font-family: 'Shadows Into Light', cursive; font-size: 15px; letter-spacing: 1px; white-space: nowrap; }
+        .lb-chip button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 10px; padding: 0 2px; }
+        .lb-chip button:hover { color: var(--exc-txt); }
+
+        .lb-card textarea.lb-remarks {
+            width: 100%; min-height: 90px; resize: vertical;
+            background: var(--bg-light); color: var(--text-main);
+            border: none; border-bottom: 1px dotted transparent; border-radius: 0;
+            font-family: 'Shadows Into Light', cursive; font-size: 15px; letter-spacing: 1px; line-height: 1.35;
+            padding: 6px 8px; outline: none; display: block;
+        }
+        .lb-card textarea.lb-remarks:focus { border-bottom: 1px solid var(--text-main); }
+
+        /* Signature (= password). The real input is invisible; a written signature appears as you type. */
+        .lb-sig { position: relative; }
+        .lb-card .lb-sig .lb-input { color: transparent; caret-color: transparent; height: 34px; }
+        .lb-sig-ink {
+            position: absolute; left: 6px; bottom: 3px; pointer-events: none;
+            font-family: 'Shadows Into Light', cursive; font-size: 22px; letter-spacing: 1px; line-height: 1;
+            color: var(--text-main); white-space: nowrap;
+        }
+        .lb-sig .lb-input:focus + .lb-sig-ink:empty::after { content: '|'; font-family: var(--font-mono); font-size: 14px; color: var(--text-muted); animation: lb-blink 1s steps(1) infinite; }
+        @keyframes lb-blink { 50% { opacity: 0; } }
+
+        .lb-btn {
+            background: var(--bg-light); color: var(--text-main);
+            border: 1px solid var(--bg-light);
+            font-family: var(--font-mono); font-size: 13px; letter-spacing: 0;
+            height: 40px; width: 100%; cursor: pointer; transition: 0.15s;
+        }
+        .lb-btn:hover, .lb-btn:focus-visible { border-color: var(--text-main); outline: none; background: var(--bg-hover); }
+        .lb-btn:disabled { opacity: 0.5; cursor: default; }
+        .lb-btn-small { height: 24px; width: auto; padding: 0 10px; font-size: 10px; }
+
+        .lb-status { min-height: 16px; margin-top: 12px; font-size: 10px; letter-spacing: 0; line-height: 1.6; color: var(--text-muted); text-transform: uppercase; }
+        .lb-status .lb-arrow { color: var(--border-main); margin: 0 6px; }
+        .lb-status .lb-step { animation: lb-in 0.25s ease; white-space: nowrap; display: inline-block; }
+        .lb-status .lb-step.lb-busy::after { content: ''; animation: lb-dots 1.2s steps(4) infinite; }
+        .lb-status .lb-done { color: var(--accent-green); }
+        .lb-status .lb-fail { color: var(--exc-txt); }
+        @keyframes lb-in { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes lb-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75% { content: '...'; } }
+
+        /* Dropdowns reuse the filter tab's .tag-dropdown look */
+        .lb-dropdown { z-index: 10000; }
+        .lb-dropdown .opt-label { font-family: var(--font-mono); }
+
+        /* Settings */
+        .lb-set-section { margin-bottom: 18px; }
+        .lb-set-note { font-size: 9px; color: var(--text-muted); letter-spacing: 0; margin: -10px 0 16px; text-align: center; }
+        .lb-org { border: 1px solid var(--border-faint); padding: 8px 10px 10px; margin-bottom: 8px; }
+        .lb-org-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+        .lb-af { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.3fr 18px; gap: 6px; align-items: end; margin-bottom: 4px; }
+        .lb-af-head { font-size: 8px; color: var(--text-muted); letter-spacing: 0; }
+        .lb-card .lb-af .lb-input, .lb-card .lb-org-head .lb-input { font-size: 13px; height: 22px; }
+        .lb-x { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 11px; padding: 0; }
+        .lb-x:hover { color: var(--exc-txt); }
+        .lb-friends { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 8px; }
+        .lb-set-actions { display: grid; grid-template-columns: 1fr 1fr; column-gap: 26px; align-items: end; }
+
+        @media (max-width: 768px) {
+            .lb-overlay { padding-top: 70px; }
+            .lb-card { padding: 16px 16px 18px; }
+            .lb-row { column-gap: 14px; }
+            .lb-af { grid-template-columns: 1fr 1fr 18px; }
+        }
+
         /* ── ZEN MODE (Hide UI) ── */
         body.ui-hidden #timeline-panel,
         body.ui-hidden #left-panel,
@@ -988,6 +1136,11 @@
             </svg>
         </button>
 
+        <button id="log-toggle" class="map-btn" onclick="Logbook.toggle()" title="Log a Flight">
+            <svg viewBox="4 8 92 92" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path fill="#d8d8d9" fill-rule="evenodd" d="m62.211 65.914c0.11719 0.50781 0.042968 1.0625-0.25 1.5391-2.3359 3.8789-5.9805 6.75-8.9023 7.75-1.6719 0.57422-3.1758 0.55859-4.3047 0.09375-1.2539-0.52344-2.2109-1.5547-2.5469-3.293-0.23438-1.2461-0.09375-3.0508 0.71875-5.4648-6.6758 5.8906-18.801 17.906-30.57 24.844-2.6523 1.5625-4.4922 2.4727-5.6641 2.8672-0.8125 0.27344-1.4375 0.33594-1.875 0.30859l-0.80078-0.16797-0.58984-0.31641-0.44922-0.42188-0.33203-0.51172-0.19922-0.61719-0.042968-0.77344c0.035156-0.36719 0.14453-0.82812 0.38281-1.3633 0.82422-1.8906 3.8125-5.6758 7.4258-10.16 5.0664-6.2891 11.406-14.105 13.867-19.949 0.12891-0.30078 0.23828-0.60547 0.33594-0.89453-1.3008 0.71484-2.9414 1.9336-4.6914 3.3047-5.5859 4.3711-11.902 10.496-11.902 10.496-0.82812 0.80078-2.1445 0.77734-2.9453-0.046875s-0.77734-2.1445 0.046875-2.9453c0 0 12.996-12.504 18.645-15 1.1562-0.50781 2.1367-0.65234 2.8359-0.55859l0.60156 0.13672 0.61328 0.29688 0.55078 0.45703 0.41016 0.56641 0.34375 0.95312c0.070313 0.35547 0.09375 0.79297 0.042969 1.3125-0.082032 0.83594-0.39844 2.0039-1.0469 3.543-2.582 6.1211-9.1562 14.352-14.461 20.938-1.7188 2.1406-3.3086 4.082-4.5352 5.7031 0.42969-0.23437 0.87109-0.48047 1.3164-0.74219 12.438-7.3359 25.246-20.473 31.383-25.645 1.9961-1.6758 3.5547-2.5469 4.3203-2.6602l0.63281-0.015626 0.51172 0.10156 0.45703 0.19531 0.42188 0.30469 0.58203 0.77734 0.24609 1.0352c0.035156 0.67188-0.24609 1.9805-1.1406 3.9805-0.96484 2.1797-1.4141 3.793-1.3906 4.9453 0.003906 0.19922 0.027343 0.37891 0.070312 0.53516 0.007813 0.035157-0.011719 0.082032 0.023438 0.09375 0.17188 0.074219 0.39453 0.042969 0.63672 0.003907 0.49609-0.078125 1.0312-0.27734 1.5938-0.55859 1.8711-0.92969 3.9258-2.7266 5.4492-5.0117-0.22266-0.25781-0.375-0.57031-0.45312-0.90625l-1.4141-6.6562c-0.10547-0.48047-0.035157-0.98047 0.19922-1.4141l24.645-46.168c0.85547-1.6016 2.3086-2.7969 4.0469-3.3242 1.7344-0.53125 3.6094-0.34766 5.207 0.51172h0.007813c1.6016 0.85547 2.7969 2.3125 3.3281 4.0508 0.52734 1.7305 0.34375 3.6055-0.51562 5.207l-24.641 46.172c-0.25781 0.48047-0.69922 0.84375-1.2188 1.0078z"/></svg>
+            LOG
+        </button>
+
         <button id="sidebar-toggle" class="map-btn" onclick="toggleSidebar()" title="Toggle Filter Panel">FILTERS (0) ></button>
 
     </div>
@@ -997,6 +1150,131 @@
     <div id="timeline-panel">
         <svg id="timeline-svg" xmlns="http://www.w3.org/2000/svg"></svg>
         <div id="timeline-tip"></div>
+    </div>
+
+    <!-- LOGBOOK: log a flight -->
+    <div id="lb-overlay" class="lb-overlay" hidden>
+        <form id="lb-card" class="lb-card" autocomplete="off" novalidate>
+            <div class="lb-head">
+                <button type="button" class="lb-icon-btn" id="lb-settings-btn" title="Live orgs, airframes &amp; friends" tabindex="-1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                </button>
+                <div class="lb-pilot"><img src="/images/pfp.png" alt="">darkeyes</div>
+                <div class="lb-title" id="lb-title">LOGBOOK</div>
+                <div class="lb-num" id="lb-num">#</div>
+                <button type="button" class="lb-icon-btn" id="lb-close-btn" title="Close (Esc)" tabindex="-1">✕</button>
+            </div>
+
+            <!-- ── FORM VIEW ── -->
+            <div id="lb-form-view">
+                <div class="lb-row lb-one" style="justify-items: center;">
+                    <div class="lb-field lb-inline" data-field="date" style="width: 240px;">
+                        <label class="lb-label" for="lb-date">Date</label>
+                        <input class="lb-input" id="lb-date" type="date">
+                    </div>
+                </div>
+                <div class="lb-row">
+                    <div class="lb-field lb-inline" data-field="time">
+                        <label class="lb-label" for="lb-time">Flight Time</label>
+                        <input class="lb-input lb-short" id="lb-time" type="text" placeholder="h:mm" inputmode="numeric" maxlength="6">
+                    </div>
+                    <div class="lb-field lb-inline" data-field="ldgs" style="justify-content: flex-end;">
+                        <label class="lb-label" for="lb-ldgs">Landings</label>
+                        <input class="lb-input lb-ldgs" id="lb-ldgs" type="text" inputmode="numeric" maxlength="3" value="1">
+                    </div>
+                </div>
+                <div class="lb-row">
+                    <div class="lb-field lb-stack" data-field="dep">
+                        <label class="lb-label" for="lb-dep">Departure</label>
+                        <input class="lb-input" id="lb-dep" type="text" placeholder="search airports">
+                    </div>
+                    <div class="lb-field lb-stack" data-field="arr">
+                        <label class="lb-label" for="lb-arr">Arrival</label>
+                        <input class="lb-input" id="lb-arr" type="text" placeholder="search airports">
+                    </div>
+                </div>
+                <div class="lb-row lb-one">
+                    <div class="lb-field lb-stack" data-field="tp">
+                        <label class="lb-label" for="lb-tp">Pattern Work <span class="lb-hint">adds “TP at …” to remarks</span></label>
+                        <div class="lb-chips" id="lb-tp-chips"><input class="lb-input" id="lb-tp" type="text"></div>
+                    </div>
+                </div>
+                <div class="lb-row lb-one" style="margin-bottom: 14px;">
+                    <div class="lb-field" data-field="org">
+                        <div class="lb-row" style="margin-bottom: 2px;">
+                            <label class="lb-label" for="lb-org">Live Org</label>
+                            <label class="lb-label" for="lb-af">Airframe</label>
+                        </div>
+                        <div class="lb-box">
+                            <input class="lb-input lb-pick" id="lb-org" type="text" placeholder="—">
+                            <input class="lb-input lb-pick" id="lb-af" type="text" placeholder="—">
+                        </div>
+                    </div>
+                </div>
+                <div class="lb-row">
+                    <div class="lb-field lb-stack" data-field="aircraft">
+                        <label class="lb-label" for="lb-aircraft">Aircraft</label>
+                        <input class="lb-input" id="lb-aircraft" type="text">
+                    </div>
+                    <div class="lb-field lb-stack" data-field="livery">
+                        <label class="lb-label" for="lb-livery">Livery</label>
+                        <input class="lb-input" id="lb-livery" type="text">
+                    </div>
+                </div>
+                <div class="lb-row lb-one">
+                    <div class="lb-field lb-stack" data-field="remarks">
+                        <label class="lb-label" for="lb-remarks">Remarks <span class="lb-hint">@ to add a friend</span></label>
+                        <textarea class="lb-remarks" id="lb-remarks" rows="4" spellcheck="true"></textarea>
+                    </div>
+                </div>
+                <div class="lb-row" style="margin-bottom: 0;">
+                    <div class="lb-field lb-stack" data-field="sig">
+                        <label class="lb-label" for="lb-sig">Signature</label>
+                        <input type="text" name="username" value="darkeyes" autocomplete="username" hidden>
+                        <div class="lb-sig">
+                            <input class="lb-input" id="lb-sig" type="password" name="password" autocomplete="current-password">
+                            <span class="lb-sig-ink" id="lb-sig-ink"></span>
+                        </div>
+                    </div>
+                    <div class="lb-field">
+                        <button type="submit" class="lb-btn" id="lb-submit">SUBMIT</button>
+                    </div>
+                </div>
+                <div class="lb-status" id="lb-status" aria-live="polite"></div>
+            </div>
+
+            <!-- ── SETTINGS VIEW ── -->
+            <div id="lb-settings-view" hidden>
+                <div class="lb-set-note">Saved with your Apps Script, never in the logbook sheet.</div>
+                <div class="lb-set-section">
+                    <div class="lb-label" style="margin-bottom: 8px;">Live Orgs &amp; Airframes</div>
+                    <div id="lb-orgs-editor"></div>
+                    <button type="button" class="lb-btn lb-btn-small" id="lb-add-org">+ ORG</button>
+                </div>
+                <div class="lb-set-section">
+                    <div class="lb-label">Friends <span class="lb-hint">for @ in remarks</span></div>
+                    <div class="lb-friends" id="lb-friends-editor"></div>
+                    <input class="lb-input" id="lb-friend-new" type="text" placeholder="add a name, press Enter" style="max-width: 260px;">
+                </div>
+                <div class="lb-set-actions">
+                    <div class="lb-field lb-stack">
+                        <label class="lb-label" for="lb-set-sig">Signature</label>
+                        <div class="lb-sig">
+                            <input class="lb-input" id="lb-set-sig" type="password" autocomplete="current-password">
+                            <span class="lb-sig-ink" id="lb-set-sig-ink"></span>
+                        </div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <button type="button" class="lb-btn" id="lb-set-back">BACK</button>
+                        <button type="button" class="lb-btn" id="lb-set-save">SAVE</button>
+                    </div>
+                </div>
+                <div class="lb-status" id="lb-set-status" aria-live="polite"></div>
+                <datalist id="lb-dl-mfr"></datalist>
+                <datalist id="lb-dl-type"></datalist>
+                <datalist id="lb-dl-livery"></datalist>
+            </div>
+        </form>
     </div>
 </div>
 <div id="sidebar" style="display: none;">
@@ -2253,7 +2531,9 @@ window.updateStatDisplay = function(type) {
 };
 
 document.addEventListener('keydown', function(e) {
-    if (e.target.tagName.toLowerCase() === 'input') return;
+    var tag = e.target.tagName.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target.isContentEditable) return;
+    if (window.Logbook && Logbook.isOpen()) return;
     if (e.key.toLowerCase() === 'm') {
         document.body.classList.toggle('ui-hidden');
         setTimeout(function(){ 
@@ -2265,6 +2545,7 @@ document.addEventListener('keydown', function(e) {
 
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
+        if (window.Logbook && Logbook.isOpen()) return;
         var anyDropdownOpen = document.querySelector('.tag-dropdown.open');
         if (anyDropdownOpen) return;
         if (filterHistory.length > 0) {
@@ -2320,7 +2601,7 @@ var Timeline = (function() {
     var PANEL_PAD_X = 22, PANEL_PAD_TOP = 22, BASELINE_FROM_BOTTOM = 46;
 
     var panel, svg, tip;
-    var allRef = null, totals = [], selected = [], filtered = false;
+    var allRef = null, allLen = 0, totals = [], selected = [], filtered = false;
     var lastIdx = -1;                       // last month that gets a trend line (current month or last flight)
     var geom = null, hoverIdx = -1, rafId = 0;
 
@@ -2541,8 +2822,8 @@ var Timeline = (function() {
 
     // all: every logged entry; shown: what's left after the current filters.
     function update(all, shown) {
-        if (all !== allRef) {
-            allRef = all;
+        if (all !== allRef || all.length !== allLen) {
+            allRef = all; allLen = all.length;
             var now = new Date(), maxIdx = -1;
             for (var k = 0; k < all.length; k++) maxIdx = Math.max(maxIdx, monthIndexOf(all[k]));
             var nowIdx = (now.getFullYear() - START_Y) * 12 + now.getMonth() - START_M;
@@ -2571,6 +2852,834 @@ var Timeline = (function() {
 })();
 
 function toggleTimeline() { Timeline.toggle(); }
+
+// ═══════════════════════════════════════════════════════════
+// LOGBOOK — log a flight to the Google Sheet through the Apps Script web app (Code.gs).
+// The script only ever adds one new row per flight; it can't change or remove anything already logged.
+// ═══════════════════════════════════════════════════════════
+// Paste the Apps Script web app URL here (ends in /exec). Same URL on flightsmart.tools and flightsmart.github.io.
+var LOGBOOK_API_URL = '';
+var LOGBOOK_TZ = 'America/New_York';
+var PINNED_ORGS = ['daydreamers', 'vela'];   // always listed first, in this order
+
+// Live orgs in display order: daydreamers, Vela, then most flown, then A–Z. (Also used by the filter tab.)
+function orderOrgNames(names, flightList) {
+    var counts = {};
+    (flightList || []).forEach(function(f) {
+        if (f.org) { var k = f.org.toLowerCase(); counts[k] = (counts[k] || 0) + 1; }
+    });
+    function pin(n) { var i = PINNED_ORGS.indexOf(String(n).toLowerCase()); return i < 0 ? 99 : i; }
+    return names.slice().sort(function(a, b) {
+        return pin(a) - pin(b) || (counts[b.toLowerCase()] || 0) - (counts[a.toLowerCase()] || 0) || a.localeCompare(b);
+    });
+}
+
+var Logbook = (function() {
+    // Used until friends are saved in Settings (pulled from past remarks).
+    var SEED_FRIENDS = ['j_vonl', 'GarlicIceCream', 'captaincrazy', 'Evan', 'ev.an9671', 'Olivia', 'samtheboss', 'Skyler',
+        'alvaroM', 'AdamCallow', 'Eggs_Aviation', 'cathaypacific2025', 'Canton_HK', 'thatonavgeek1', 'SlipperyBooney',
+        'AV-Booney', 'CX-01ProjectDread', 'sierracharlie24', 'Gwengo', 'Maya', 'CitrusAviatrix', 'Atlas', 'Hello_Kitty',
+        'falcon.ccp', 'RTCarter1', 'TaiXipø', 'MAcostaPR', 'Tyler_Shelton', '3D-THI'];
+
+    // Three random steps, then always "FILED, GOOD DAY!"
+    var SEQUENCES = [
+        ['DISPATCHING', 'APPROVING', 'AWAITING CHIEF PILOT'],
+        ['COMPILING FLIGHT DATA', 'VERIFYING ROUTE', 'FILING LOG'],
+        ['READING BLACK BOX', 'PARSING TELEMETRY', 'STAMPING LOGBOOK'],
+        ['TRANSMITTING TO OPS', 'AWAITING CLEARANCE', 'LOGGING BLOCK TIMES'],
+        ['SYNCING ACARS', 'CROSS-CHECKING FUEL', 'COUNTERSIGNING'],
+        ['CONTACTING TOWER', 'READBACK CORRECT', 'CLEARED FOR LOGGING'],
+        ['SQUAWKING 1200', 'RADAR CONTACT', 'CLOSING FLIGHT PLAN'],
+        ['HANDING OFF TO CENTER', 'FREQUENCY CHANGE APPROVED', 'UPLINKING'],
+        ['CHOCKS IN', 'ENGINES SPOOLING DOWN', 'SIGNING PAPERWORK'],
+        ['WEIGHING CARGO', 'BALANCING CG', "CAPTAIN'S SIGNATURE"],
+        ['DEBRIEFING CREW', 'TALLYING FLIGHT HOURS', 'GRADING TOUCHDOWN'],
+        ['CALCULATING LANDING RATE', 'RECONCILING FUEL BURN', 'NOTIFYING DISPATCH'],
+        ['DOWNLINKING', 'VALIDATING', 'STAMPING']
+    ];
+    var SIGNATURE_NAME = 'darkeyes';
+
+    var $ = function(id) { return document.getElementById(id); };
+    var els = {}, menus = [], opened = false, busy = false;
+    var settings = null, settingsVer = 0, settingsRequested = false;
+    var friends = SEED_FRIENDS.slice(), friendsDirty = false;
+    var state = { dep: null, arr: null, tp: [], org: '', af: '', aircraft: null };
+    var cache = null, apIndex = null, submissionId = null, draft = null;
+    var combos = {};
+
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+    function clone(o) { return JSON.parse(JSON.stringify(o)); }
+    function ci(a, b) { return String(a).toLowerCase() === String(b).toLowerCase(); }
+
+    // ── Data derived from the logbook (rebuilt when flights or settings change) ──
+    function data() {
+        var fl = window.logbookFlights || [];
+        if (cache && cache.n === fl.length && cache.v === settingsVer) return cache;
+        var c = { n: fl.length, v: settingsVer, flown: {}, flownCodeByObj: new Map(), aircraft: {}, liveries: {},
+                  orgs: [], flightCount: 0, remarksText: '' };
+        var orgMap = {}, rmk = [];
+        fl.forEach(function(f) {   // newest first
+            if (f.isATC) return;
+            c.flightCount++;
+            [f.departure, f.arrival].forEach(function(code) {
+                c.flown[code] = (c.flown[code] || 0) + 1;
+                var ap = window.airportData && window.airportData[code];
+                if (ap && !c.flownCodeByObj.has(ap)) c.flownCodeByObj.set(ap, code);
+            });
+            if (f.mfr && f.type) {
+                var k = f.mfr + '|' + f.type;
+                var a = c.aircraft[k] || (c.aircraft[k] = { mfr: f.mfr, type: f.type, count: 0, liveries: {} });
+                a.count++;
+                if (f.livery && f.livery !== 'Standard') a.liveries[f.livery] = (a.liveries[f.livery] || 0) + 1;
+            }
+            if (f.livery && f.livery !== 'Standard') c.liveries[f.livery] = (c.liveries[f.livery] || 0) + 1;
+            if (f.org && f.airframe) {
+                var ok = f.org.toLowerCase();
+                var o = orgMap[ok] || (orgMap[ok] = { name: f.org, airframes: [] });
+                if (!o.airframes.some(function(x) { return x.id === f.airframe; })) {   // newest flight wins
+                    o.airframes.push({ id: f.airframe, manufacturer: f.mfr, type: f.type, livery: f.livery === 'Standard' ? '' : f.livery });
+                }
+            }
+            if (f.remarks) rmk.push(f.remarks);
+        });
+        c.remarksText = rmk.join('\n').toLowerCase();
+        var orgs = (settings && Array.isArray(settings.orgs)) ? clone(settings.orgs) : Object.keys(orgMap).map(function(k) { return orgMap[k]; });
+        var byName = {};
+        orgs.forEach(function(o) { byName[o.name] = o; });
+        c.orgs = orderOrgNames(Object.keys(byName), fl).map(function(n) { return byName[n]; });
+        // airframes from settings also count as known aircraft / liveries
+        c.orgs.forEach(function(o) { o.airframes.forEach(function(a) {
+            if (a.manufacturer && a.type) {
+                var k = a.manufacturer + '|' + a.type;
+                if (!c.aircraft[k]) c.aircraft[k] = { mfr: a.manufacturer, type: a.type, count: 0, liveries: {} };
+                if (a.livery) c.aircraft[k].liveries[a.livery] = c.aircraft[k].liveries[a.livery] || 0;
+            }
+            if (a.livery && !(a.livery in c.liveries)) c.liveries[a.livery] = 0;
+        }); });
+        c.aircraftList = Object.keys(c.aircraft).map(function(k) { return c.aircraft[k]; })
+            .sort(function(a, b) { return b.count - a.count || (a.mfr + a.type).localeCompare(b.mfr + b.type); });
+        c.mfrs = Array.from(new Set(c.aircraftList.map(function(a) { return a.mfr; })))
+            .sort(function(a, b) { return b.length - a.length; });
+        cache = c;
+        return c;
+    }
+
+    function airportIndex() {
+        if (apIndex) return apIndex;
+        var ad = window.airportData;
+        if (!ad) return [];
+        var d = data(), seen = new Set(), list = [];
+        Object.keys(ad).forEach(function(k) {
+            var a = ad[k];
+            if (seen.has(a)) return;
+            seen.add(a);
+            var code = d.flownCodeByObj.get(a) || a.gps || a.ident;
+            var codes = [code, a.ident, a.gps, a.local].filter(function(c, i, arr) { return c && arr.indexOf(c) === i; });
+            list.push({ code: code, codes: codes, ident: a.ident, name: a.name, muni: a.municipality || '', kind: a.kind || '',
+                        lc: (a.name + ' ' + (a.municipality || '')).toLowerCase() });
+        });
+        apIndex = list;
+        return list;
+    }
+
+    // ── Dropdown menu (same look as the filter tab's) ──
+    function Menu(onPick) {
+        var self = this;
+        this.items = []; this.hi = -1; this.onPick = onPick; this.anchor = null;
+        this.dd = document.createElement('div');
+        this.dd.className = 'tag-dropdown lb-dropdown';
+        document.body.appendChild(this.dd);
+        this.dd.addEventListener('mousedown', function(e) {
+            e.preventDefault();                       // keep focus in the field
+            var row = e.target.closest('.dropdown-opt');
+            if (row) self.onPick(self.items[+row.getAttribute('data-i')]);
+        });
+        this.dd.addEventListener('mousemove', function(e) {
+            var row = e.target.closest('.dropdown-opt');
+            if (row && +row.getAttribute('data-i') !== self.hi) { self.hi = +row.getAttribute('data-i'); self.paint(); }
+        });
+        menus.push(this);
+    }
+    Menu.prototype.open = function(items, anchor, emptyText) {
+        this.items = items; this.anchor = anchor; this.hi = items.length ? 0 : -1;
+        var html = '', group = null;
+        items.forEach(function(it, i) {
+            if (it.group && it.group !== group) { group = it.group; html += '<div class="dropdown-group-header">' + esc(group) + '</div>'; }
+            html += '<div class="dropdown-opt" data-i="' + i + '"><span class="opt-label">' + esc(it.label) + '</span>' +
+                    (it.badge ? '<span class="opt-badge">' + esc(it.badge) + '</span>' : '') + '</div>';
+        });
+        if (!items.length) html = '<div class="no-results">' + esc(emptyText || 'No matches') + '</div>';
+        this.dd.innerHTML = html;
+        this.position();
+        this.dd.classList.add('open');
+        this.paint();
+    };
+    Menu.prototype.position = function() {
+        var r = this.anchor.getBoundingClientRect(), dd = this.dd;
+        var below = window.innerHeight - r.bottom - 8, above = r.top - 8;
+        dd.style.left = r.left + 'px';
+        dd.style.width = Math.max(r.width, 220) + 'px';
+        if (below < 150 && above > below) {
+            dd.style.top = 'auto'; dd.style.bottom = (window.innerHeight - r.top + 3) + 'px';
+            dd.style.maxHeight = Math.min(280, above) + 'px';
+        } else {
+            dd.style.bottom = 'auto'; dd.style.top = (r.bottom + 3) + 'px';
+            dd.style.maxHeight = Math.min(280, below) + 'px';
+        }
+    };
+    Menu.prototype.paint = function() {
+        var hi = this.hi;
+        this.dd.querySelectorAll('.dropdown-opt').forEach(function(el) {
+            var on = +el.getAttribute('data-i') === hi;
+            el.classList.toggle('highlighted', on);
+            if (on && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+        });
+    };
+    Menu.prototype.move = function(d) { if (this.items.length) { this.hi = Math.max(0, Math.min(this.items.length - 1, this.hi + d)); this.paint(); } };
+    Menu.prototype.current = function() { return this.hi >= 0 ? this.items[this.hi] : null; };
+    Menu.prototype.isOpen = function() { return this.dd.classList.contains('open'); };
+    Menu.prototype.close = function() { this.dd.classList.remove('open'); };
+
+    // ── Combo field: type to search, ↑↓ to move, Enter / Tab to take the highlighted option ──
+    // o.source(q) -> [{value, label, badge, group, data}]; o.strict = only listed values; o.onPick(opt); o.anchor
+    function Combo(input, o) {
+        var self = this;
+        this.input = input; this.o = o; this.value = null; this.text = '';
+        this.menu = new Menu(function(opt) { self.pick(opt); });
+        input.addEventListener('focus', function() { self.open(self.dirty() ? input.value : ''); });
+        input.addEventListener('click', function() { if (!self.menu.isOpen()) self.open(self.dirty() ? input.value : ''); });
+        input.addEventListener('input', function() { self.open(input.value); });
+        input.addEventListener('keydown', function(e) {
+            var m = self.menu;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (!m.isOpen()) self.open(self.dirty() ? input.value : '');
+                else m.move(e.key === 'ArrowDown' ? 1 : -1);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (m.isOpen() && m.current()) self.pick(m.current());
+            } else if (e.key === 'Tab') {
+                // Tab takes the highlighted match when something was typed, then moves on as usual
+                if (m.isOpen() && m.current() && self.dirty() && input.value.trim()) self.pick(m.current());
+            } else if (e.key === 'Escape') {
+                if (m.isOpen()) { e.preventDefault(); e.stopPropagation(); m.close(); }
+            } else if (o.onKey) {
+                o.onKey(e, self);
+            }
+        });
+        input.addEventListener('blur', function() {
+            self.menu.close();
+            if (!self.dirty()) return;
+            if (o.onBlurText) o.onBlurText(input.value, self);
+            else if (o.strict) input.value = self.text;     // pick-only fields: undo stray typing
+        });
+        combos[input.id] = this;
+    }
+    Combo.prototype.dirty = function() { return this.input.value !== this.text; };
+    Combo.prototype.open = function(q) {
+        if (document.activeElement !== this.input) return;
+        this.menu.open(this.o.source(q || ''), this.o.anchor || this.input, this.o.emptyText);
+    };
+    Combo.prototype.set = function(value, text) { this.value = value; this.text = text || ''; this.input.value = this.text; };
+    Combo.prototype.pick = function(opt) {
+        this.menu.close();
+        if (this.o.multi) { this.input.value = ''; this.text = ''; }
+        else this.set(opt.value, opt.value === '' || opt.value == null ? '' : (opt.display || opt.label));
+        clearErr(this.input);
+        if (this.o.onPick) this.o.onPick(opt, this);
+    };
+
+    // ── Sources ──
+    function airportOpt(a, flown, group, asCode) {
+        var code = asCode || a.code;
+        return { value: code, label: code + ' - ' + a.name + (a.muni && a.name.indexOf(a.muni) < 0 ? ' (' + a.muni + ')' : ''),
+                 badge: flown ? flown + (flown === 1 ? ' flight' : ' flights') : '', group: group };
+    }
+    function searchAirports(q, extra) {
+        var d = data(), idx = airportIndex(), out = [];
+        q = q.trim();
+        var Q = q.toUpperCase(), ql = q.toLowerCase();
+        if (!q) {
+            var seen = {};
+            (extra || []).forEach(function(code) {
+                var a = idx.find(function(x) { return x.code === code; });
+                if (a && !seen[code]) { seen[code] = 1; out.push(airportOpt(a, d.flown[code], 'This flight')); }
+            });
+            idx.filter(function(a) { return d.flown[a.code] && !seen[a.code]; })
+               .sort(function(a, b) { return d.flown[b.code] - d.flown[a.code]; })
+               .slice(0, 30).forEach(function(a) { out.push(airportOpt(a, d.flown[a.code], 'Most flown')); });
+            return out;
+        }
+        var hits = [];
+        for (var i = 0; i < idx.length; i++) {
+            var a = idx[i], s, as = null;
+            if (a.codes.indexOf(Q) >= 0) { s = 0; as = d.flown[a.code] ? a.code : Q; }   // exact code: keep the code you typed (e.g. X06)
+            else if (a.codes.some(function(c) { return c.indexOf(Q) === 0; })) s = 1;
+            else if (ql.length >= 2 && a.lc.indexOf(ql) >= 0) s = 2;
+            else continue;
+            if (a.kind === 'closed') s += 3;
+            else if (a.kind === 'heliport' || a.kind === 'seaplane_base' || a.kind === 'balloonport') s += 1;
+            hits.push({ a: a, s: s, f: d.flown[a.code] || 0, as: as });
+        }
+        hits.sort(function(x, y) { return x.s - y.s || y.f - x.f || x.a.code.length - y.a.code.length || (x.a.code < y.a.code ? -1 : 1); });
+        out = hits.slice(0, 40).map(function(h) { return airportOpt(h.a, h.f, null, h.as); });
+        if (/^[A-Z0-9]{3,5}$/.test(Q) && !hits.some(function(h) { return h.as; })) {
+            out.push({ value: Q, label: Q, badge: 'not in airport database' });
+        }
+        return out;
+    }
+    function resolveAirportText(text) {
+        var T = text.trim().toUpperCase().split(' ')[0];
+        if (!T) return null;
+        var ap = window.airportData && window.airportData[T];
+        if (!ap) return null;
+        return data().flownCodeByObj.get(ap) || T;
+    }
+    function orgOf(name) { return data().orgs.find(function(o) { return ci(o.name, name); }) || null; }
+    function aircraftLabel(a) { return a ? (a.mfr + ' ' + a.type).trim() : ''; }
+    function parseAircraft(text) {
+        text = text.replace(/\s+/g, ' ').trim();
+        if (!text) return null;
+        var d = data();
+        var known = d.aircraftList.find(function(a) { return ci(aircraftLabel(a), text); });
+        if (known) return { mfr: known.mfr, type: known.type };
+        var mfr = d.mfrs.find(function(m) { return text.toLowerCase().indexOf(m.toLowerCase() + ' ') === 0; });
+        if (mfr) return { mfr: mfr, type: text.slice(mfr.length).trim() };
+        var sp = text.indexOf(' ');
+        return sp < 0 ? { mfr: text, type: '' } : { mfr: text.slice(0, sp), type: text.slice(sp + 1) };
+    }
+    function filterLabel(list, q) {
+        q = q.trim().toLowerCase();
+        if (!q) return list;
+        var starts = list.filter(function(o) { return o.label.toLowerCase().indexOf(q) === 0; });
+        var inc = list.filter(function(o) { var l = o.label.toLowerCase(); return l.indexOf(q) > 0; });
+        return starts.concat(inc);
+    }
+
+    function setAircraft(a) {
+        state.aircraft = a;
+        combos['lb-aircraft'].set(a ? a.mfr + '|' + a.type : null, aircraftLabel(a));
+    }
+    function setLivery(l) { combos['lb-livery'].set(l || null, l || ''); }
+    function setOrg(name) { state.org = name || ''; combos['lb-org'].set(name || '', name || ''); }
+    function setAirframe(af, orgName) {
+        state.af = af ? af.id : '';
+        combos['lb-af'].set(state.af, state.af);
+        if (af) {
+            if (orgName && !ci(orgName, state.org)) setOrg(orgName);
+            if (af.manufacturer && af.type) setAircraft({ mfr: af.manufacturer, type: af.type });
+            if (af.livery) setLivery(af.livery);
+            clearErr(els.aircraft);
+        }
+    }
+
+    function buildCombos() {
+        combos.dep = new Combo(els.dep, {
+            source: function(q) { return searchAirports(q); },
+            onPick: function(opt) { state.dep = opt.value; },
+            onBlurText: function(t, c) { var code = resolveAirportText(t); state.dep = code; if (code) c.set(code, t.trim().toUpperCase() === code ? searchLabel(code) : t); },
+            emptyText: 'No airports found'
+        });
+        combos.arr = new Combo(els.arr, {
+            source: function(q) { return searchAirports(q, state.dep ? [state.dep] : []); },
+            onPick: function(opt) { state.arr = opt.value; },
+            onBlurText: function(t, c) { var code = resolveAirportText(t); state.arr = code; if (code) c.set(code, t.trim().toUpperCase() === code ? searchLabel(code) : t); },
+            emptyText: 'No airports found'
+        });
+        combos.tp = new Combo(els.tp, {
+            multi: true,
+            anchor: els.tpChips,
+            source: function(q) {
+                return searchAirports(q, [state.dep, state.arr].filter(Boolean)).filter(function(o) { return state.tp.indexOf(o.value) < 0; });
+            },
+            onPick: function(opt) { if (state.tp.indexOf(opt.value) < 0) state.tp.push(opt.value); renderTp(); },
+            onBlurText: function(t, c) { var code = resolveAirportText(t); if (code && state.tp.indexOf(code) < 0) { state.tp.push(code); renderTp(); } c.input.value = ''; },
+            onKey: function(e, c) {
+                if (e.key === 'Backspace' && !c.input.value && state.tp.length) { state.tp.pop(); renderTp(); }
+            },
+            emptyText: 'No airports found'
+        });
+        combos.org = new Combo(els.org, {
+            strict: true,
+            source: function(q) {
+                var opts = data().orgs.map(function(o) {
+                    return { value: o.name, label: o.name, badge: o.airframes.length + (o.airframes.length === 1 ? ' airframe' : ' airframes') };
+                });
+                opts = filterLabel(opts, q);
+                if (!q) opts.unshift({ value: '', label: '— none —' });
+                return opts;
+            },
+            onPick: function(opt) {
+                state.org = opt.value;
+                var o = orgOf(state.org);
+                if (!o) { setAirframe(null); return; }
+                if (state.af && !o.airframes.some(function(a) { return a.id === state.af; })) setAirframe(null);
+                if (!state.af && o.airframes.length === 1) setAirframe(o.airframes[0], o.name);
+            },
+            emptyText: 'Add orgs in settings (⚙)'
+        });
+        combos.af = new Combo(els.af, {
+            strict: true,
+            source: function(q) {
+                var opts = [], d = data();
+                d.orgs.forEach(function(o) {
+                    if (state.org && !ci(o.name, state.org)) return;
+                    o.airframes.forEach(function(a) {
+                        opts.push({ value: a.id, label: a.id, badge: [a.type, a.livery].filter(Boolean).join(' · '),
+                                    group: state.org ? null : o.name, af: a, org: o.name });
+                    });
+                });
+                opts = filterLabel(opts, q);
+                if (!q) opts.unshift({ value: '', label: '— none —' });
+                return opts;
+            },
+            onPick: function(opt) { if (opt.af) setAirframe(opt.af, opt.org); else setAirframe(null); },
+            emptyText: 'Add airframes in settings (⚙)'
+        });
+        combos.aircraft = new Combo(els.aircraft, {
+            source: function(q) {
+                var opts = data().aircraftList.map(function(a) {
+                    return { value: a.mfr + '|' + a.type, label: aircraftLabel(a), badge: a.count ? a.count + (a.count === 1 ? ' flight' : ' flights') : '', a: a };
+                });
+                opts = filterLabel(opts, q);
+                var t = q.trim();
+                if (t && !opts.some(function(o) { return ci(o.label, t); })) opts.push({ value: t, label: t, badge: 'new aircraft', custom: true });
+                return opts;
+            },
+            onPick: function(opt) { state.aircraft = opt.custom ? parseAircraft(opt.value) : { mfr: opt.a.mfr, type: opt.a.type }; },
+            onBlurText: function(t, c) { state.aircraft = parseAircraft(t); c.set(t.trim() || null, t.trim()); }
+        });
+        combos.livery = new Combo(els.livery, {
+            source: function(q) {
+                var d = data(), opts = [], seen = {};
+                var a = state.aircraft && d.aircraft[state.aircraft.mfr + '|' + state.aircraft.type];
+                if (a) {
+                    Object.keys(a.liveries).sort(function(x, y) { return a.liveries[y] - a.liveries[x]; }).forEach(function(l) {
+                        seen[l] = 1;
+                        opts.push({ value: l, label: l, group: 'On the ' + a.type, badge: a.liveries[l] ? a.liveries[l] + '×' : '' });
+                    });
+                }
+                Object.keys(d.liveries).sort(function(x, y) { return d.liveries[y] - d.liveries[x]; }).forEach(function(l) {
+                    if (!seen[l]) opts.push({ value: l, label: l, group: a ? 'All liveries' : null });
+                });
+                opts = filterLabel(opts, q);
+                var t = q.trim();
+                if (t && !opts.some(function(o) { return ci(o.label, t); })) opts.push({ value: t, label: t, badge: 'new livery' });
+                return opts;
+            },
+            onBlurText: function(t, c) { c.set(t.trim() || null, t.trim()); }
+        });
+    }
+    function searchLabel(code) {
+        var hit = airportIndex().find(function(a) { return a.codes.indexOf(code) >= 0; });
+        return hit ? airportOpt(hit, 0, null, code).label : code;
+    }
+
+    function renderTp() {
+        els.tpChips.querySelectorAll('.lb-chip').forEach(function(n) { n.remove(); });
+        state.tp.forEach(function(code, i) {
+            var chip = document.createElement('span');
+            chip.className = 'lb-chip';
+            chip.innerHTML = esc(code) + '<button type="button" tabindex="-1" title="Remove">✕</button>';
+            chip.querySelector('button').addEventListener('click', function() { state.tp.splice(i, 1); renderTp(); els.tp.focus(); });
+            els.tpChips.insertBefore(chip, els.tp);
+        });
+        els.tp.placeholder = state.tp.length ? '' : 'none';
+    }
+
+    // ── @friends in remarks ──
+    var mention = { start: -1 };
+    function friendsSorted() {
+        var t = data().remarksText;
+        function count(n) { var k = n.toLowerCase(), c = 0, i = t.indexOf(k); while (i >= 0) { c++; i = t.indexOf(k, i + k.length); } return c; }
+        var withCount = friends.map(function(n) { return { n: n, c: count(n) }; });
+        withCount.sort(function(a, b) { return b.c - a.c || a.n.localeCompare(b.n); });
+        return withCount.map(function(x) { return x.n; });
+    }
+    function checkMention() {
+        var ta = els.remarks, pos = ta.selectionStart;
+        var m = ta.selectionStart === ta.selectionEnd && /(^|[\s,;(\/])@([^\s@,;()\/]*)$/.exec(ta.value.slice(0, pos));
+        if (!m) { mention.menu.close(); mention.start = -1; return; }
+        var q = m[2], ql = q.toLowerCase();
+        mention.start = pos - q.length - 1;
+        var all = friendsSorted();
+        var items = all.filter(function(n) { return n.toLowerCase().indexOf(ql) === 0; })
+            .concat(all.filter(function(n) { return n.toLowerCase().indexOf(ql) > 0; }))
+            .slice(0, 8).map(function(n) { return { value: n, label: n }; });
+        if (q && !friends.some(function(n) { return ci(n, q); })) items.push({ value: q, label: '+ add “' + q + '” as a friend', add: true });
+        if (!items.length) { mention.menu.close(); return; }
+        mention.menu.open(items, ta);
+    }
+    function pickMention(opt) {
+        var ta = els.remarks, pos = ta.selectionStart;
+        if (mention.start < 0) return;
+        if (opt.add && !friends.some(function(n) { return ci(n, opt.value); })) { friends.push(opt.value); friendsDirty = true; }
+        var before = ta.value.slice(0, mention.start), after = ta.value.slice(pos);
+        var insert = opt.value + (after.charAt(0) === ' ' ? '' : ' ');
+        ta.value = before + insert + after;
+        var caret = before.length + insert.length;
+        ta.setSelectionRange(caret, caret);
+        mention.menu.close(); mention.start = -1;
+        ta.focus();
+    }
+
+    // ── Helpers for fields ──
+    function todayISO() {
+        try { return new Intl.DateTimeFormat('en-CA', { timeZone: LOGBOOK_TZ, year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date()); }
+        catch (e) { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+    }
+    function isoToSheet(iso) { var p = (iso || '').split('-'); return p.length === 3 ? (+p[1]) + '/' + (+p[2]) + '/' + p[0] : ''; }
+    function normalizeTime(v) {
+        v = v.trim().replace(/[.,h ]/, ':').replace(/[^\d:]/g, '');
+        if (/^\d{1,2}$/.test(v)) return v + ':00';
+        if (/^\d{3,4}$/.test(v)) return (+v.slice(0, -2)) + ':' + v.slice(-2);
+        var m = /^(\d{1,2}):(\d{1,2})$/.exec(v);
+        if (m) return (+m[1]) + ':' + ('0' + m[2]).slice(-2);
+        return v;
+    }
+    function fieldOf(el) { return el.closest('.lb-field[data-field]') || el.closest('.lb-field'); }
+    function setErr(el) { var f = fieldOf(el); if (f) f.classList.add('lb-err'); }
+    function clearErr(el) { var f = fieldOf(el); if (f) f.classList.remove('lb-err'); }
+    function sigInk(input, ink) {
+        var n = input.value.length;
+        ink.textContent = n ? SIGNATURE_NAME.slice(0, Math.min(n, SIGNATURE_NAME.length)) : '';
+    }
+    function flightNumberGuess() { var n = data().flightCount; return n ? '#' + (n + 1) : '#'; }
+    function newSubmissionId() {
+        if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+        return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
+    }
+
+    // ── Server ──
+    function api(body) {
+        if (!LOGBOOK_API_URL) return Promise.reject(new Error('Not connected yet: add the Apps Script URL to LOGBOOK_API_URL'));
+        return fetch(LOGBOOK_API_URL, { method: 'POST', body: JSON.stringify(body) })   // text/plain: no CORS preflight
+            .then(function(r) { if (!r.ok) throw new Error('Server error ' + r.status); return r.json(); });
+    }
+    function applySettings(s) {
+        settings = s || null;
+        settingsVer++;
+        if (!friendsDirty) friends = (settings && Array.isArray(settings.friends)) ? settings.friends.slice() : SEED_FRIENDS.slice();
+        try { localStorage.setItem('logbook-settings', JSON.stringify(settings)); } catch (e) {}
+    }
+    function loadSettings() {
+        if (settingsRequested) return;
+        settingsRequested = true;
+        try { var cached = JSON.parse(localStorage.getItem('logbook-settings') || 'null'); if (cached) applySettings(cached); } catch (e) {}
+        if (!LOGBOOK_API_URL) return;
+        fetch(LOGBOOK_API_URL + '?action=settings')
+            .then(function(r) { return r.json(); })
+            .then(function(res) { if (res && res.ok) applySettings(res.settings); })
+            .catch(function() { settingsRequested = false; });
+    }
+
+    // ── Submit ──
+    function collect() {
+        var errs = [], f = {};
+        f.date = isoToSheet(els.date.value);
+        if (!f.date) errs.push([els.date, 'date']);
+        f.flightTime = normalizeTime(els.time.value);
+        els.time.value = f.flightTime;
+        if (!/^\d{1,2}:[0-5]\d$/.test(f.flightTime)) errs.push([els.time, 'flight time']);
+        f.ldgs = els.ldgs.value.trim() || '0';
+        if (!/^\d{1,3}$/.test(f.ldgs)) errs.push([els.ldgs, 'landings']);
+        f.depart = state.dep || resolveAirportText(els.dep.value) || '';
+        if (!f.depart || els.dep.value.trim() === '') errs.push([els.dep, 'departure']);
+        f.dest = state.arr || resolveAirportText(els.arr.value) || '';
+        if (!f.dest || els.arr.value.trim() === '') errs.push([els.arr, 'arrival']);
+        var ac = (combos.aircraft.dirty() || !state.aircraft) ? parseAircraft(els.aircraft.value) : state.aircraft;
+        if (ac && aircraftLabel(ac) !== els.aircraft.value.trim()) ac = parseAircraft(els.aircraft.value);
+        if (!ac || !ac.mfr || !ac.type) errs.push([els.aircraft, 'aircraft (manufacturer + type)']);
+        f.manufacturer = ac ? ac.mfr : ''; f.type = ac ? ac.type : '';
+        f.livery = els.livery.value.replace(/\s+/g, ' ').trim();
+        f.org = state.org || '';
+        f.airframe = state.af || '';
+        var tps = state.tp.slice();
+        var pending = els.tp.value.trim() && resolveAirportText(els.tp.value);
+        if (pending && tps.indexOf(pending) < 0) tps.push(pending);
+        var userRemarks = els.remarks.value.replace(/\s+/g, ' ').trim();
+        f.remarks = tps.map(function(c) { return 'TP at ' + c; }).concat(userRemarks ? [userRemarks] : []).join(', ');
+        if (!els.sig.value) errs.push([els.sig, 'signature']);
+        return { flight: f, errs: errs };
+    }
+
+    function playSequence(statusEl, work) {
+        var seq = SEQUENCES[Math.floor(Math.random() * SEQUENCES.length)];
+        var settled = null;
+        work.then(function(r) { settled = r; }, function(e) { settled = { ok: false, error: e.message || 'Network error' }; });
+        statusEl.innerHTML = '';
+        function add(text, cls) {
+            if (statusEl.childNodes.length) {
+                var a = document.createElement('span'); a.className = 'lb-arrow'; a.textContent = '-->>'; statusEl.appendChild(a);
+            }
+            var s = document.createElement('span'); s.className = 'lb-step ' + (cls || ''); s.textContent = text; statusEl.appendChild(s);
+            return s;
+        }
+        var i = 0;
+        function next() {
+            if (i >= seq.length || (settled && !settled.ok)) return finish();
+            var s = add(seq[i++], 'lb-busy');
+            return sleep(600 + Math.random() * 550).then(function() {
+                if (i < seq.length || settled) s.classList.remove('lb-busy');
+                return next();
+            });
+        }
+        function finish() {
+            return work.catch(function(e) { return { ok: false, error: e.message || 'Network error' }; }).then(function(res) {
+                statusEl.querySelectorAll('.lb-busy').forEach(function(s) { s.classList.remove('lb-busy'); });
+                if (res && res.ok) add('FILED, GOOD DAY!', 'lb-done');
+                else add('NOT FILED: ' + String(res && res.error || 'unknown error').toUpperCase(), 'lb-fail');
+                return res;
+            });
+        }
+        return next();
+    }
+
+    function submit() {
+        if (busy) return;
+        document.querySelectorAll('#lb-form-view .lb-err').forEach(function(n) { n.classList.remove('lb-err'); });
+        var c = collect();
+        if (c.errs.length) {
+            c.errs.forEach(function(e) { setErr(e[0]); });
+            els.status.innerHTML = '<span class="lb-fail">CHECK: ' + esc(c.errs.map(function(e) { return e[1]; }).join(', ').toUpperCase()) + '</span>';
+            c.errs[0][0].focus();
+            return;
+        }
+        busy = true;
+        els.submit.disabled = true;
+        if (!submissionId) submissionId = newSubmissionId();
+        var body = { action: 'log', password: els.sig.value, submissionId: submissionId, flight: c.flight };
+        if (friendsDirty) body.friends = friends.slice();
+        playSequence(els.status, api(body)).then(function(res) {
+            busy = false;
+            els.submit.disabled = false;
+            if (!res || !res.ok) {
+                if (res && /signature/i.test(res.error || '')) { setErr(els.sig); els.sig.select(); }
+                return;
+            }
+            submissionId = null;
+            if (body.friends) { friendsDirty = false; settings = settings || {}; settings.friends = body.friends; applySettings(settings); }
+            var f = c.flight;
+            if (window.addLoggedFlight) {
+                window.addLoggedFlight([f.date, f.flightTime, f.manufacturer, f.type, f.livery, f.depart, f.dest, f.ldgs, '-', f.org, f.airframe, f.remarks]);
+            }
+            els.num.textContent = '#' + res.flightNumber;
+            if (!res.emailed) {
+                var note = document.createElement('div');
+                note.style.color = 'var(--text-muted)';
+                note.textContent = '(confirmation email not sent: ' + (res.emailError || 'unknown') + ')';
+                els.status.appendChild(note);
+            }
+            setTimeout(function() { close(); resetForm(); }, 2300);
+        });
+    }
+
+    function resetForm() {
+        els.date.value = todayISO();
+        els.time.value = ''; els.ldgs.value = '1';
+        state.dep = state.arr = null; combos.dep.set(null, ''); combos.arr.set(null, '');
+        state.tp = []; renderTp(); els.tp.value = '';
+        setOrg(''); setAirframe(null); setAircraft(null); setLivery('');
+        els.remarks.value = '';
+        els.sig.value = ''; sigInk(els.sig, els.sigInk);
+        els.status.innerHTML = '';
+        document.querySelectorAll('#lb-form-view .lb-err').forEach(function(n) { n.classList.remove('lb-err'); });
+        submissionId = null;
+    }
+
+    // ── Settings window ──
+    function fillDatalists() {
+        var d = data();
+        function fill(id, vals) { $(id).innerHTML = vals.map(function(v) { return '<option value="' + esc(v) + '">'; }).join(''); }
+        fill('lb-dl-mfr', Array.from(new Set(d.aircraftList.map(function(a) { return a.mfr; }))).sort());
+        fill('lb-dl-type', Array.from(new Set(d.aircraftList.map(function(a) { return a.type; }))).sort());
+        fill('lb-dl-livery', Object.keys(d.liveries).sort());
+    }
+    function renderOrgs() {
+        var box = $('lb-orgs-editor');
+        box.innerHTML = '';
+        draft.orgs.forEach(function(o, oi) {
+            var div = document.createElement('div');
+            div.className = 'lb-org';
+            var html = '<div class="lb-org-head"><input class="lb-input" data-k="name" value="' + esc(o.name) + '" placeholder="Org name">' +
+                       '<button type="button" class="lb-x" data-act="del-org" title="Remove org">✕</button></div>' +
+                       '<div class="lb-af lb-af-head"><span>AIRFRAME</span><span>MANUFACTURER</span><span>TYPE</span><span>LIVERY</span><span></span></div>';
+            o.airframes.forEach(function(a, ai) {
+                html += '<div class="lb-af" data-ai="' + ai + '">' +
+                    '<input class="lb-input" data-k="id" value="' + esc(a.id) + '" placeholder="IF-XXXX">' +
+                    '<input class="lb-input" data-k="manufacturer" list="lb-dl-mfr" value="' + esc(a.manufacturer) + '">' +
+                    '<input class="lb-input" data-k="type" list="lb-dl-type" value="' + esc(a.type) + '">' +
+                    '<input class="lb-input" data-k="livery" list="lb-dl-livery" value="' + esc(a.livery) + '">' +
+                    '<button type="button" class="lb-x" data-act="del-af" title="Remove airframe">✕</button></div>';
+            });
+            html += '<button type="button" class="lb-btn lb-btn-small" data-act="add-af" style="margin-top: 4px;">+ AIRFRAME</button>';
+            div.innerHTML = html;
+            div.addEventListener('input', function(e) {
+                var k = e.target.getAttribute('data-k'); if (!k) return;
+                var row = e.target.closest('.lb-af');
+                if (row) o.airframes[+row.getAttribute('data-ai')][k] = e.target.value;
+                else o.name = e.target.value;
+            });
+            div.addEventListener('click', function(e) {
+                var act = e.target.getAttribute('data-act'); if (!act) return;
+                if (act === 'del-org') draft.orgs.splice(oi, 1);
+                if (act === 'add-af') o.airframes.push({ id: '', manufacturer: '', type: '', livery: '' });
+                if (act === 'del-af') o.airframes.splice(+e.target.closest('.lb-af').getAttribute('data-ai'), 1);
+                renderOrgs();
+                if (act === 'add-af') { var ins = box.querySelectorAll('.lb-org')[oi].querySelectorAll('.lb-af:not(.lb-af-head) input'); if (ins.length) ins[ins.length - 4].focus(); }
+            });
+            box.appendChild(div);
+        });
+    }
+    function renderFriends() {
+        var box = $('lb-friends-editor');
+        box.innerHTML = '';
+        draft.friends.forEach(function(n, i) {
+            var chip = document.createElement('span');
+            chip.className = 'lb-chip';
+            chip.innerHTML = esc(n) + '<button type="button" title="Remove">✕</button>';
+            chip.querySelector('button').addEventListener('click', function() { draft.friends.splice(i, 1); renderFriends(); });
+            box.appendChild(chip);
+        });
+    }
+    function showSettings(on) {
+        menus.forEach(function(m) { m.close(); });
+        els.formView.hidden = on;
+        els.setView.hidden = !on;
+        els.title.textContent = on ? 'SETTINGS' : 'LOGBOOK';
+        if (on) {
+            var d = data();
+            draft = {
+                orgs: d.orgs.map(function(o) { return { name: o.name, airframes: o.airframes.map(function(a) {
+                    return { id: a.id, manufacturer: a.manufacturer || '', type: a.type || '', livery: a.livery || '' }; }) }; }),
+                friends: friendsSorted()
+            };
+            fillDatalists(); renderOrgs(); renderFriends();
+            $('lb-set-status').innerHTML = '';
+            $('lb-set-sig').value = ''; sigInk($('lb-set-sig'), $('lb-set-sig-ink'));
+        }
+    }
+    function saveSettings() {
+        var st = $('lb-set-status'), sig = $('lb-set-sig');
+        var clean = {
+            orgs: draft.orgs.map(function(o) {
+                return { name: o.name.trim(), airframes: o.airframes.map(function(a) {
+                    return { id: a.id.trim(), manufacturer: a.manufacturer.trim(), type: a.type.trim(), livery: a.livery.trim() }; })
+                    .filter(function(a) { return a.id; }) };
+            }).filter(function(o) { return o.name; }),
+            friends: draft.friends.slice()
+        };
+        if (!sig.value) { st.innerHTML = '<span class="lb-fail">CHECK: SIGNATURE</span>'; sig.focus(); return; }
+        st.innerHTML = '<span class="lb-step lb-busy">SAVING</span>';
+        api({ action: 'saveSettings', password: sig.value, settings: clean }).then(function(res) {
+            if (!res.ok) throw new Error(res.error);
+            friendsDirty = false;
+            applySettings(res.settings);
+            st.innerHTML = '<span class="lb-step">SAVING</span><span class="lb-arrow">-->></span><span class="lb-done">SAVED</span>';
+            setTimeout(function() { showSettings(false); }, 900);
+        }).catch(function(e) {
+            st.innerHTML = '<span class="lb-fail">NOT SAVED: ' + esc(String(e.message || e).toUpperCase()) + '</span>';
+        });
+    }
+
+    // ── Open / close ──
+    function open() {
+        if (opened) return;
+        opened = true;
+        loadSettings();
+        els.overlay.hidden = false;
+        if (!busy) els.num.textContent = flightNumberGuess();
+        if (!els.date.value) els.date.value = todayISO();
+        setTimeout(function() { (els.setView.hidden ? els.time : $('lb-friend-new')).focus(); }, 30);   // date fills itself in; start at flight time
+    }
+    function close() {
+        if (!opened) return;
+        opened = false;
+        menus.forEach(function(m) { m.close(); });
+        els.overlay.hidden = true;
+        if (!els.setView.hidden) showSettings(false);
+    }
+
+    function init() {
+        ['overlay', 'card', 'num', 'title', 'date', 'time', 'ldgs', 'dep', 'arr', 'tp', 'org', 'af', 'aircraft', 'livery',
+         'remarks', 'sig', 'submit', 'status'].forEach(function(k) { els[k] = $('lb-' + k); });
+        els.tpChips = $('lb-tp-chips'); els.sigInk = $('lb-sig-ink');
+        els.formView = $('lb-form-view'); els.setView = $('lb-settings-view');
+        if (!els.overlay) return;
+
+        buildCombos();
+        // rename internal keys to the input ids used by setters
+        combos['lb-aircraft'] = combos.aircraft; combos['lb-livery'] = combos.livery;
+        combos['lb-org'] = combos.org; combos['lb-af'] = combos.af;
+        renderTp();
+
+        mention.menu = new Menu(pickMention);
+        els.remarks.addEventListener('input', checkMention);
+        els.remarks.addEventListener('click', checkMention);
+        els.remarks.addEventListener('blur', function() { mention.menu.close(); });
+        els.remarks.addEventListener('keydown', function(e) {
+            var m = mention.menu;
+            if (!m.isOpen()) return;
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); m.move(e.key === 'ArrowDown' ? 1 : -1); }
+            else if (e.key === 'Enter' || e.key === 'Tab') { if (m.current()) { e.preventDefault(); pickMention(m.current()); } }
+            else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); m.close(); }
+        });
+        els.remarks.addEventListener('keyup', function(e) { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'Home' || e.key === 'End') checkMention(); });
+
+        els.time.addEventListener('blur', function() { if (els.time.value.trim()) els.time.value = normalizeTime(els.time.value); });
+        els.ldgs.addEventListener('input', function() { els.ldgs.value = els.ldgs.value.replace(/\D/g, ''); });
+        els.sig.addEventListener('input', function() { sigInk(els.sig, els.sigInk); });
+        els.sig.addEventListener('change', function() { sigInk(els.sig, els.sigInk); });
+        $('lb-set-sig').addEventListener('input', function() { sigInk($('lb-set-sig'), $('lb-set-sig-ink')); });
+        els.tpChips.addEventListener('mousedown', function(e) { if (e.target === els.tpChips) { e.preventDefault(); els.tp.focus(); } });
+
+        // Any edit clears that field's error and starts a fresh submission
+        els.formView.addEventListener('input', function(e) { clearErr(e.target); submissionId = null; });
+
+        els.card.addEventListener('submit', function(e) { e.preventDefault(); if (els.setView.hidden) submit(); });
+        els.card.addEventListener('keydown', function(e) {
+            // Enter only submits from the signature field or the button (not from half-filled fields)
+            if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target !== els.sig && !e.defaultPrevented) {
+                e.preventDefault();
+                if (e.target.id === 'lb-friend-new') addFriendFromInput();
+                if (e.target.id === 'lb-set-sig') saveSettings();
+            }
+        });
+        els.overlay.addEventListener('mousedown', function(e) { if (e.target === els.overlay) close(); });
+        els.overlay.addEventListener('scroll', function() { menus.forEach(function(m) { m.close(); }); });
+        window.addEventListener('resize', function() { menus.forEach(function(m) { m.close(); }); });
+        document.addEventListener('keydown', function(e) { if (opened && e.key === 'Escape' && !e.defaultPrevented) close(); });
+
+        $('lb-close-btn').addEventListener('click', close);
+        $('lb-settings-btn').addEventListener('click', function() { showSettings(els.setView.hidden); });
+        $('lb-set-back').addEventListener('click', function() { showSettings(false); });
+        $('lb-set-save').addEventListener('click', saveSettings);
+        $('lb-add-org').addEventListener('click', function() {
+            draft.orgs.push({ name: '', airframes: [{ id: '', manufacturer: '', type: '', livery: '' }] });
+            renderOrgs();
+            var heads = $('lb-orgs-editor').querySelectorAll('.lb-org-head input');
+            heads[heads.length - 1].focus();
+        });
+        function addFriendFromInput() {
+            var inp = $('lb-friend-new'), v = inp.value.replace(/^@/, '').trim();
+            if (v && !draft.friends.some(function(n) { return ci(n, v); })) { draft.friends.push(v); renderFriends(); }
+            inp.value = '';
+        }
+
+        els.date.value = todayISO();
+        if (LOGBOOK_API_URL) setTimeout(loadSettings, 4000);
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+
+    return {
+        open: open, close: close,
+        toggle: function() { opened ? close() : open(); },
+        isOpen: function() { return opened; }
+    };
+})();
 
 function selectRandomFlight() {
     var container = document.getElementById('sidebar-routes');
@@ -3033,15 +4142,16 @@ Promise.all([
     
     var originalIndex = 0;
 
-    // Process Flights (skip the sheet's first 2 header rows: logo row + column-title row)
-    flightSheetResults.data.slice(2).forEach(function(row){
-        if (row.length>=7 && row[5] && row[6] && row[5].trim()!=='' && row[6].trim()!=='') {
+    // One logbook sheet row (columns A–L) -> flight object. Also used for flights just logged from the form.
+    function flightFromRow(row) {
             var rawDep = row[5].trim().toUpperCase();
             var rawArr = row[6].trim().toUpperCase();
 
-            flights.push({
+            return {
                 _rawIndex: originalIndex++,
                 isATC: false,
+                mfr:       (row[2]||'').trim(),
+                type:      (row[3]||'').trim(),
                 date:      (row[0]||'').trim() || 'Unknown',
                 duration:  (row[1]||'').trim(), 
                 aircraft:  ((row[2]||'').trim()+' '+(row[3]||'').trim()).trim(),
@@ -3053,7 +4163,13 @@ Promise.all([
                 airframe:  (row[10]||'').trim(),
                 isLive:    !!((row[9]||'').trim() || (row[10]||'').trim()),
                 remarks:   (row[11]||'').trim()
-            });
+            };
+    }
+
+    // Process Flights (skip the sheet's first 2 header rows: logo row + column-title row)
+    flightSheetResults.data.slice(2).forEach(function(row){
+        if (row.length>=7 && row[5] && row[6] && row[5].trim()!=='' && row[6].trim()!=='') {
+            flights.push(flightFromRow(row));
         }
     });
 
@@ -3091,7 +4207,7 @@ Promise.all([
     });
     
     // Unified sorting
-    flights.sort(function(a, b) {
+    function compareFlights(a, b) {
         var dateA = new Date(a.date);
         var dateB = new Date(b.date);
         if (isNaN(dateA)) return 1;
@@ -3102,7 +4218,17 @@ Promise.all([
         }
         
         return dateB - dateA;
-    });
+    }
+    flights.sort(compareFlights);
+
+    // Hooks for the LOG form: the flights array, and a way to show a just-logged flight right away
+    // (the published CSV takes a few minutes to catch up).
+    window.logbookFlights = flights;
+    window.addLoggedFlight = function(row) {
+        flights.push(flightFromRow(row));
+        flights.sort(compareFlights);
+        if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+    };
 
     Papa.parse('https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv', {
         download: true, header: true,
@@ -3133,7 +4259,10 @@ Promise.all([
                     name: row.name || row.ident,
                     continent: continentMap[row.continent] || 'Unknown Region',
                     country: countryName,
-                    municipality: (row.municipality || '').trim()
+                    municipality: (row.municipality || '').trim(),
+                    gps: (row.gps_code || '').trim().toUpperCase(),
+                    local: (row.local_code || '').trim().toUpperCase(),
+                    kind: row.type || ''
                 };
                 
                 airportData[row.ident.trim().toUpperCase()] = apObj;
@@ -3200,7 +4329,7 @@ Promise.all([
 
             var remarksOptions = Array.from(rmkSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
 
-            var orgOptions = Array.from(orgSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
+            var orgOptions = orderOrgNames(Array.from(orgSet), flights).map(function(v){ return {value:v, label:v, badge:null}; });
             var airframeOptions = Array.from(airframeSet).sort().map(function(v){ return {value:v, label:v, badge:null}; });
 
             var airportOptions = [];
