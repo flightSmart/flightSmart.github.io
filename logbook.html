@@ -731,9 +731,9 @@
             --tl-bar-dim: rgb(118, 118, 118);      /* the non-matching part of a bar while filters are on */
             --tl-bar-hover: rgb(250, 250, 250);
             --tl-trend: rgb(108, 108, 108);        /* smoothed trend line behind the bars */
-            --tl-sel: rgb(152, 198, 166);          /* the part of a bar that matches the filters */
-            --tl-sel-hover: rgb(196, 232, 208);
-            --tl-sel-trend: rgba(100, 195, 153, 0.45);
+            --tl-sel: rgb(121, 175, 145);          /* #79af91 — the part of a bar that matches the filters (same in both themes) */
+            --tl-sel-hover: rgb(160, 205, 179);
+            --tl-sel-trend: rgba(121, 175, 145, 0.45);
             --tl-month: rgb(135, 135, 135);
             --tl-year: rgb(214, 214, 214);
         }
@@ -742,9 +742,9 @@
             --tl-bar-dim: rgb(196, 196, 196);
             --tl-bar-hover: rgb(45, 45, 45);
             --tl-trend: rgb(196, 196, 196);
-            --tl-sel: rgb(70, 170, 125);
-            --tl-sel-hover: rgb(0, 115, 70);
-            --tl-sel-trend: rgba(0, 148, 90, 0.35);
+            --tl-sel: rgb(121, 175, 145);
+            --tl-sel-hover: rgb(88, 145, 113);
+            --tl-sel-trend: rgba(121, 175, 145, 0.45);
             --tl-month: rgb(130, 130, 130);
             --tl-year: rgb(70, 70, 70);
         }
@@ -1919,6 +1919,7 @@ window.renderAllActiveFilters = function() {
         container.appendChild(createGlobalChip('Date Range', dateSubText, 'include', function() {
             document.getElementById('start-date').value = '';
             document.getElementById('end-date').value = '';
+            syncDateFilterHistory();
             window.renderAllActiveFilters();
             if (window.applyFiltersGlobal) window.applyFiltersGlobal();
         }, null));
@@ -2268,13 +2269,25 @@ document.addEventListener('keydown', function(e) {
         if (anyDropdownOpen) return;
         if (filterHistory.length > 0) {
             var lastFilter = filterHistory.pop();
-            if (lastFilter.mode === 'include') filterState[lastFilter.key].includes.delete(lastFilter.value);
+            if (lastFilter.key === 'date') {
+                document.getElementById('start-date').value = '';
+                document.getElementById('end-date').value = '';
+            } else if (lastFilter.mode === 'include') filterState[lastFilter.key].includes.delete(lastFilter.value);
             else filterState[lastFilter.key].excludes.delete(lastFilter.value);
             if (window.renderAllActiveFilters) window.renderAllActiveFilters();
             if (window.applyFiltersGlobal) window.applyFiltersGlobal();
         }
     }
 });
+
+// Keeps the Date Range in the Escape-to-undo history: it becomes the most recent filter whenever it's
+// set or changed, and is dropped from the history once both dates are cleared.
+function syncDateFilterHistory() {
+    filterHistory = filterHistory.filter(function(h) { return h.key !== 'date'; });
+    if (document.getElementById('start-date').value || document.getElementById('end-date').value) {
+        filterHistory.push({ key: 'date', value: 'range', mode: 'include' });
+    }
+}
 
 function toggleSidebar() {
     var sb = document.getElementById('sidebar');
@@ -2506,6 +2519,7 @@ var Timeline = (function() {
         var last = ym.y + '-' + pad2(ym.m + 1) + '-' + pad2(new Date(ym.y, ym.m + 1, 0).getDate());
         if (sdEl.value === first && edEl.value === last) { sdEl.value = ''; edEl.value = ''; }
         else { sdEl.value = first; edEl.value = last; }
+        syncDateFilterHistory();
         if (window.renderAllActiveFilters) window.renderAllActiveFilters();
         if (window.applyFiltersGlobal) window.applyFiltersGlobal();
     }
@@ -3253,6 +3267,7 @@ Promise.all([
 
             ['start-date','end-date'].forEach(function(id){
                 document.getElementById(id).addEventListener('change', function(){
+                    syncDateFilterHistory();
                     if (window.renderAllActiveFilters) window.renderAllActiveFilters();
                     if (window.applyFiltersGlobal) window.applyFiltersGlobal();
                 });
