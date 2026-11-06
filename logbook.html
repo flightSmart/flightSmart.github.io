@@ -1843,16 +1843,119 @@ function getTpSize() {
     }
 }
 
+// ── RUNWAY DATA (OurAirports runways.csv) ───────────────────────────────────
+// window.runwayData maps an airport ident (e.g. "KSAN") to its open runways:
+//   [{ ids: ['09','27'], hdg: <true heading in degrees, 0-360>, len: <length in ft> }, ...]
+window.runwayData = {};
+
+function bearingDeg(lat1, lon1, lat2, lon2) {
+    var R = Math.PI / 180;
+    var p1 = lat1 * R, p2 = lat2 * R, dl = (lon2 - lon1) * R;
+    var y = Math.sin(dl) * Math.cos(p2);
+    var x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+    return (Math.atan2(y, x) / R + 360) % 360;
+}
+
+function loadRunwayData() {
+    Papa.parse('https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv', {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function(res) {
+            var out = {};
+            res.data.forEach(function(r) {
+                if (!r.airport_ident || r.closed === '1') return;
+
+                // Preferred: true bearing between the two thresholds (exact, and the map is true-north).
+                var la1 = parseFloat(r.le_latitude_deg), lo1 = parseFloat(r.le_longitude_deg);
+                var la2 = parseFloat(r.he_latitude_deg), lo2 = parseFloat(r.he_longitude_deg);
+                var hdg = null;
+                if (isFinite(la1) && isFinite(lo1) && isFinite(la2) && isFinite(lo2) &&
+                    Math.abs(la1 - la2) + Math.abs(lo1 - lo2) > 0.0005) {
+                    hdg = bearingDeg(la1, lo1, la2, lo2);
+                } else {
+                    var le = parseFloat(r.le_heading_degT), he = parseFloat(r.he_heading_degT);
+                    if (isFinite(le))      hdg = le;
+                    else if (isFinite(he)) hdg = (he + 180) % 360;
+                    else {
+                        // Last resort: runway number x10 (magnetic, so a few degrees off true).
+                        var m = (r.le_ident || '').match(/^(\d{1,2})/);
+                        if (m) hdg = (parseInt(m[1], 10) % 36) * 10;
+                    }
+                }
+                if (hdg === null) return;   // helipads, water lanes with no usable heading, etc.
+
+                var key = r.airport_ident.trim().toUpperCase();
+                (out[key] = out[key] || []).push({
+                    ids: [(r.le_ident || '').toUpperCase(), (r.he_ident || '').toUpperCase()],
+                    hdg: hdg,
+                    len: parseFloat(r.length_ft) || 0
+                });
+            });
+            window.runwayData = out;
+            // Patterns may already be on the map (drawn north-up before this finished): re-orient in place.
+            resizeTrafficPatterns();
+        },
+        error: function() { /* no runway data: patterns simply stay north-up */ }
+    });
+}
+loadRunwayData();
+
+// Picks the runway heading used to orient a pattern at an airport.
+// rwyHint (optional) comes from the flight remarks, e.g. "TP at KSAN RWY 27" -> "27".
+// Otherwise the longest open runway is used. Returns null when nothing is known.
+function getTpHeading(ident, rwyHint) {
+    var list = ident ? window.runwayData[ident] : null;
+    if (!list || !list.length) return null;
+
+    var norm = function(s) { return String(s || '').toUpperCase().replace(/^0+/, ''); };
+    var num  = function(s) { return norm(s).replace(/[LRC]$/, ''); };
+
+    if (rwyHint) {
+        var h = norm(rwyHint), hasSide = /[LRC]$/.test(h), best = null;
+        list.forEach(function(rw) {
+            var hit = rw.ids.some(function(id) { return hasSide ? norm(id) === h : num(id) === num(h); });
+            if (hit && (!best || rw.len > best.len)) best = rw;
+        });
+        if (best) return best.hdg;
+    }
+    return list.reduce(function(a, b) { return b.len > a.len ? b : a; }).hdg;
+}
+
+// Same rounded rectangle as before, offset from the airport exactly as before, but turned so
+// its long axis lies along the runway. Rotation is done in Web-Mercator screen space
+// (east = dLon, north = dLat / cos(lat)) so the shape isn't skewed at higher latitudes.
+// headingDeg == null leaves it north-up, identical to the previous behaviour.
+function makeTpPoints(lat, lon, sz, headingDeg) {
+    // Offsets from the airport: the pattern sits alongside the runway, not centred on it.
+    var base = makeRoundedRectPoints(sz.halfH * 0.2, sz.halfW * 0.6, sz.halfH, sz.halfW, sz.cornerR, 12);
+    if (headingDeg === null || headingDeg === undefined) {
+        return base.map(function(p) { return [lat + p[0], lon + p[1]]; });
+    }
+
+    // A rectangle is symmetric end-to-end, so only the axis matters. Fold into (-90, 90]
+    // so the pattern sits east of a N-S runway (as it did north-up) and south of an E-W one.
+    // (Which side real traffic uses depends on the runway in use, which isn't known here.)
+    var axis = 90 - ((((90 - headingDeg) % 180) + 180) % 180);
+    var th = axis * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
+    var k = Math.max(0.05, Math.cos(lat * Math.PI / 180));
+
+    return base.map(function(p) {
+        var x = p[1], y = p[0] / k;               // screen-space east / north
+        var xr = x * c + y * s;                   // clockwise rotation by `axis`
+        var yr = -x * s + y * c;
+        return [lat + yr * k, lon + xr];
+    });
+}
+
 // Resizes existing traffic-pattern rectangles in place for the current zoom,
 // instead of rebuilding the whole map on every zoom.
 function resizeTrafficPatterns() {
+    if (typeof map === 'undefined' || !map || !tpLayers.length) return;
     var sz = getTpSize();
     tpLayers.forEach(function(l) {
         var c = l._tpCenter;
         if (!c) return;
-        l.setLatLngs(makeRoundedRectPoints(
-            c.lat + sz.halfH * 0.2, c.lon + c.offset + sz.halfW * 0.6,
-            sz.halfH, sz.halfW, sz.cornerR, 12));
+        var pts = makeTpPoints(c.lat, c.lon, sz, getTpHeading(c.ident, c.rwy));
+        l.setLatLngs(pts.map(function(p) { return [p[0], p[1] + c.offset]; }));
     });
 }
 
@@ -2550,8 +2653,9 @@ Promise.all([
                     } catch(e) { }
                 }
 
-                var apObj = { 
-                    lat: parseFloat(row.latitude_deg), 
+                var apObj = {
+                    ident: row.ident.trim().toUpperCase(),   // key into window.runwayData
+                    lat: parseFloat(row.latitude_deg),
                     lon: parseFloat(row.longitude_deg), 
                     name: row.name || row.ident,
                     continent: continentMap[row.continent] || 'Unknown Region',
@@ -2802,17 +2906,18 @@ Promise.all([
                                 }
                             }
 
-                            // Draw the rectangle using the targeted airport's coordinates
-                            var tpLat = targetAp.lat + sz.halfH * 0.2;
-                            var tpLon = targetAp.lon + sz.halfW * 0.6;
-                            var rectPts = makeRoundedRectPoints(tpLat, tpLon, sz.halfH, sz.halfW, sz.cornerR, 12);
-                            
+                            // Orient the pattern along the runway. Optional remark hint: "TP at KSAN RWY 27L"
+                            var rwyMatch = f.remarks ? f.remarks.match(/\b(?:RWY|RW|RUNWAY)\s*0?(\d{1,2}[LRC]?)\b/i) : null;
+                            var rwyHint = rwyMatch ? rwyMatch[1].toUpperCase() : null;
+                            var rectPts = makeTpPoints(targetAp.lat, targetAp.lon, sz, getTpHeading(targetAp.ident, rwyHint));
+
                             mapOffsets.forEach(function(offset) {
                                 var shifted = rectPts.map(function(p) { return [p[0], p[1] + offset]; });
                                 var rectLine = L.polyline(shifted, { color: '#64c49a', weight: 1, opacity: tpVisible ? 0.5 : 0, interactive: false });
-                                
+
                                 rectLine.isTp = true; // Flag for hover visibility toggling
-                                rectLine._tpCenter = { lat: targetAp.lat, lon: targetAp.lon, offset: offset }; // for resize on zoom
+                                // for resize on zoom (and re-orienting once runway data arrives)
+                                rectLine._tpCenter = { lat: targetAp.lat, lon: targetAp.lon, offset: offset, ident: targetAp.ident, rwy: rwyHint };
                                 drawnLayers.addLayer(rectLine);
                                 linesForFlight.push(rectLine);
                                 tpLayers.push(rectLine);
