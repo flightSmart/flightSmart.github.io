@@ -1,0 +1,9 @@
+Saved 2 new picture(s), 448 already there.
+
+Aircraft not found on infiniteflight.com/fleet (add to AIRCRAFT_PAGES if it is there under another name):
+  - Boeing 747-SCA  (1 liveries)
+  - Boeing 747SP  (1 liveries)
+  - Cessna Citation X  (7 liveries)
+  - Embraer E170  (1 liveries)
+  - Embraer E195  (2 liveries)
+  - Unknown Unknown  (2 liveries)
