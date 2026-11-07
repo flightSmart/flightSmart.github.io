@@ -884,10 +884,10 @@
         .lb-meta { position: absolute; top: -2.9px; right: 0; display: flex; flex-direction: column; align-items: flex-end; }
         .lb-no { font-size: 14px; letter-spacing: -0.11em; line-height: 16px; padding: 0 0 0 1px; border-bottom: 1px solid var(--lbc-line); white-space: nowrap; }
         .lb-meta-pilot { margin-top: 7px; font-family: Inter, var(--font-sans); font-weight: 600; font-size: 8px; letter-spacing: -0.08em; line-height: 10px; color: var(--lbc-faint); }
-        .lb-if-badge { margin-top: 8px; width: 64px; height: 20px; box-sizing: border-box; border: 1px solid var(--lbc-faint); border-radius: 3px;
+        .lb-if-badge { margin-top: 8px; width: 64px; height: 20px; box-sizing: border-box; border: 1px solid var(--lbc-faint); border-radius: 3px; color: var(--lbc-faint);
                        display: flex; align-items: center; justify-content: center; }
         .lb-if-badge[hidden] { display: none; }
-        .lb-if-badge img { display: block; width: 56px; height: 12px; }
+        .lb-if-badge svg { display: block; width: 56px; height: 13px; }
 
         /* the small ring opens Live Org settings */
         .lb-dot { position: absolute; right: -4px; top: -0.3px; width: 14px; height: 14px; padding: 0; background: none; border: none; cursor: pointer; }
@@ -956,13 +956,14 @@
         .lb-btn:disabled { opacity: 0.5; cursor: default; }
         .lb-btn-small { height: 22px; width: auto; padding: 0 9px; font-size: 9px; letter-spacing: 0; }
 
-        .lb-status { min-height: 14px; margin-top: 12px; font-size: 9px; letter-spacing: 0; line-height: 1.7; color: var(--text-muted); text-transform: uppercase; }
+        .lb-status { min-height: 14px; margin-top: 12px; font-size: 11px; letter-spacing: 0; line-height: 1.7; color: var(--lbc-ink); text-transform: uppercase; }
         .lb-status:empty { min-height: 0; margin-top: 0; }
         /* Submission prints like a receipt */
-        .lb-receipt { font-family: var(--font-mono); font-size: 9px; line-height: 1.6; color: var(--text-muted); text-transform: uppercase; }
+        .lb-receipt { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0; line-height: 1.6; color: var(--lbc-ink); text-transform: uppercase; }
         .lb-rl { overflow: hidden; white-space: pre-wrap; animation: lb-feed 0.16s ease-out; }
-        .lb-rule { white-space: nowrap; overflow: hidden; color: var(--border-main); }
-        .lb-rl.lb-stamp { color: var(--text-main); }
+        /* same as the dotted line under LOG BOOK: runs to the same edges as that one */
+        .lb-rl.lb-rule { height: 0; margin: 7px -19px 7px -18px; border-top: 1px dotted var(--lbc-line); animation: none; }
+        .lb-rl.lb-stamp { color: var(--lbc-ink); }
         .lb-rl.lb-note { text-transform: none; }
         .lb-dots.lb-busy::after { content: ''; animation: lb-dots 0.9s steps(4) infinite; }
         @keyframes lb-feed { from { max-height: 0; opacity: 0; transform: translateY(-3px); } to { max-height: 40px; opacity: 1; transform: none; } }
@@ -1003,6 +1004,7 @@
             .lb-overlay { padding-top: 70px; }
             .lb-card { padding: 0 16px 17px 16px; }
             .lb-head { margin: 0 -12px; padding: 14px 12px 10px; }
+            .lb-rl.lb-rule { margin-left: -12px; margin-right: -12px; }
             .lb-labels, .lb-box, .lb-bottom { column-gap: 14px; }
             .lb-top-grid { grid-template-columns: max-content 100px; }
             .lb-if-badge { display: none; }
@@ -1248,9 +1250,13 @@
                     <div class="lb-meta">
                         <div class="lb-no" id="lb-num">N°</div>
                         <div class="lb-meta-pilot">darkeyes</div>
-                        <!-- Infinite Flight badge: export "Group 4" from the Figma file as images/infinite-flight-badge.svg -->
-                        <div class="lb-if-badge" hidden><img src="/images/infinite-flight-badge.svg" alt="Infinite Flight"
-                             onload="this.parentNode.hidden=false" onerror="this.parentNode.remove()"></div>
+                        <div class="lb-if-badge">
+                            <svg width="56" height="13" viewBox="0 0 56 13" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Infinite Flight">
+                            <path d="M3.49609 2.59093C3.93433 2.59095 4.41859 2.73012 4.9541 2.98643L4.5625 3.14854C4.21937 3.29053 4.00318 3.5455 3.92188 3.82823C3.75754 3.77712 3.61431 3.7511 3.49609 3.75108C2.23282 3.75108 1.20996 4.72469 1.20996 5.92393C1.20998 6.98043 2.00399 7.86188 3.05664 8.05675C3.08267 8.07466 3.11013 8.09153 3.13867 8.10753L4.69238 8.97862C4.2597 9.15971 3.86171 9.25692 3.49609 9.25694C1.56635 9.25694 2.38316e-05 7.76574 0 5.92393C0 4.08211 1.56633 2.59093 3.49609 2.59093ZM13.0654 2.63292C14.7288 2.88882 16 4.26436 16 5.92393C16 7.76574 14.4337 9.25694 12.5039 9.25694C11.9076 9.25681 11.2263 8.99822 10.4463 8.53917C10.0728 8.31934 9.68318 8.05604 9.2832 7.7589C9.1456 7.65667 9.00886 7.55241 8.87402 7.4464L9.77539 6.65343C9.85791 6.71708 9.94113 6.78003 10.0244 6.8419C10.3919 7.11489 10.7464 7.35408 11.0791 7.54991C11.6845 7.90624 12.1851 8.0966 12.5039 8.09679C13.7672 8.09679 14.79 7.12316 14.79 5.92393C14.79 4.81028 13.908 3.89127 12.7705 3.76573C12.7733 3.7613 12.7766 3.75649 12.7793 3.75206C12.9217 3.52157 13.0196 3.29566 13.0605 3.0587C13.0853 2.91537 13.0881 2.77172 13.0654 2.63292ZM11.3779 2.67589C11.3885 2.67085 11.7575 2.49653 11.916 2.66222C12.3209 3.06605 11.1279 4.12218 11.1279 4.12218L8.01758 6.82433C7.93311 6.8977 7.78193 6.99722 7.67969 7.04698L5.94824 7.88976C5.84629 7.93933 5.68269 7.93466 5.58398 7.87999L4.03711 7.02354C3.98755 6.996 3.98818 6.95242 4.03809 6.92589L4.35254 6.75792C4.45212 6.70501 4.62489 6.67431 4.73828 6.68858L5.70117 6.81065C5.81477 6.82506 5.97865 6.77939 6.06641 6.71007L7.12988 5.87022C7.26179 5.76561 7.26602 5.59196 7.13867 5.48448C7.13867 5.48448 7.00457 5.35275 6.40625 4.91319C5.81183 4.47651 5.25152 4.16148 5.24414 4.15733C5.09875 4.07216 5.1083 3.95073 5.2666 3.88585L5.6709 3.72081C5.82892 3.65636 6.09009 3.63923 6.25684 3.6837L8.56348 4.30089C8.6737 4.33033 8.83752 4.30034 8.92871 4.23448C8.95361 4.21656 10.2283 3.29876 10.4092 3.13585C10.5922 2.97109 11.1254 2.56507 11.3779 2.67589Z" fill="currentColor"/>
+                            <path d="M20.5899 5.17677V0H19.2772V5.17677H20.5899ZM25.8812 3.36283L23.7347 0H22.3147V5.17677H23.5448V1.82222L25.7161 5.22647H27.1113V0H25.8812V3.36283ZM28.8197 5.17677H30.1158V3.2303H32.0229V2.15353H30.1158V1.08505H32.51V0H28.8197V5.17677ZM35.242 5.17677V0H33.9294V5.17677H35.242ZM40.5334 3.36283L38.3869 0H36.9669V5.17677H38.197V1.82222L40.3683 5.22647H41.7635V0H40.5334V3.36283ZM44.7928 5.17677V0H43.4801V5.17677H44.7928ZM50.7611 1.10162V0H46.1626V1.10162H47.8055V5.17677H49.1182V1.10162H50.7611ZM55.8955 5.17677V4.11657H53.4106V3.10606H55.4085V2.05414H53.4106V1.0602H55.8955V0H52.1226V5.17677H55.8955Z" fill-rule="evenodd" clip-rule="evenodd" fill="currentColor"/>
+                            <path d="M55.9159 7.81677V6.71516H51.3174V7.81677H52.9603V11.8919H54.273V7.81677H55.9159ZM49.9641 11.8919V6.71516H48.6514V8.72788H46.5792V6.71516H45.2665V11.8919H46.5792V9.83778H48.6514V11.8919H49.9641ZM43.682 11.5358V8.97637H41.2218V10.02H42.4932V10.782C42.2786 10.8731 41.9648 10.9394 41.6676 10.9394C40.6852 10.9394 40.1651 10.3265 40.1651 9.29112C40.1651 8.33031 40.7595 7.7091 41.6841 7.7091C42.1795 7.7091 42.6831 7.85819 43.1702 8.1398L43.583 7.03819C43.0876 6.74 42.3033 6.59091 41.6429 6.59091C39.9504 6.59091 38.8607 7.62627 38.8607 9.32425C38.8607 11.0305 39.9834 12.0162 41.6346 12.0162C42.3859 12.0162 43.1207 11.8422 43.682 11.5358ZM37.3505 11.8919V6.71516H36.0378V11.8919H37.3505ZM34.5772 11.8919V10.7903H32.4141V6.71516H31.1015V11.8919H34.5772ZM26 11.8919H27.2962V9.94546H29.2033V8.86869H27.2962V7.80021H29.6903V6.71516H26V11.8919Z" fill-rule="evenodd" clip-rule="evenodd" fill="currentColor"/>
+                            </svg>
+                        </div>
                     </div>
                 </div>
 
@@ -3470,7 +3476,7 @@ var Logbook = (function() {
                 })();
             });
         }
-        function rule() { feed('lb-rule').textContent = new Array(160).join('-'); }
+        function rule() { feed('lb-rule'); }
         function stamp() {
             try {
                 return new Intl.DateTimeFormat('en-US', { timeZone: LOGBOOK_TZ, year: 'numeric', month: 'numeric', day: 'numeric',
