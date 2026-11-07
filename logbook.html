@@ -816,115 +816,145 @@
         #timeline-panel.open ~ .lb-overlay { bottom: 128px; }   /* leave the timeline unblurred */
         [data-theme="light"] .lb-overlay { background-color: rgba(248, 247, 244, 0.35); }
         .lb-overlay[hidden] { display: none; }
+        /* Log book card (matches the Figma mock-up, 479px wide). Colours per theme: */
+        .lb-card {
+            --lbc-card: var(--bg-dark);  --lbc-field: var(--bg-light);  --lbc-field-hi: rgb(60, 60, 60);
+            --lbc-ink: var(--text-main); --lbc-line: rgb(110, 110, 110); --lbc-faint: rgb(68, 68, 68);
+            --lbc-x: var(--text-muted);  --lbc-dot: rgb(140, 140, 140);
+            --lbc-notch-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='25.6' viewBox='0 0 6 25.6'%3E%3Cpath d='M0.5 0V0.2A3.8 3.8 0 0 1 0.5 7.8V25.6' fill='none' stroke='%236e6e6e'/%3E%3C/svg%3E");
+            --lbc-notch-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='25.6' viewBox='0 0 6 25.6'%3E%3Cpath d='M5.5 0V0.2A3.8 3.8 0 0 0 5.5 7.8V25.6' fill='none' stroke='%236e6e6e'/%3E%3C/svg%3E");
+        }
+        [data-theme="light"] .lb-card {
+            --lbc-card: #eeeeee; --lbc-field: #dcdcdc; --lbc-field-hi: #d2d2d2;
+            --lbc-ink: #464646;  --lbc-line: #a5a5a5;  --lbc-faint: #d9d9d9;
+            --lbc-x: #696969;    --lbc-dot: #727272;
+            --lbc-notch-l: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='25.6' viewBox='0 0 6 25.6'%3E%3Cpath d='M0.5 0V0.2A3.8 3.8 0 0 1 0.5 7.8V25.6' fill='none' stroke='%23a5a5a5'/%3E%3C/svg%3E");
+            --lbc-notch-r: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='25.6' viewBox='0 0 6 25.6'%3E%3Cpath d='M5.5 0V0.2A3.8 3.8 0 0 0 5.5 7.8V25.6' fill='none' stroke='%23a5a5a5'/%3E%3C/svg%3E");
+        }
         .lb-card {
             position: relative;
-            width: 100%; max-width: 480px;
+            box-sizing: border-box;
+            width: 100%; max-width: 479px;
             margin: auto 0;
-            background: var(--bg-dark);
-            border: 1px solid var(--border-main);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.45);
-            color: var(--text-main);
+            background: var(--lbc-card);
+            border-top: 1px solid var(--lbc-line); border-bottom: 1px solid var(--lbc-line);
+            color: var(--lbc-ink);
             font-family: var(--font-mono);
             letter-spacing: 0;
-            padding: 14px 22px 18px;
+            padding: 0 23px 17px 22px;
         }
-        .lb-head { position: relative; text-align: center; margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border-main); }
-        /* same as the "darkeyes" in the top-left of the page */
-        .lb-pilot { display: inline-flex; align-items: center; gap: 5px; font-family: var(--font-sans); font-weight: bold; font-size: 10px; color: var(--text-main); }
-        .lb-pilot img { width: 15px; border-radius: 50%; transform: translateY(1px); }
-        .lb-title { font-size: 17px; line-height: 1.25; }
-                .lb-icon-btn {
-            position: absolute; top: -4px;
-            background: none; border: 1px solid transparent; color: var(--text-muted);
-            width: 22px; height: 22px; padding: 0; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            font-family: var(--font-mono); font-size: 12px; line-height: 1;
+        /* notched (perforated) left and right edges */
+        .lb-card::before, .lb-card::after {
+            content: ''; position: absolute; top: -1px; bottom: -1px; width: 6px; pointer-events: none;
+            background-repeat: repeat-y; background-size: 6px 25.6px;
         }
-        .lb-icon-btn:hover, .lb-icon-btn:focus-visible { color: var(--text-main); border-color: var(--border-main); outline: none; }
-        .lb-icon-btn svg { width: 13px; height: 13px; }
-        #lb-settings-btn { left: -10px; }
-        #lb-close-btn { right: -12px; }
+        .lb-card::before { left: 0; background-image: var(--lbc-notch-l); }
+        .lb-card::after { right: 0; background-image: var(--lbc-notch-r); }
 
-        .lb-label { font-size: 11px; text-transform: uppercase; white-space: nowrap; color: var(--text-main); }
+        .lb-head { position: relative; margin: 0 -19px 0 -18px; padding: 14px 19px 10px 18px; border-bottom: 1px dotted var(--lbc-line); }
+        .lb-title { font-size: 24px; letter-spacing: -0.11em; line-height: normal; color: var(--lbc-ink); white-space: nowrap; }
+        .lb-close {
+            position: absolute; top: 14.6px; right: 15px; width: 14px; height: 14px; padding: 0;
+            background: none; border: none; cursor: pointer; color: var(--lbc-x);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .lb-close svg { width: 6px; height: 6px; stroke: currentColor; stroke-width: 1.3; }
+        .lb-close:hover, .lb-close:focus-visible { color: var(--lbc-ink); outline: none; }
+
+        .lb-label { display: block; font-size: 11px; line-height: normal; letter-spacing: 0; text-transform: uppercase; white-space: nowrap; color: var(--lbc-ink); }
         .lb-label.lb-err-label { color: var(--exc-txt); }
-        .lb-section { margin-bottom: 16px; }
-        .lb-labels, .lb-line, .lb-box { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; }
-        .lb-labels { margin-bottom: 3px; }
-        .lb-line { border-bottom: 1px dotted var(--border-main); }
+        .lb-section { margin-top: 16px; }
+        .lb-top + .lb-section { margin-top: 17px; }
+        .lb-labels { position: relative; display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; margin-bottom: 2px; }
+        .lb-box { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; min-height: 24px; box-sizing: border-box;
+                  background: var(--lbc-field); border-bottom: 1px dotted var(--lbc-line); }
         .lb-one { grid-template-columns: 1fr; }
-        .lb-under { border-bottom: 1px dotted var(--border-main); }
         .lb-card [data-field] { min-width: 0; }
         .lb-card [data-field].lb-err { box-shadow: inset 0 -1px 0 var(--exc-brd); }
 
-        /* Date / flight time share one label column so their lines start at the same x */
-        .lb-top { display: grid; grid-template-columns: max-content 118px 1fr max-content 26px; column-gap: 8px; row-gap: 12px; align-items: end; margin-bottom: 18px; }
-        .lb-top .lb-label { justify-self: end; }
+        /* Date / flight time: labels right-aligned in one column, ► marks the first line */
+        .lb-top { position: relative; margin-top: 13.3px; }
+        .lb-top-grid { display: grid; grid-template-columns: max-content 119px; column-gap: 8px; row-gap: 10px; align-items: end; width: max-content; }
+        .lb-top-grid .lb-label { justify-self: end; margin-bottom: 3.5px; }
+        .lb-top-grid .lb-box { grid-template-columns: 1fr; }
+        .lb-mark { position: absolute; left: 1px; top: 13.5px; width: 7.2px; height: 5.2px; color: var(--lbc-ink); }
+        .lb-mark svg { display: block; width: 100%; height: 100%; fill: currentColor; }
+
+        /* N°, pilot and Infinite Flight badge, top right */
+        .lb-meta { position: absolute; top: -2.9px; right: 0; display: flex; flex-direction: column; align-items: flex-end; }
+        .lb-no { font-size: 14px; letter-spacing: -0.11em; line-height: 16px; padding: 0 0 0 1px; border-bottom: 1px solid var(--lbc-line); white-space: nowrap; }
+        .lb-meta-pilot { margin-top: 7px; font-family: Inter, var(--font-sans); font-weight: 600; font-size: 8px; letter-spacing: -0.08em; line-height: 10px; color: var(--lbc-faint); }
+        .lb-if-badge { margin-top: 8px; width: 64px; height: 20px; box-sizing: border-box; border: 1px solid var(--lbc-faint); border-radius: 3px;
+                       display: flex; align-items: center; justify-content: center; }
+        .lb-if-badge[hidden] { display: none; }
+        .lb-if-badge img { display: block; width: 56px; height: 12px; }
+
+        /* the small ring opens Live Org settings */
+        .lb-dot { position: absolute; right: -4px; top: -0.3px; width: 14px; height: 14px; padding: 0; background: none; border: none; cursor: pointer; }
+        .lb-dot::before { content: ''; position: absolute; left: 4px; top: 4px; width: 6px; height: 6px; box-sizing: border-box;
+                          border: 1px solid var(--lbc-dot); border-radius: 50%; }
+        .lb-dot:hover::before, .lb-dot:focus-visible::before { border-color: var(--lbc-ink); background: var(--lbc-ink); }
+        .lb-dot:focus-visible { outline: none; }
 
         .lb-card .lb-input {
-            width: 100%;
+            width: 100%; height: 23px;
             flex: none;
             background: transparent;
             border: none; border-radius: 0;
-            color: var(--text-main);
+            color: var(--lbc-ink);
             font-family: var(--lb-hand);
             font-size: 14px; letter-spacing: 0.3px;
-            padding: 0 2px; height: 20px;
+            padding: 0 5px;
             outline: none;
         }
-        .lb-card .lb-input:focus { border: none; background: rgba(255, 255, 255, 0.035); }
-        [data-theme="light"] .lb-card .lb-input:focus { background: rgba(0, 0, 0, 0.04); }
-        .lb-card .lb-input::placeholder { color: var(--text-muted); opacity: 0.5; }
+        .lb-card .lb-input:focus { border: none; background: rgba(255, 255, 255, 0.04); }
+        [data-theme="light"] .lb-card .lb-input:focus { background: rgba(0, 0, 0, 0.035); }
+        .lb-card .lb-input::placeholder { color: var(--lbc-ink); opacity: 0.35; }
         .lb-card input[type="date"].lb-input { color-scheme: dark; cursor: text; }
         [data-theme="light"] .lb-card input[type="date"].lb-input { color-scheme: light; }
         .lb-card input[type="date"].lb-input::-webkit-calendar-picker-indicator { opacity: 0.45; width: 10px; height: 10px; margin-left: 2px; cursor: pointer; }
-        .lb-card #lb-ldgs { text-align: center; }
-
-        /* Live org / airframe: one filled bar, two pick-only dropdowns */
-        .lb-box { background: var(--bg-light); padding: 0 4px; }
-        .lb-card .lb-box .lb-input { height: 24px; }
         .lb-card .lb-pick { cursor: pointer; caret-color: transparent; }
         .lb-card .lb-pick:focus { caret-color: auto; }
 
         /* Pattern work chips */
-        .lb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; min-height: 20px; cursor: text; }
-        .lb-card .lb-chips .lb-input { flex: 1; min-width: 100px; width: auto; }
+        .lb-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 0 10px; padding-left: 5px; min-height: 23px; cursor: text; }
+        .lb-card .lb-chips .lb-input { flex: 1; min-width: 60px; width: auto; padding-left: 0; }
         .lb-chip { font-family: var(--lb-hand); font-size: 14px; letter-spacing: 0.3px; white-space: nowrap; }
-        .lb-chip button { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 8px; padding: 0 2px; }
+        .lb-chip button { background: none; border: none; color: var(--lbc-x); cursor: pointer; font-family: var(--font-mono); font-size: 8px; padding: 0 2px; }
         .lb-chip button:hover { color: var(--exc-txt); }
 
         .lb-card textarea.lb-remarks {
-            width: 100%; min-height: 72px; resize: vertical; display: block;
-            background: var(--bg-light); color: var(--text-main);
-            border: none; border-radius: 0;
+            width: 100%; height: 85.5px; min-height: 48px; resize: vertical; display: block; box-sizing: border-box;
+            background: var(--lbc-field); color: var(--lbc-ink);
+            border: none; border-bottom: 1px dotted var(--lbc-line); border-radius: 0;
             font-family: var(--lb-hand); font-size: 14px; letter-spacing: 0.3px; line-height: 1.35;
-            padding: 5px 7px; outline: none;
+            padding: 4px 5px; outline: none;
         }
-        [data-theme="light"] .lb-card { background: #eeeeee; }    /* lighter than the #dcdcdc entries so they stay visible */
-        [data-theme="light"] .lb-box,
-        [data-theme="light"] .lb-card textarea.lb-remarks,
+        .lb-card textarea.lb-remarks:focus { background: var(--lbc-field-hi); }
         [data-theme="light"] .lb-dropdown { background: #dcdcdc; }
 
         /* Signature = password entry shown as *****. The real input is invisible underneath. */
-        .lb-bottom { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: end; }
+        .lb-bottom { display: grid; grid-template-columns: 1fr 1fr; column-gap: 24px; align-items: end; margin-top: 16px; }
         .lb-sig { position: relative; }
         .lb-card .lb-sig .lb-input { color: transparent; caret-color: transparent; }
         .lb-sig-ink {
-            position: absolute; left: 3px; bottom: 1px; right: 0; overflow: hidden; pointer-events: none;
+            position: absolute; left: 5px; bottom: 2px; right: 0; overflow: hidden; pointer-events: none;
             font-family: var(--font-mono); font-size: 11px; letter-spacing: 1px; line-height: 18px;
-            color: var(--text-main); white-space: nowrap;
+            color: var(--lbc-ink); white-space: nowrap;
         }
-        .lb-sig .lb-input:focus + .lb-sig-ink::after { content: '|'; color: var(--text-muted); animation: lb-blink 1s steps(1) infinite; }
+        .lb-sig .lb-input:focus + .lb-sig-ink::after { content: '|'; color: var(--lbc-x); animation: lb-blink 1s steps(1) infinite; }
         @keyframes lb-blink { 50% { opacity: 0; } }
 
         .lb-btn {
-            background: var(--bg-light); color: var(--text-main);
-            border: 1px solid var(--bg-light);
-            font-family: var(--font-mono); font-size: 11px; letter-spacing: 0;
-            height: 36px; width: 100%; cursor: pointer; transition: 0.15s;
+            box-sizing: border-box;
+            background: var(--lbc-field); color: var(--lbc-ink);
+            border: none; border-bottom: 1px dotted var(--lbc-line); border-radius: 0;
+            font-family: var(--font-mono); font-size: 11px; letter-spacing: -0.11em;
+            height: 36px; width: 100%; cursor: pointer; transition: background 0.15s;
         }
-        .lb-btn:hover, .lb-btn:focus-visible { border-color: var(--text-main); outline: none; background: var(--bg-hover); }
+        .lb-btn:hover, .lb-btn:focus-visible { outline: none; background: var(--lbc-field-hi); }
         .lb-btn:disabled { opacity: 0.5; cursor: default; }
-        .lb-btn-small { height: 22px; width: auto; padding: 0 9px; font-size: 9px; }
+        .lb-btn-small { height: 22px; width: auto; padding: 0 9px; font-size: 9px; letter-spacing: 0; }
 
         .lb-status { min-height: 14px; margin-top: 12px; font-size: 9px; letter-spacing: 0; line-height: 1.7; color: var(--text-muted); text-transform: uppercase; }
         .lb-status:empty { min-height: 0; margin-top: 0; }
@@ -958,9 +988,10 @@
         [data-theme="light"] .lb-dropdown .dropdown-opt.highlighted { background: #cfcfcf; }
 
         /* Settings */
-        .lb-set-note { font-size: 9px; color: var(--text-muted); margin: -16px 0 16px; text-align: center; }
+        .lb-set-note { font-size: 9px; color: var(--lbc-x); margin: 12px 0 14px; }
         .lb-org { border: 1px solid var(--border-faint); padding: 8px 10px 10px; margin-bottom: 8px; }
         .lb-org-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; border-bottom: 1px dotted var(--border-main); }
+        .lb-card .lb-org-head .lb-input { flex: 1; width: auto; min-width: 0; }
         .lb-af { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.3fr 14px; column-gap: 6px; align-items: end; margin-bottom: 4px; }
         .lb-af:not(.lb-af-head) .lb-input { border-bottom: 1px dotted var(--border-main); }
         .lb-af-head { font-size: 8px; color: var(--text-muted); }
@@ -970,9 +1001,11 @@
         @media (max-width: 768px) {
             #timeline-panel.open ~ .lb-overlay { bottom: 0; }
             .lb-overlay { padding-top: 70px; }
-            .lb-card { padding: 14px 14px 16px; }
-            .lb-labels, .lb-line, .lb-box, .lb-bottom { column-gap: 14px; }
-            .lb-top { grid-template-columns: max-content 104px 1fr max-content 24px; }
+            .lb-card { padding: 0 16px 17px 16px; }
+            .lb-head { margin: 0 -12px; padding: 14px 12px 10px; }
+            .lb-labels, .lb-box, .lb-bottom { column-gap: 14px; }
+            .lb-top-grid { grid-template-columns: max-content 100px; }
+            .lb-if-badge { display: none; }
         }
 
         /* ── ZEN MODE (Hide UI) ── */
@@ -1196,75 +1229,81 @@
     <div id="lb-overlay" class="lb-overlay" hidden>
         <form id="lb-card" class="lb-card" autocomplete="off" novalidate>
             <div class="lb-head">
-                <button type="button" class="lb-icon-btn" id="lb-settings-btn" title="Live orgs &amp; airframes" tabindex="-1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                <div class="lb-title" id="lb-title"><span id="lb-title-text">LOG BOOK</span></div>
+                <button type="button" class="lb-close" id="lb-close-btn" title="Close" tabindex="-1">
+                    <svg viewBox="0 0 6 6" aria-hidden="true"><path d="M0.5 0.5L5.5 5.5M5.5 0.5L0.5 5.5"/></svg>
                 </button>
-                <div class="lb-pilot"><img src="/images/pfp.png" alt=" "><span>darkeyes</span></div>
-                <div class="lb-title" id="lb-title"><span id="lb-title-text">LOGBOOK ENTRY</span> <span id="lb-num">#</span></div>
-                <button type="button" class="lb-icon-btn" id="lb-close-btn" title="Close (Esc)" tabindex="-1">✕</button>
             </div>
 
             <!-- ── FORM VIEW ── -->
             <div id="lb-form-view">
                 <div class="lb-top">
-                    <label class="lb-label" for="lb-date" style="grid-row: 1; grid-column: 1;">Date</label>
-                    <div class="lb-under" data-field="date" style="grid-row: 1; grid-column: 2;">
-                        <input class="lb-input" id="lb-date" type="date">
+                    <span class="lb-mark" aria-hidden="true"><svg viewBox="0 0 7.2 5.2"><path d="M0 0L4.6 2.2H7.2V3H4.6L0 5.2Z"/></svg></span>
+                    <div class="lb-top-grid">
+                        <label class="lb-label" for="lb-date">Date:</label>
+                        <div class="lb-box" data-field="date"><input class="lb-input" id="lb-date" type="date"></div>
+                        <label class="lb-label" for="lb-time">Flight Time:</label>
+                        <div class="lb-box" data-field="time"><input class="lb-input" id="lb-time" type="text" placeholder="h:mm" inputmode="numeric" maxlength="6"></div>
                     </div>
-                    <label class="lb-label" for="lb-time" style="grid-row: 2; grid-column: 1;">Flight Time</label>
-                    <div class="lb-under" data-field="time" style="grid-row: 2; grid-column: 2;">
-                        <input class="lb-input" id="lb-time" type="text" placeholder="h:mm" inputmode="numeric" maxlength="6">
-                    </div>
-                    <label class="lb-label" for="lb-ldgs" style="grid-row: 2; grid-column: 4;">Landings</label>
-                    <div class="lb-under" data-field="ldgs" style="grid-row: 2; grid-column: 5;">
-                        <input class="lb-input" id="lb-ldgs" type="text" inputmode="numeric" maxlength="3" value="1">
+                    <div class="lb-meta">
+                        <div class="lb-no" id="lb-num">N°</div>
+                        <div class="lb-meta-pilot">darkeyes</div>
+                        <!-- Infinite Flight badge: export "Group 4" from the Figma file as images/infinite-flight-badge.svg -->
+                        <div class="lb-if-badge" hidden><img src="/images/infinite-flight-badge.svg" alt="Infinite Flight"
+                             onload="this.parentNode.hidden=false" onerror="this.parentNode.remove()"></div>
                     </div>
                 </div>
 
                 <div class="lb-section">
-                    <div class="lb-labels"><label class="lb-label" for="lb-dep">Departure</label><label class="lb-label" for="lb-arr">Arrival</label></div>
-                    <div class="lb-line">
+                    <div class="lb-labels"><label class="lb-label" for="lb-dep">Departure:</label><label class="lb-label" for="lb-arr">Arrival:</label></div>
+                    <div class="lb-box">
                         <div data-field="dep"><input class="lb-input" id="lb-dep" type="text"></div>
                         <div data-field="arr"><input class="lb-input" id="lb-arr" type="text"></div>
                     </div>
                 </div>
 
                 <div class="lb-section">
-                    <div class="lb-labels"><label class="lb-label" for="lb-org">Live Org</label><label class="lb-label" for="lb-af">Airframe</label></div>
+                    <div class="lb-labels">
+                        <label class="lb-label" for="lb-org">Live Org:</label><label class="lb-label" for="lb-af">Airframe:</label>
+                        <button type="button" class="lb-dot" id="lb-settings-btn" title="Live org settings" tabindex="-1"></button>
+                    </div>
                     <div class="lb-box">
                         <div data-field="org"><input class="lb-input lb-pick" id="lb-org" type="text"></div>
                         <div data-field="af"><input class="lb-input lb-pick" id="lb-af" type="text"></div>
                     </div>
                 </div>
 
-                <div class="lb-section">
-                    <div class="lb-labels"><label class="lb-label" for="lb-aircraft">Aircraft</label><label class="lb-label" for="lb-livery">Livery</label></div>
-                    <div class="lb-line">
+                <div class="lb-section" style="margin-top: 13.5px;">
+                    <div class="lb-labels"><label class="lb-label" for="lb-aircraft">Aircraft:</label><label class="lb-label" for="lb-livery">Livery:</label></div>
+                    <div class="lb-box">
                         <div data-field="aircraft"><input class="lb-input" id="lb-aircraft" type="text"></div>
                         <div data-field="livery"><input class="lb-input" id="lb-livery" type="text"></div>
                     </div>
                 </div>
 
-                <div class="lb-section">
-                    <div class="lb-labels lb-one"><label class="lb-label" for="lb-remarks">Remarks</label></div>
+                <div class="lb-section" style="margin-top: 17.6px;">
+                    <div class="lb-labels lb-one"><label class="lb-label" for="lb-remarks">Remarks:</label></div>
                     <div data-field="remarks"><textarea class="lb-remarks" id="lb-remarks" rows="4" spellcheck="true"></textarea></div>
                 </div>
 
-                <div class="lb-section">
-                    <div class="lb-labels lb-one"><label class="lb-label" for="lb-tp">Pattern Work</label></div>
-                    <div class="lb-line lb-one lb-chips" id="lb-tp-chips" data-field="tp"><input class="lb-input" id="lb-tp" type="text"></div>
+                <div class="lb-section" style="margin-top: 13.1px;">
+                    <div class="lb-labels"><label class="lb-label" for="lb-tp">Pattern Work:</label><label class="lb-label" for="lb-ldgs">Landings:</label></div>
+                    <div class="lb-box">
+                        <div class="lb-chips" id="lb-tp-chips" data-field="tp"><input class="lb-input" id="lb-tp" type="text"></div>
+                        <div data-field="ldgs"><input class="lb-input" id="lb-ldgs" type="text" inputmode="numeric" maxlength="3" value="1"></div>
+                    </div>
                 </div>
 
-                <div class="lb-bottom">
+                <div class="lb-bottom" style="margin-top: 15px;">
                     <div>
-                        <div class="lb-labels lb-one"><label class="lb-label" for="lb-sig">Signature</label></div>
+                        <div class="lb-labels lb-one"><label class="lb-label" for="lb-sig">Signature:</label></div>
                         <input type="text" name="username" value="darkeyes" autocomplete="username" hidden>
-                        <div class="lb-under lb-sig" data-field="sig">
+                        <div class="lb-box lb-one lb-sig" data-field="sig">
                             <input class="lb-input" id="lb-sig" type="password" name="password" autocomplete="current-password">
                             <span class="lb-sig-ink" id="lb-sig-ink"></span>
                         </div>
                     </div>
-                    <button type="submit" class="lb-btn" id="lb-submit">SUBMIT</button>
+                    <button type="submit" class="lb-btn" id="lb-submit">FILE</button>
                 </div>
                 <div class="lb-status" id="lb-status" aria-live="polite"></div>
             </div>
@@ -1273,14 +1312,14 @@
             <div id="lb-settings-view" hidden>
                 <div class="lb-set-note">(not saved in logbook sheet)</div>
                 <div class="lb-section">
-                    <div class="lb-label" style="margin-bottom: 8px;">Live Orgs &amp; Airframes</div>
+                    <div class="lb-label" style="margin-bottom: 8px;">Live Orgs &amp; Airframes:</div>
                     <div id="lb-orgs-editor"></div>
                     <button type="button" class="lb-btn lb-btn-small" id="lb-add-org">+ ORG</button>
                 </div>
                 <div class="lb-bottom">
                     <div>
-                        <div class="lb-labels lb-one"><label class="lb-label" for="lb-set-sig">Signature</label></div>
-                        <div class="lb-under lb-sig">
+                        <div class="lb-labels lb-one"><label class="lb-label" for="lb-set-sig">Signature:</label></div>
+                        <div class="lb-box lb-one lb-sig">
                             <input class="lb-input" id="lb-set-sig" type="password" autocomplete="current-password">
                             <span class="lb-sig-ink" id="lb-set-sig-ink"></span>
                         </div>
@@ -3295,7 +3334,7 @@ var Logbook = (function() {
             chip.querySelector('button').addEventListener('click', function() { state.tp.splice(i, 1); renderTp(); els.tp.focus(); });
             els.tpChips.insertBefore(chip, els.tp);
         });
-        els.tp.placeholder = state.tp.length ? '' : 'none';
+        els.tp.placeholder = '';
     }
 
     // ── Helpers for fields ──
@@ -3330,7 +3369,7 @@ var Logbook = (function() {
     function sigInk(input, ink) {
         ink.textContent = '*'.repeat(input.value.length);
     }
-    function flightNumberGuess() { var n = data().flightCount; return n ? '#' + (n + 1) : '#'; }
+    function flightNumberGuess() { var n = data().flightCount; return n ? 'N°' + (n + 1) : 'N°'; }
     function newSubmissionId() {
         if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
         return 'id-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 10);
@@ -3502,7 +3541,7 @@ var Logbook = (function() {
             if (window.addLoggedFlight) {
                 window.addLoggedFlight([f.date, f.flightTime, f.manufacturer, f.type, f.livery, f.depart, f.dest, f.ldgs, '-', f.org, f.airframe, f.remarks]);
             }
-            els.num.textContent = '#' + res.flightNumber;
+            els.num.textContent = 'N°' + res.flightNumber;
             setFiled(true);
             if (res.emailDeferred) {
                 api({ action: 'notify', password: body.password, submissionId: body.submissionId }).then(function(r) {
@@ -3524,7 +3563,7 @@ var Logbook = (function() {
         filed = on;
         els.formView.querySelectorAll('input, textarea').forEach(function(el) { el.disabled = on; });
         menus.forEach(function(m) { m.close(); });
-        els.submit.textContent = on ? 'NEW ENTRY' : 'SUBMIT';
+        els.submit.textContent = on ? 'NEW ENTRY' : 'FILE';
         els.card.classList.toggle('lb-is-filed', on);
         if (on) els.submit.focus();
     }
@@ -3596,7 +3635,7 @@ var Logbook = (function() {
         menus.forEach(function(m) { m.close(); });
         els.formView.hidden = on;
         els.setView.hidden = !on;
-        els.titleText.textContent = on ? 'SETTINGS' : 'LOGBOOK ENTRY';
+        els.titleText.textContent = on ? 'SETTINGS' : 'LOG BOOK';
         els.num.hidden = on;
         if (on) {
             var d = data();
