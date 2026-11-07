@@ -141,6 +141,7 @@ FrenchBee,,,,French_bee_logo.svg,F,knockout
 Frontier,,,,Frontier_Airlines_logo.svg,F,knockout
 Frontier - Colorado,,,,Frontier_Airlines_logo.svg,F,knockout
 Frontier - Sheldon,,,,Frontier_Airlines_logo.svg,F,knockout
+Frontier - Alberta and Clipper,,,,Frontier_Airlines_logo.svg,F,knockout
 Fuji Dream Airlines,,,,"Fuji_Dream_Airlines_logo_(2008,_FDA).svg",F,mono
 Garuda Indonesia,,,,Garuda_Indonesia_Logo.svg,F,knockout
 Ghana Airways,,,,GhanaAirwaysLogo.jpg,T,knockout
@@ -151,7 +152,7 @@ Hawaiian,,,,Hawaiian_Airlines_logo_2017.svg,T,mono
 Hi Fly,,,,Hi_Fly_logo.svg,F,mono
 Horizon Air,,,,Horizon_Air_Logo.svg,F,mono
 iberojet,,,,Iberojetlogo.png,F,knockout
-Ibom Air,,,,Ibom_air_Logo.png,F,mono
+Ibom Air,,,,Ibom_air_Logo.png,F,knockout
 Icelandair,,,,Icelandairlogo.svg,F,knockout
 IndiGo,,,,IndiGo.svg,F,mono
 Infinite Flight,,,,Infinite_Flight_logo.svg,T,mono
@@ -172,7 +173,7 @@ JetStar,,,,Jetstar_logo.svg,F,knockout
 Kenya Airways,,,,Kenya_Airways_Logo.svg,F,mono
 KLM,,,,KLM_logo.svg,T,mono
 KLM - Orange Pride,,,,KLM_logo.svg,F,mono
-Korean Airlines,,,,KoreanAir_logo.svg,F,mono
+Korean Airlines,,,,KoreanAir_logo.svg,F,knockout
 Kuwait Airways,,,,Kuwait_Airways_logo.svg,T,knockout
 La Compagnie,,,,La_Compagnie_Boutique_Airline_Logo.svg,F,mono
 LAPA,,,,Lapa_logo.svg,F,knockout
@@ -194,7 +195,7 @@ Lufthansa Cargo,,,,Lufthansa_Cargo_logo.svg,F,mono
 Lufthansa Cityline,,,,Lufthansa_CityLine_logo.svg,F,mono
 Lufthansa,,,,Lufthansa_Logo_2018.svg,F,mono
 Lufthansa - 2018,,,,Lufthansa_Logo_2018.svg,F,mono
-Lufthansa - Regional,,,,Lufthansa_Regional_Logo.svg,F,mono
+Lufthansa - Regional,,,,Lufthansa_Regional_Logo.svg,F,knockout
 Luxaviation Belgium,,,,Luxaviation_logo.svg,F,mono
 Malaysia Airlines,,,,Malaysia_Airlines_Logo.svg,F,mono
 Mango,,,,Mango_Airlines_logo.svg,F,knockout
@@ -211,18 +212,18 @@ Omni Air International,,,,Omni_Air_International_Logo.svg,F,knockout
 Pakistan International Airlines,,,,Pakistan_International_Airlines_logo_(2004).svg,F,mono
 Pan Am,,,,Pan_Am_Logo.svg,T,mono
 Peach Aviation,,,,"Peach_Aviation_Logo,_March_2026.svg",F,mono
-Philippines Airlines,,,,Philippine_Airlines_logo.svg,F,knockout
+Philippine Airlines,,,,Philippine_Airlines_logo.svg,F,knockout
 Porter Airlines,,,,Porter_Airlines_Logo.svg,F,mono
-Qantas,,,,Qantas_Airways_logo_2016.svg,F,mono
-QantasLink,,,,QantasLink_logo.svg,F,mono
+Qantas,,,,Qantas_Airways_logo_2016.svg,F,knockout
+QantasLink,,,,QantasLink_logo.svg,F,knockout
 Qatar Airways,,,,Qatar_Airways_Logo.svg,F,mono
 Qatar Cargo,,,,Qatar_Airways_Logo.svg,T,mono
-Royal Jordanian,,,,Royal_Jordanian_Logo.svg,F,knockout
+Royal Jordanian,,,,Royal_Jordanian_Logo.svg,T,knockout
 RwandAir,,,,RwandAir_logo.svg,F,knockout
 Ryanair,,,,Ryanair.svg,F,mono
 S7,,,,S7_new_logo.svg,F,knockout
 SAS,,,,Scandinavian_Airlines_logo.svg,F,mono
-Scoot Airlines,,,,Scoot_logo.svg,F,knockout
+Scoot Airlines,,,,Scoot_logo.svg,T,knockout
 Shandong Airlines,,,,ShandongAirlines.svg,F,mono
 Sichuan Airlines,,,,Sichuan_Airlines_logo.svg,F,mono
 Singapore Airlines,,,,Singapore_Airlines_Logo_2.svg,F,mono
@@ -231,7 +232,7 @@ Southern Air,,,,Southern_Air_logo.png,F,mono
 Southwest,,,,Southwest_Airlines_logo_2014.svg,F,mono
 Southwest - Heart,,,,Southwest_Airlines_logo_2014.svg,F,mono
 Southwest - Canyon Blue,,,,Southwest_Airlines_logo_2014.svg,F,mono
-Southwest - Illionis One,,,,Southwest_Airlines_logo_2014.svg,F,mono
+Southwest - Illinois One,,,,Southwest_Airlines_logo_2014.svg,F,mono
 Spicejet,,,,SpiceJet_logo.svg,F,mono
 Spirit Airlines,,,,Spirit_Airlines_logo.svg,F,mono
 Spirit Airlines - 2014,,,,Spirit_Airlines_logo.svg,F,mono
@@ -240,9 +241,9 @@ Sriwijaya Air,,,,Sriwijaya_Air_Logo_Horizontal.png,F,mono
 Sun Country,,,,Sun_Country_Airlines_logo.svg,F,mono
 Sunwest Aviation,,,,Sunwest_Aviation_logo.png,F,mono
 Susi Air,,,,Susi_Air_logo.png,F,mono
-Swiss,,,,Swiss_International_Air_Lines_Logo_2011.svg,F,mono
+Swiss,,,,Swiss_International_Air_Lines_Logo_2011.svg,F,knockout
 Taag Angola Airlines,,,,TAAG_Logo.png,F,mono
-TAP Air Portugual,,,,TAP-Portugal-Logo.svg,F,mono
+TAP Air Portugal,,,,TAP-Portugal-Logo.svg,F,mono
 Tarom,,,,TAROM_Logo_(blue).svg,F,mono
 Thai Airways,,,,Thai_Airways_logo.svg,F,mono
 tigerair,,,,Tigerair.svg,F,knockout
@@ -250,7 +251,7 @@ Titan Airways,,,,Titan_Airways_logo.svg,F,knockout
 Transavia,,,,Transavia_logo_2025.png,F,mono
 TUI,,,,TUI_Logo_2016.svg,F,mono
 Tunisair,,,,Tunisair_logo.svg,F,mono
-Turkish Airlines,,,,Turkish_Airlines_logo_2019_compact.svg,F,mono
+Turkish Airlines,,,,Turkish_Airlines_logo_2019_compact.svg,F,knockout
 Turkish Cargo,,,,Turkish_Cargo_logo.svg,F,mono
 Ukraine International,,,,Ukraine_International_Airlines_logo.svg,F,mono
 United Airlines,,,,United_Airlines_Logo.svg,F,knockout
@@ -279,4 +280,4 @@ Copa Airlines,#ffffff,#0060a9,#0060a9,,,
 Martinair Cargo,,,,Martinair_logo.svg,F,mono
 Azerbaijan Airlines,,,,Azerbaijan_Airlines_logo.svg,T,mono
 Luxair,,,,Luxair_Official_Logo.svg,F,mono
-EgyptAir Express,,,,Egypt_Air_Express_Logo.png,F,mono
+EgyptAir Express,,,,Egypt_Air_Express_Logo.png,F,knockout
