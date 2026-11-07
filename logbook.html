@@ -3951,7 +3951,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 c3 = colors[2] || 'transparent';
                 
                 if (lData.logo && lData.logo.trim() !== '') {
-                logoUrl = 'https://en.wikipedia.org/wiki/Special:FilePath/' + encodeURIComponent(lData.logo.trim());
+                logoUrl = '/images/logos/' + encodeURIComponent(lData.logo.trim());
                 }
                 if (lData.includeName) {
                     includeName = (lData.includeName.trim().toUpperCase() === 'T');
@@ -3968,7 +3968,9 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
         } else if (logoUrl) {
             // If we have a logo, render the image
             var imgStyle = 'height: 14px; max-width: 90px; vertical-align: middle; object-fit: contain; ' + (includeName ? 'margin-right: 6px;' : '');
-            var imgTag = '<img class="airline-logo logo-' + darkLogoMode + '" src="' + logoUrl + '" style="' + imgStyle + '">';            
+            // If a logo file is missing: drop it when the name is already shown, otherwise show the livery name as text
+            var errAttr = includeName ? 'this.remove()' : 'this.replaceWith(this.dataset.name)';
+            var imgTag = '<img class="airline-logo logo-' + darkLogoMode + '" src="' + logoUrl + '" loading="lazy" decoding="async" data-name="' + escapeHtml(truncateText(item.livery, 22)) + '" onerror="' + errAttr + '" style="' + imgStyle + '">';      
 
             if (includeName) {
                 liveryContent = imgTag + escapeHtml(truncateText(item.livery, 22));
