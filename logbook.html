@@ -112,6 +112,9 @@
         .airline-logo.logo-mono  { filter: brightness(0) invert(1); }
         .airline-logo.logo-color { filter: none; }
         .airline-logo.logo-chip  { filter: none; background: #ecece9; padding: 1px 3px; border-radius: 2px; }
+        .airline-logo.logo-outline { filter: url(#logo-outline); }
+
+        
         [data-theme="light"] .airline-logo { filter: none; background: none; padding: 0; }
         
 
@@ -4789,6 +4792,27 @@ map.on('zoomend', function() {
    0 0 0 0 0.878  0 0 0 0 0.882  0 0 0 0 0.886
    -0.638 -2.146 -0.217 2.25 0"/>
  </filter>
+
+
+ <filter id="logo-outline" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
+  <feMorphology in="SourceAlpha" operator="dilate" radius="0.5" result="ad"/>
+  <feMorphology in="SourceAlpha" operator="erode"  radius="0.5" result="ae"/>
+  <feComposite in="ad" in2="ae" operator="arithmetic" k1="0" k2="1" k3="-1" k4="0" result="edgeA"/>
+  <feFlood flood-color="#000" result="blk"/>
+  <feMerge result="flat"><feMergeNode in="blk"/><feMergeNode in="SourceGraphic"/></feMerge>
+  <feColorMatrix in="flat" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="cr"/>
+  <feColorMatrix in="flat" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 1 0 0 0" result="cg"/>
+  <feColorMatrix in="flat" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 1 0 0" result="cb"/>
+  <feMorphology in="cr" operator="dilate" radius="0.5" result="rd"/><feMorphology in="cr" operator="erode" radius="0.5" result="re"/>
+  <feComposite in="rd" in2="re" operator="arithmetic" k2="1" k3="-1" result="er"/>
+  <feMorphology in="cg" operator="dilate" radius="0.5" result="gd"/><feMorphology in="cg" operator="erode" radius="0.5" result="ge"/>
+  <feComposite in="gd" in2="ge" operator="arithmetic" k2="1" k3="-1" result="eg"/>
+  <feMorphology in="cb" operator="dilate" radius="0.5" result="bd"/><feMorphology in="cb" operator="erode" radius="0.5" result="be"/>
+  <feComposite in="bd" in2="be" operator="arithmetic" k2="1" k3="-1" result="eb"/>
+  <feMerge result="all"><feMergeNode in="edgeA"/><feMergeNode in="er"/><feMergeNode in="eg"/><feMergeNode in="eb"/></feMerge>
+  <feColorMatrix in="all" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 8 -0.8" result="mask"/>
+  <feComposite in="SourceGraphic" in2="mask" operator="in"/>
+ </filter>    
 </svg>
 
             
