@@ -617,6 +617,12 @@
             border: 1px solid rgba(250, 152, 34, 1.0);
         }
 
+        /* Infinite Flight picture under REMARK. The slot stays hidden until the picture has loaded,
+           and is removed if there isn't one, so there's never an empty gap. */
+        .fleet-slot[hidden] { display: none; }
+        .fleet-sep { border-bottom: 1px solid var(--border-faint); margin: 1px 0; }
+        .fleet-img { display: block; width: 82%; max-width: 340px; height: auto; margin: 14px auto 10px; }
+
         .filter-clickable {
             cursor: pointer;
             border-bottom: 1px dotted var(--text-muted);
@@ -2831,6 +2837,34 @@ var LOGBOOK_TZ = 'America/New_York';
 var PINNED_ORGS = ['daydreamers', 'vela'];   // always listed first, in this order
 
 // Live orgs in display order: daydreamers, Vela, then most flown, then A–Z. (Also used by the filter tab.)
+// Aircraft / livery name -> file name for images/fleet/ (must match slug() in fleet_images.py)
+function fleetSlug(text) {
+    return String(text).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Loads the picture for an opened flight. The slot only appears once the picture has arrived;
+// if there's no picture (new aircraft / livery, or a missing file) the slot is removed, so no gap.
+function loadFleetPicture(detailsRow) {
+    var slot = detailsRow && detailsRow.querySelector('.fleet-slot[data-src]');
+    if (!slot) return;
+    var src = slot.getAttribute('data-src');
+    slot.removeAttribute('data-src');
+    var img = new Image();
+    img.className = 'fleet-img';
+    img.alt = slot.getAttribute('data-alt') || '';
+    img.decoding = 'async';
+    img.onload = function() {
+        var sep = document.createElement('div');
+        sep.className = 'fleet-sep';
+        slot.appendChild(sep);
+        slot.appendChild(img);
+        slot.hidden = false;
+    };
+    img.onerror = function() { slot.remove(); };
+    img.src = src;
+}
+
 function orderOrgNames(names, flightList) {
     var counts = {};
     (flightList || []).forEach(function(f) {
@@ -4002,6 +4036,12 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             var arrAp = window.airportData && window.airportData[item.arrival];
             var depLabel = item.departure + (depAp && depAp.municipality ? ' · ' + depAp.municipality : depAp && depAp.name ? ' · ' + depAp.name : '');
             var arrLabel = item.arrival   + (arrAp && arrAp.municipality ? ' · ' + arrAp.municipality : arrAp && arrAp.name ? ' · ' + arrAp.name : '');
+            // Placeholder for the Infinite Flight picture of this aircraft + livery (images/fleet/, saved by fleet_images.py)
+            function fleetSlot(f) {
+                if (!f.type || !f.livery || f.livery === 'Standard') return '';
+                return '<div class="fleet-slot" style="grid-column: span 4;" hidden data-src="/images/fleet/' + fleetSlug(f.type) + '/' +
+                       fleetSlug(f.livery) + '.webp" data-alt="' + escapeHtml(f.livery + ' ' + f.type) + '"></div>';
+            }
             // Full airport name on a second line under the code · city (only when the city was shown above)
             function fullNameRow(ap) {
                 if (!ap || !ap.municipality || !ap.name) return '';
@@ -4027,18 +4067,18 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             } else {
                 html += `
                     <div style="font-size: 10px; line-height: 1.8; color: var(--text-main);">
-                        <div style="display: grid; grid-template-columns: 50px 1fr 50px 1fr; gap: 2px 4px;">
+                        <div style="display: grid; grid-template-columns: 56px 1fr 52px 1fr; gap: 2px 4px;">
                             <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">DEP</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}${fullNameRow(depAp)}</span>
-                            <span style="color: var(--text-muted);">ARR</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}${fullNameRow(arrAp)}</span>
+                            <span style="color: var(--text-muted);">DEPART</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}${fullNameRow(depAp)}</span>
+                            <span style="color: var(--text-muted);">ARRIVAL</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}${fullNameRow(arrAp)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">MODEL</span><span class="filter-clickable" data-filter-key="aircraft" data-filter-value="spc:${escapeHtml(formatAircraft(item.aircraft))}" title="Click to filter by ${escapeHtml(formatAircraft(item.aircraft))}">${escapeHtml(formatAircraft(item.aircraft))}</span>
-                            <span style="color: var(--text-muted);">LIVRY</span><span class="filter-clickable" data-filter-key="airline" data-filter-value="${escapeHtml(item.livery)}" title="Click to filter by ${escapeHtml(item.livery)}">${escapeHtml(item.livery, 18)}</span>
+                            <span style="color: var(--text-muted);">TYPE</span><span class="filter-clickable" data-filter-key="aircraft" data-filter-value="spc:${escapeHtml(formatAircraft(item.aircraft))}" title="Click to filter by ${escapeHtml(formatAircraft(item.aircraft))}">${escapeHtml(formatAircraft(item.aircraft))}</span>
+                            <span style="color: var(--text-muted);">LIVERY</span><span class="filter-clickable" data-filter-key="airline" data-filter-value="${escapeHtml(item.livery)}" title="Click to filter by ${escapeHtml(item.livery)}">${escapeHtml(item.livery, 18)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
                             <span style="color: var(--text-muted);">LDGS</span><span>${escapeHtml(item.ldgs || 'N/A')}</span>
-<span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span><span style="color: var(--text-muted);">RMK</span><span style="grid-column: span 3; font-family: 'Caveat', cursive; font-size: 13px; letter-spacing: 0;">${escapeHtml(item.remarks || '')}</span>                        </div>
+<span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span><span style="color: var(--text-muted);">REMARK</span><span style="grid-column: span 3; font-family: 'Caveat', cursive; font-size: 13px; letter-spacing: 0;">${escapeHtml(item.remarks || '')}</span>${fleetSlot(item)}                        </div>
                     </div>
                 `;
             }
@@ -4096,6 +4136,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             if (!isCurrentlyOpen) {
                 // Open the specific row
                 detailsRow.style.display = 'table-row';
+                loadFleetPicture(detailsRow);
                 this.classList.add('active-row'); 
                 window.selectedFlightIndices.add(idx);
                 window.hoveredFlightIndex = idx;
