@@ -592,6 +592,13 @@
             border-bottom: 1px solid rgba(250, 152, 34, 1.0);
             border-top: 1px solid rgba(250, 152, 34, 1.0);
         }
+        /* Close the orange box around the selected row: its sides, and the line above it
+           (that line belongs to the flight row above, which otherwise keeps it grey;
+           the row in between is that flight's hidden details row). */
+        .flight-row.active-row td:first-child { border-left: 1px solid rgba(250, 152, 34, 1.0); }
+        .flight-row.active-row td:last-child { border-right: 1px solid rgba(250, 152, 34, 1.0); }
+        .flight-row:has(+ .details-row + .flight-row.active-row) td { border-bottom-color: rgba(250, 152, 34, 1.0); }
+        table:has(tbody > .flight-row.active-row:first-child) thead th { border-bottom-color: rgba(250, 152, 34, 1.0); }
 
         .route-cell {
             position: relative;
