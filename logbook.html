@@ -189,12 +189,13 @@
             background-color: var(--bg-light);
             border: 1px solid var(--border-main);
             color: var(--text-main);
-            font-size: 8px;
+            font-size: 10px;
+            font-weight: 500;
             cursor: pointer;
             transition: 0.2s;
             display: inline-block;
             text-align: center;
-            font-family: var(--font-mono);
+            font-family: var(--font-sans);
             outline: none;         /* ← kills the default focus ring */
         }
         .map-btn:hover {
@@ -780,6 +781,7 @@
         .tl-bar { fill: var(--tl-bar); }
         .tl-filtered .tl-bar { fill: var(--tl-bar-dim); }
         .tl-sel { fill: var(--tl-sel); }
+        .tl-sel-dot { fill: rgb(250, 152, 34); pointer-events: none; }   /* same orange as a selected row */
         .tl-hover .tl-bar, .tl-filtered .tl-hover .tl-bar { fill: var(--tl-bar-hover); }
         .tl-hover .tl-sel { fill: var(--tl-sel-hover); }
         #timeline-tip {
@@ -877,8 +879,6 @@
         .lb-top-grid { display: grid; grid-template-columns: max-content 119px; column-gap: 8px; row-gap: 10px; align-items: end; width: max-content; }
         .lb-top-grid .lb-label { justify-self: end; margin-bottom: 3.5px; }
         .lb-top-grid .lb-box { grid-template-columns: 1fr; }
-        .lb-mark { position: absolute; left: 1px; top: 13.5px; width: 7.2px; height: 5.2px; color: var(--lbc-ink); }
-        .lb-mark svg { display: block; width: 100%; height: 100%; fill: currentColor; }
 
         /* N°, pilot and Infinite Flight badge, top right */
         .lb-meta { position: absolute; top: -2.9px; right: 0; display: flex; flex-direction: column; align-items: flex-end; }
@@ -1240,7 +1240,6 @@
             <!-- ── FORM VIEW ── -->
             <div id="lb-form-view">
                 <div class="lb-top">
-                    <span class="lb-mark" aria-hidden="true"><svg viewBox="0 0 7.2 5.2"><path d="M0 0L4.6 2.2H7.2V3H4.6L0 5.2Z"/></svg></span>
                     <div class="lb-top-grid">
                         <label class="lb-label" for="lb-date">Date:</label>
                         <div class="lb-box" data-field="date"><input class="lb-input" id="lb-date" type="date"></div>
@@ -1249,7 +1248,7 @@
                     </div>
                     <div class="lb-meta">
                         <div class="lb-no" id="lb-num">N°</div>
-                        <div class="lb-meta-pilot">darkeyes</div>
+                        <div class="lb-meta-pilot">darkeyes · N2DE</div>
                         <div class="lb-if-badge">
                             <svg width="56" height="13" viewBox="0 0 56 13" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Infinite Flight">
                             <path d="M3.49609 2.59093C3.93433 2.59095 4.41859 2.73012 4.9541 2.98643L4.5625 3.14854C4.21937 3.29053 4.00318 3.5455 3.92188 3.82823C3.75754 3.77712 3.61431 3.7511 3.49609 3.75108C2.23282 3.75108 1.20996 4.72469 1.20996 5.92393C1.20998 6.98043 2.00399 7.86188 3.05664 8.05675C3.08267 8.07466 3.11013 8.09153 3.13867 8.10753L4.69238 8.97862C4.2597 9.15971 3.86171 9.25692 3.49609 9.25694C1.56635 9.25694 2.38316e-05 7.76574 0 5.92393C0 4.08211 1.56633 2.59093 3.49609 2.59093ZM13.0654 2.63292C14.7288 2.88882 16 4.26436 16 5.92393C16 7.76574 14.4337 9.25694 12.5039 9.25694C11.9076 9.25681 11.2263 8.99822 10.4463 8.53917C10.0728 8.31934 9.68318 8.05604 9.2832 7.7589C9.1456 7.65667 9.00886 7.55241 8.87402 7.4464L9.77539 6.65343C9.85791 6.71708 9.94113 6.78003 10.0244 6.8419C10.3919 7.11489 10.7464 7.35408 11.0791 7.54991C11.6845 7.90624 12.1851 8.0966 12.5039 8.09679C13.7672 8.09679 14.79 7.12316 14.79 5.92393C14.79 4.81028 13.908 3.89127 12.7705 3.76573C12.7733 3.7613 12.7766 3.75649 12.7793 3.75206C12.9217 3.52157 13.0196 3.29566 13.0605 3.0587C13.0853 2.91537 13.0881 2.77172 13.0654 2.63292ZM11.3779 2.67589C11.3885 2.67085 11.7575 2.49653 11.916 2.66222C12.3209 3.06605 11.1279 4.12218 11.1279 4.12218L8.01758 6.82433C7.93311 6.8977 7.78193 6.99722 7.67969 7.04698L5.94824 7.88976C5.84629 7.93933 5.68269 7.93466 5.58398 7.87999L4.03711 7.02354C3.98755 6.996 3.98818 6.95242 4.03809 6.92589L4.35254 6.75792C4.45212 6.70501 4.62489 6.67431 4.73828 6.68858L5.70117 6.81065C5.81477 6.82506 5.97865 6.77939 6.06641 6.71007L7.12988 5.87022C7.26179 5.76561 7.26602 5.59196 7.13867 5.48448C7.13867 5.48448 7.00457 5.35275 6.40625 4.91319C5.81183 4.47651 5.25152 4.16148 5.24414 4.15733C5.09875 4.07216 5.1083 3.95073 5.2666 3.88585L5.6709 3.72081C5.82892 3.65636 6.09009 3.63923 6.25684 3.6837L8.56348 4.30089C8.6737 4.33033 8.83752 4.30034 8.92871 4.23448C8.95361 4.21656 10.2283 3.29876 10.4092 3.13585C10.5922 2.97109 11.1254 2.56507 11.3779 2.67589Z" fill="currentColor"/>
@@ -2740,6 +2739,16 @@ var Timeline = (function() {
         }
         out.push('</g>');
 
+        // Selected flights (open rows in the table): one dot above each month that has any
+        var selMonths = {};
+        selectedFlights().forEach(function(f) {
+            var mi = monthIndexOf(f);
+            if (mi >= 0 && mi < n) selMonths[mi] = true;
+        });
+        Object.keys(selMonths).forEach(function(mi) {
+            out.push('<circle class="tl-sel-dot" cx="' + cx(+mi).toFixed(2) + '" cy="' + Math.max(4, padT - 10) + '" r="' + clamp(colW * 0.3, 2, 3) + '"/>');
+        });
+
         // Month labels: all months if they fit, otherwise quarters (1 4 7 10), otherwise none.
         var monthFont = Math.min(8.5, colW / 1.15), monthStep = 1;
         if (monthFont < 6) {
@@ -2840,6 +2849,13 @@ var Timeline = (function() {
     }
 
     // all: every logged entry; shown: what's left after the current filters.
+    // Flights currently selected in the table (window.selectedFlightIndices are row numbers in the table)
+    function selectedFlights() {
+        var list = window.visibleFlightList || [], out = [];
+        if (window.selectedFlightIndices) window.selectedFlightIndices.forEach(function(i) { if (list[i]) out.push(list[i]); });
+        return out;
+    }
+
     function update(all, shown) {
         if (all !== allRef || all.length !== allLen) {
             allRef = all; allLen = all.length;
@@ -2867,7 +2883,7 @@ var Timeline = (function() {
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
     else init();
 
-    return { update: update, toggle: toggle, render: render };
+    return { update: update, toggle: toggle, render: render, refreshSelection: scheduleRender };
 })();
 
 function toggleTimeline() { Timeline.toggle(); }
@@ -3882,11 +3898,13 @@ window.closeAllFlightDetails = function() {
     });
 
     window.selectedFlightIndices.clear();
+    if (window.Timeline) Timeline.refreshSelection();
     window.hoveredFlightIndex = null;
 };
 
 
 function renderVisibleRoutes(filteredFlights) {
+    window.visibleFlightList = filteredFlights;   // table row N = filteredFlights[N] (used by the timeline dots)
     var container = document.getElementById('sidebar-routes');
     var countSpan = document.getElementById('visible-routes-count');
     var timeSpan = document.getElementById('visible-flight-time');
@@ -4184,6 +4202,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 loadFleetPicture(detailsRow);
                 this.classList.add('active-row'); 
                 window.selectedFlightIndices.add(idx);
+                Timeline.refreshSelection();
                 window.hoveredFlightIndex = idx;
                 if (flightLayers[idx]) {
                     flightLayers[idx].layers.forEach(function(l) { 
@@ -4195,6 +4214,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 detailsRow.style.display = 'none';
                 this.classList.remove('active-row');
                 window.selectedFlightIndices.delete(idx);
+                Timeline.refreshSelection();
                 if (flightLayers[idx]) {
                     flightLayers[idx].layers.forEach(function(l) { 
                         setFlightLayerHighlight(l, false);
