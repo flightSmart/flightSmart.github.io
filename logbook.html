@@ -2403,12 +2403,31 @@ function bearingDeg(lat1, lon1, lat2, lon2) {
     return (Math.atan2(y, x) / R + 360) % 360;
 }
 
+// data/runways-flown.csv (made by fleet_images.py) has the runways of logbook airports only; the full
+// list follows in the background and fills in anything missing. Without the small file, the full list is used.
+var FULL_RUNWAYS_URL = 'https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv';
 function loadRunwayData() {
-    Papa.parse('https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv', {
+    Papa.parse('/data/runways-flown.csv', {
         download: true, header: true, skipEmptyLines: true,
         complete: function(res) {
+            var ok = res.data.length && res.data[0].airport_ident !== undefined;
+            if (ok) addRunwayRows(res.data, false);
+            loadRunwayFile(FULL_RUNWAYS_URL, ok);
+        },
+        error: function() { loadRunwayFile(FULL_RUNWAYS_URL, false); }
+    });
+}
+function loadRunwayFile(url, onlyNew) {
+    Papa.parse(url, {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function(res) { addRunwayRows(res.data, onlyNew); },
+        error: function() { /* no runway data: patterns simply stay north-up */ }
+    });
+}
+// onlyNew: keep airports that already have runways (so the background list doesn't redo them)
+function addRunwayRows(rows, onlyNew) {
             var out = {};
-            res.data.forEach(function(r) {
+            rows.forEach(function(r) {
                 if (!r.airport_ident || r.closed === '1') return;
 
                 // Preferred: true bearing between the two thresholds (exact, and the map is true-north).
@@ -2437,12 +2456,11 @@ function loadRunwayData() {
                     len: parseFloat(r.length_ft) || 0
                 });
             });
-            window.runwayData = out;
+            Object.keys(out).forEach(function(key) {
+                if (!onlyNew || !window.runwayData[key]) window.runwayData[key] = out[key];
+            });
             // Patterns may already be on the map (drawn north-up before this finished): re-orient in place.
             resizeTrafficPatterns();
-        },
-        error: function() { /* no runway data: patterns simply stay north-up */ }
-    });
 }
 loadRunwayData();
 
@@ -3018,10 +3036,13 @@ var Logbook = (function() {
         return c;
     }
 
+    var apIndexVer = -1;
     function airportIndex() {
-        if (apIndex) return apIndex;
+        // rebuilt when more airports arrive (the full world list loads after the small one)
+        if (apIndex && apIndexVer === window.airportDataVersion) return apIndex;
         var ad = window.airportData;
-        if (!ad) return [];
+        if (!ad || !Object.keys(ad).length) return [];
+        apIndexVer = window.airportDataVersion;
         var d = data(), seen = new Set(), list = [];
         Object.keys(ad).forEach(function(k) {
             var a = ad[k];
@@ -4335,55 +4356,99 @@ Promise.all([
         if (window.applyFiltersGlobal) window.applyFiltersGlobal();
     };
 
-    Papa.parse('https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv', {
-        download: true, header: true,
-        complete: function(airportResults) {
-            document.getElementById('loading').style.display='none';
-            window.airportData = {};
-            var airportData = window.airportData;
-            airportResults.data.forEach(function(row) {
-                if (!row.ident) return;
-                
-                var continentMap = {
-                    'NA': 'North America', 'SA': 'South America', 
-                    'EU': 'Europe', 'AS': 'Asia', 
-                    'AF': 'Africa', 'OC': 'Oceania', 'AN': 'Antarctica'
-                };
+    // ── Airports ──
+    // data/airports-flown.csv (made by fleet_images.py) has just the airports in the logbook, so the
+    // map can draw right away. The full world list then loads in the background for the LOG form's
+    // airport search and for any airport flown since the small file was last made.
+    // If the small file isn't there, the full list is used straight away (as before).
+    var FULL_AIRPORTS_URL = 'https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv';
+    var FLOWN_AIRPORTS_URL = '/data/airports-flown.csv';
+    var continentMap = {
+        'NA': 'North America', 'SA': 'South America',
+        'EU': 'Europe', 'AS': 'Asia',
+        'AF': 'Africa', 'OC': 'Oceania', 'AN': 'Antarctica'
+    };
+    var regionNames = null;
+    try { regionNames = new Intl.DisplayNames(['en'], {type: 'region'}); } catch (e) { }
+    window.airportData = {};
+    window.airportDataVersion = 0;
 
-                var countryName = row.iso_country;
-                if (row.iso_country) {
-                    try {
-                        countryName = new Intl.DisplayNames(['en'], {type: 'region'}).of(row.iso_country);
-                    } catch(e) { }
-                }
-
-                var apObj = {
-                    ident: row.ident.trim().toUpperCase(),   // key into window.runwayData
-                    lat: parseFloat(row.latitude_deg),
-                    lon: parseFloat(row.longitude_deg), 
-                    name: row.name || row.ident,
-                    continent: continentMap[row.continent] || 'Unknown Region',
-                    country: countryName,
-                    municipality: (row.municipality || '').trim(),
-                    gps: (row.gps_code || '').trim().toUpperCase(),
-                    local: (row.local_code || '').trim().toUpperCase(),
-                    kind: row.type || ''
-                };
-                
-                airportData[row.ident.trim().toUpperCase()] = apObj;
-                
-                if (row.gps_code && row.gps_code.trim() !== '') {
-                    airportData[row.gps_code.trim().toUpperCase()] = apObj;
-                }
-                
-                if (row.iata_code && row.iata_code.trim() !== '') {
-                    airportData[row.iata_code.trim().toUpperCase()] = apObj;
-                }
-
-                if (row.local_code && row.local_code.trim() !== '') {
-                    airportData[row.local_code.trim().toUpperCase()] = apObj;
-                }
+    // Adds airport rows to airportData under every code they're known by (ident, GPS, IATA, local).
+    // onlyNew: leave codes that are already there untouched.
+    function addAirportRows(rows, onlyNew) {
+        var airportData = window.airportData;
+        rows.forEach(function(row) {
+            if (!row.ident) return;
+            var countryName = row.iso_country;
+            if (row.iso_country && regionNames) {
+                try { countryName = regionNames.of(row.iso_country); } catch (e) { }
+            }
+            var apObj = {
+                ident: row.ident.trim().toUpperCase(),   // key into window.runwayData
+                lat: parseFloat(row.latitude_deg),
+                lon: parseFloat(row.longitude_deg),
+                name: row.name || row.ident,
+                continent: continentMap[row.continent] || 'Unknown Region',
+                country: countryName,
+                municipality: (row.municipality || '').trim(),
+                gps: (row.gps_code || '').trim().toUpperCase(),
+                local: (row.local_code || '').trim().toUpperCase(),
+                kind: row.type || ''
+            };
+            [row.ident, row.gps_code, row.iata_code, row.local_code].forEach(function(code) {
+                code = (code || '').trim().toUpperCase();
+                if (code && (!onlyNew || !airportData[code])) airportData[code] = apObj;
             });
+        });
+        window.airportDataVersion++;
+    }
+
+    function missingAirportCount() {
+        var n = 0;
+        flights.forEach(function(f) {
+            if (!window.airportData[f.departure]) n++;
+            if (!window.airportData[f.arrival]) n++;
+        });
+        return n;
+    }
+
+    function loadFullAirportsInBackground() {
+        Papa.parse(FULL_AIRPORTS_URL, {
+            download: true, header: true, skipEmptyLines: true,
+            complete: function(res) {
+                var before = missingAirportCount();
+                addAirportRows(res.data, true);
+                // Airports flown since airports-flown.csv was made: draw those flights now.
+                if (missingAirportCount() < before && window.applyFiltersGlobal) window.applyFiltersGlobal();
+            }
+        });
+    }
+
+    Papa.parse(FLOWN_AIRPORTS_URL, {
+        download: true, header: true, skipEmptyLines: true,
+        complete: function(res) {
+            if (res.data.length && res.data[0].ident) {
+                startWithAirports(res);
+                loadFullAirportsInBackground();
+            } else {
+                loadAirportsFromFullList();
+            }
+        },
+        error: loadAirportsFromFullList
+    });
+
+    function loadAirportsFromFullList() {
+        Papa.parse(FULL_AIRPORTS_URL, {
+            download: true, header: true,
+            complete: startWithAirports,
+            error: function(err) { document.getElementById('loading').innerText='ERR: APT DATA'; console.error(err); }
+        });
+    }
+
+    function startWithAirports(airportResults) {
+            document.getElementById('loading').style.display='none';
+            addAirportRows(airportResults.data, false);
+            var airportData = window.airportData;
 
             var mfrSet=new Set(), famSet=new Set(), spcSet=new Set(), airlineSet=new Set(), rmkSet=new Set();
             var apSet=new Set(), regSet=new Set(), ctySet=new Set();
@@ -4876,9 +4941,7 @@ Promise.all([
                 }
             });
 
-        },
-        error: function(err) { document.getElementById('loading').innerText='ERR: APT DATA'; console.error(err); }
-    });
+    }
 });
 
 // Zooming no longer rebuilds the map/table — only airport dots and TP rectangles
