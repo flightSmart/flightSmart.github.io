@@ -437,6 +437,55 @@
             background: var(--text-main); color: var(--bg-dark); 
         }
 
+        /* ── ACTIVE FILTERS (bottom of the filter sidebar) ── */
+        .af-head { display: flex; align-items: center; gap: 8px; min-height: 14px; }
+        .af-count {
+            display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
+            min-width: 17px; height: 13px; padding: 0 5px; border-radius: 7px;
+            background: #64c399; color: #1e1e1e;
+            font-family: var(--font-mono); font-weight: 700; font-size: 9px; line-height: 1;
+        }
+        .af-count[hidden], .af-clear[hidden] { display: none; }
+        .af-clear {
+            margin-left: auto; padding: 0; background: none; border: none; cursor: pointer;
+            font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
+            text-decoration: underline; text-underline-offset: 2px;
+        }
+        .af-clear:hover { color: var(--text-main); }
+        .af-sentence { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--text-muted); }
+        .af-v { color: var(--text-main); }
+        .af-v.af-inc { text-decoration-line: underline; text-decoration-color: var(--accent-green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+        .af-v.af-exc { text-decoration-line: line-through; text-decoration-color: var(--exc-brd); text-decoration-thickness: 1px; }
+        .af-group { margin-top: 16px; }
+        .af-group-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 6px; }
+        .af-group-label { font-family: var(--font-sans); font-weight: bold; font-size: 10px; color: var(--text-muted); }
+        .af-strict { padding: 0; background: none; border: none; cursor: pointer; font-family: var(--font-mono); font-size: 9px; color: var(--text-main); }
+        .af-strict:hover { color: rgba(250, 152, 34, 1.0); }
+        .af-chips { display: flex; flex-direction: column; gap: 5px; }
+        .af-chip {
+            display: flex; align-items: stretch; box-sizing: border-box; min-height: 40px;
+            background: var(--bg-light); border: 1px solid var(--border-main);
+        }
+        /* The INC / EXC square: its coloured border goes all the way round (over the chip's grey edge) */
+        .af-mode {
+            flex: none; width: 44px; margin: -1px 0 -1px -1px; padding: 0;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border-main); background: var(--bg-light); color: var(--text-muted);
+            font-family: var(--font-mono); font-size: 9px; white-space: pre; cursor: pointer;
+        }
+        .af-chip.af-inc .af-mode { border-color: var(--inc-brd); color: var(--inc-txt); background: color-mix(in srgb, var(--inc-brd) 12%, var(--bg-light)); }
+        .af-chip.af-exc .af-mode { border-color: var(--exc-brd); color: var(--exc-txt); background: color-mix(in srgb, var(--exc-brd) 12%, var(--bg-light)); }
+        .af-chip.af-inc .af-mode:hover { background: color-mix(in srgb, var(--inc-brd) 22%, var(--bg-light)); }
+        .af-chip.af-exc .af-mode:hover { background: color-mix(in srgb, var(--exc-brd) 22%, var(--bg-light)); }
+        .af-chip.af-date .af-mode { cursor: default; }
+        .af-text { flex: 1; min-width: 0; padding: 6px 2px 6px 8px; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
+        .af-main { font-family: var(--font-mono); font-weight: bold; font-size: 11px; line-height: 14px; color: var(--text-main);
+                   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .af-sub { font-family: var(--font-mono); font-size: 9.5px; line-height: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+        .af-x { flex: none; width: 34px; padding: 0; background: none; border: none; cursor: pointer; color: var(--text-muted);
+                display: flex; align-items: center; justify-content: center; }
+        .af-x:hover { color: var(--text-main); }
+
         /* ── RESET BUTTON ── */
         .reset-btn {
             width: 100%; padding: 4px 6px;
@@ -1411,7 +1460,7 @@
             <div class="filter-header-row"><span class="filter-label">Airport</span></div>
             <div class="tag-input-wrapper" id="airport-wrapper"></div>
             <label style="font-size: 10px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; margin-top: 8px; cursor: pointer;">
-                <input type="checkbox" id="airport-strict-match" onchange="window.applyFiltersGlobal()">
+                <input type="checkbox" id="airport-strict-match" onchange="window.renderAllActiveFilters(); window.applyFiltersGlobal()">
                 Only show strict matches
             </label>
         </div>
@@ -1475,10 +1524,13 @@
     </div>
 
     <div id="active-filters-section" style="padding: 12px 10px; flex: 0 1 auto; max-height: 40%; overflow-y: auto; border-top: 1px solid var(--border-faint); transition: max-height 0.2s ease;">
-        <div class="filter-header-row" style="margin-bottom: 8px;">
+        <div class="af-head">
             <span class="filter-label">Active Filters</span>
+            <span class="af-count" id="af-count" hidden></span>
+            <button type="button" class="af-clear" id="af-clear" onclick="resetFilters()" hidden>Clear all</button>
         </div>
-        <div id="active-filters-list" style="display: flex; flex-direction: column; gap: 5px;"></div>
+        <div class="af-sentence" id="af-sentence">Showing all flights and IFATC sessions.</div>
+        <div id="active-filters-list"></div>
     </div>
 
         <div id="airport-hover-info" style="display: none;">
@@ -2237,107 +2289,81 @@ window.renderAllActiveFilters = function() {
     var container = document.getElementById('active-filters-list');
     if (!container) return;
     container.innerHTML = '';
-    
-    var hasFilters = false;
-    let filterCount = 0; 
+    var filterCount = 0;
 
-    function createGlobalChip(mainText, subText, modeClass, onRemove, onToggle) {
+    var KEYS = ['aircraft', 'airline', 'station', 'controllers', 'airport', 'ifatc', 'live', 'org', 'airframe', 'remarks'];
+    var GROUP_LABELS = { date: 'Date Range', aircraft: 'Aircraft', airline: 'Airline / Livery', airport: 'Airport', remarks: 'Remarks',
+                         ifatc: 'IFATC Sessions', station: 'Station', controllers: 'Controllers', live: 'Live Flights',
+                         org: 'Organization', airframe: 'Airframe' };
+    var GROUP_ORDER = ['date', 'aircraft', 'airline', 'airport', 'remarks', 'ifatc', 'station', 'controllers', 'live', 'org', 'airframe'];
+    var X_ICON = '<svg width="9" height="9" viewBox="0 0 9 9" aria-hidden="true"><path d="M1 1l7 7M8 1L1 8" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>';
+    var CAL_ICON = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1">' +
+                   '<rect x="1.5" y="2.5" width="9" height="8" rx="1"/><path d="M1.5 5h9M4 1v3M8 1v3"/></svg>';
+    var strictEl = document.getElementById('airport-strict-match');
+    var strict = !!(strictEl && strictEl.checked);
+
+    // Value -> what to show: { name (chip title, also used in the sentence), sub (second line) }
+    function describe(key, val, mode) {
+        if (key === 'ifatc') return { name: 'IFATC Session', sub: mode === 'include' ? 'only these' : 'hidden' };
+        if (key === 'live') return { name: 'Live Flight', sub: mode === 'include' ? 'only these' : 'hidden' };
+        var ti = (typeof tagInputs !== 'undefined') && tagInputs[key];
+        var opt = ti && ti.options ? ti.options.find(function(o) { return o.value === val; }) : null;
+        var label = opt ? opt.label : String(val).replace(/^(mfr|fam|spc|reg|cty):/, '');
+        if (key === 'airport' && label.indexOf(' - ') > -1) {
+            var parts = label.split(' - ');
+            return { name: parts[0], sub: parts.slice(1).join(' - ').replace(/\s*[\[(][^\])]*[\])]\s*$/, '') };   // no "(City)" on the chip
+        }
+        if (key === 'aircraft' || key === 'airport') return { name: label, sub: opt && opt.badge ? opt.badge : null };
+        return { name: label, sub: null };
+    }
+
+    function makeChip(mode, name, sub, onRemove, onToggle) {
         var chip = document.createElement('div');
-        chip.className = 'tag-chip mode-' + modeClass;
-        chip.style.alignItems = 'center';
-
-        var labelContainer = document.createElement('div');
-        labelContainer.style.display = 'flex';
-        labelContainer.style.flexDirection = 'column';
-        labelContainer.style.flex = '1';
-        labelContainer.style.overflow = 'hidden';
-        labelContainer.style.gap = '2px';
-        
-        var mainSpan = document.createElement('span');
-        mainSpan.textContent = mainText;
-        mainSpan.style.whiteSpace = 'nowrap';
-        mainSpan.style.overflow = 'hidden';
-        mainSpan.style.textOverflow = 'ellipsis';
-        mainSpan.style.fontWeight = 'bold';
-        labelContainer.appendChild(mainSpan);
-
-        if (subText) {
-            var subSpan = document.createElement('span');
-            subSpan.textContent = subText;
-            subSpan.style.fontSize = '9px'; 
-            subSpan.style.color = 'var(--text-muted)';
-            subSpan.style.whiteSpace = 'nowrap';
-            subSpan.style.overflow = 'hidden';
-            subSpan.style.textOverflow = 'ellipsis';
-            labelContainer.appendChild(subSpan);
+        chip.className = 'af-chip ' + (mode === 'date' ? 'af-date' : mode === 'include' ? 'af-inc' : 'af-exc');
+        var sq = document.createElement('button');
+        sq.type = 'button'; sq.className = 'af-mode';
+        if (mode === 'date') { sq.innerHTML = CAL_ICON; sq.tabIndex = -1; }
+        else {
+            sq.textContent = mode === 'include' ? '+ INC' : '- EXC';
+            sq.title = mode === 'include' ? 'Including. Click to exclude instead' : 'Excluding. Click to include instead';
+            sq.addEventListener('click', function(e) { e.stopPropagation(); onToggle(); });
         }
-
-        chip.appendChild(labelContainer);
-
-        var actionsDiv = document.createElement('div');
-        actionsDiv.className = 'chip-actions';
-
-        if (onToggle) {
-            var toggleBtn = document.createElement('button');
-            toggleBtn.className = 'chip-toggle';
-            toggleBtn.innerHTML = 'SWP';
-            toggleBtn.addEventListener('click', function(e) { e.stopPropagation(); onToggle(); });
-            actionsDiv.appendChild(toggleBtn);
-        }
-
-        var btn = document.createElement('button');
-        btn.className = 'chip-remove';
-        btn.innerHTML = 'X';
-        btn.addEventListener('click', function(e) { e.stopPropagation(); onRemove(); });
-        actionsDiv.appendChild(btn);
-
-        chip.appendChild(actionsDiv);
+        var text = document.createElement('div'); text.className = 'af-text';
+        var m = document.createElement('span'); m.className = 'af-main'; m.textContent = name; m.title = name; text.appendChild(m);
+        if (sub) { var sb = document.createElement('span'); sb.className = 'af-sub'; sb.textContent = sub; text.appendChild(sb); }
+        var x = document.createElement('button');
+        x.type = 'button'; x.className = 'af-x'; x.title = 'Remove filter'; x.innerHTML = X_ICON;
+        x.addEventListener('click', function(e) { e.stopPropagation(); onRemove(); });
+        chip.appendChild(sq); chip.appendChild(text); chip.appendChild(x);
         return chip;
     }
+
+    var groups = {};   // key -> [chip elements]
+    function addChip(key, el) { (groups[key] = groups[key] || []).push(el); filterCount++; }
 
     var sd = document.getElementById('start-date').value;
     var ed = document.getElementById('end-date').value;
     if (sd || ed) {
-        hasFilters = true;
-        filterCount++;
-        var dateSubText = (sd || 'Any') + ' > ' + (ed || 'Any');
-        container.appendChild(createGlobalChip('Date Range', dateSubText, 'include', function() {
+        addChip('date', makeChip('date', (sd || 'Any') + ' → ' + (ed || 'Any'), null, function() {
             document.getElementById('start-date').value = '';
             document.getElementById('end-date').value = '';
             syncDateFilterHistory();
             window.renderAllActiveFilters();
             if (window.applyFiltersGlobal) window.applyFiltersGlobal();
-        }, null));
+        }));
     }
-    ['aircraft', 'airline', 'station', 'controllers', 'airport', 'ifatc', 'live', 'org', 'airframe', 'remarks'].forEach(function(key) {
+
+    var names = {};    // key -> { inc: [names], exc: [names] } for the sentence
+    KEYS.forEach(function(key) {
         var state = filterState[key];
-
-        function renderTags(set, mode) {
-            set.forEach(function(val) {
-                hasFilters = true;
-                filterCount++;
-
-                var mainText, subText = null;
-
-                if (key === 'ifatc') {
-                    mainText = "IFATC Session";
-                } else if (key === 'live') {
-                    mainText = "Live Flight";
-                } else {
-                    var opt = tagInputs[key].options.find(function(o) { return o.value === val; });
-                    var fullLabel = opt ? opt.label : val;
-                    mainText = fullLabel;
-
-                    if (key === 'airport' && fullLabel.includes(' - ')) {
-                        var parts = fullLabel.split(' - ');
-                        mainText = parts[0];
-                        subText = parts.slice(1).join(' - ');
-                    }
-                }
-
-                container.appendChild(createGlobalChip(mainText, subText, mode, function() {
-                    // Custom remove handler for IFATC / Live (no TagInput backing them)
-                    if (key === 'ifatc' || key === 'live') {
+        names[key] = { inc: [], exc: [] };
+        [['include', state.includes], ['exclude', state.excludes]].forEach(function(pair) {
+            var mode = pair[0];
+            pair[1].forEach(function(val) {
+                var d = describe(key, val, mode);
+                names[key][mode === 'include' ? 'inc' : 'exc'].push(d.name);
+                addChip(key, makeChip(mode, d.name, d.sub, function() {
+                    if (key === 'ifatc' || key === 'live') {    // no TagInput behind these two
                         if (mode === 'include') filterState[key].includes.delete(val);
                         else filterState[key].excludes.delete(val);
                         filterHistory = filterHistory.filter(function(h) { return !(h.key === key && h.value === val); });
@@ -2348,11 +2374,95 @@ window.renderAllActiveFilters = function() {
                     }
                 }, function() { toggleFilterState(key, val, mode); }));
             });
-        }
-
-        renderTags(state.includes, 'include');
-        renderTags(state.excludes, 'exclude');
+        });
     });
+
+    GROUP_ORDER.forEach(function(key) {
+        if (!groups[key]) return;
+        var g = document.createElement('div'); g.className = 'af-group';
+        var head = document.createElement('div'); head.className = 'af-group-head';
+        var lab = document.createElement('span'); lab.className = 'af-group-label'; lab.textContent = GROUP_LABELS[key];
+        head.appendChild(lab);
+        if (key === 'airport' && filterState.airport.includes.size) {
+            // AND = strict (a flight must go between the included airports / stay within one); OR = touching any of them
+            var t = document.createElement('button');
+            t.type = 'button'; t.className = 'af-strict'; t.textContent = strict ? 'AND' : 'OR';
+            t.title = strict ? 'Strict matches only (departure AND arrival). Click for any match'
+                             : 'Any match (departure OR arrival). Click for strict matches only';
+            t.addEventListener('click', function() {
+                strictEl.checked = !strictEl.checked;
+                window.renderAllActiveFilters();
+                if (window.applyFiltersGlobal) window.applyFiltersGlobal();
+            });
+            head.appendChild(t);
+        }
+        g.appendChild(head);
+        var list = document.createElement('div'); list.className = 'af-chips';
+        groups[key].forEach(function(el) { list.appendChild(el); });
+        g.appendChild(list);
+        container.appendChild(g);
+    });
+
+    // ── Sentence ──
+    function esc(t) { return escapeHtml(t); }
+    function v(t, cls) { return '<span class="af-v' + (cls ? ' ' + cls : '') + '">' + esc(t) + '</span>'; }
+    function list(arr, cls, conj) {
+        var a = arr.map(function(t) { return v(t, cls); });
+        return a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' ' + conj + ' ' + a[a.length - 1];
+    }
+    function clause(key, verb) {
+        var n = names[key];
+        if (n.inc.length && n.exc.length) return verb + ' ' + list(n.inc, 'af-inc', 'or') + ' but not ' + list(n.exc, 'af-exc', 'or');
+        if (n.inc.length) return verb + ' ' + list(n.inc, 'af-inc', 'or');
+        if (n.exc.length) return 'not ' + verb + ' ' + list(n.exc, 'af-exc', 'or');
+        return '';
+    }
+    function niceDate(iso) {
+        var d = new Date(iso + 'T00:00:00');
+        return isNaN(d) ? iso : ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()] + ' ' + d.getDate() + ' ' + d.getFullYear();
+    }
+
+    var sentenceEl = document.getElementById('af-sentence');
+    var html;
+    if (!filterCount) {
+        html = 'Showing all flights and IFATC sessions.';
+    } else {
+        var has = function(k, which) { return names[k][which].length > 0; };
+        var flightOnly = has('ifatc', 'exc') || has('aircraft', 'inc') || has('aircraft', 'exc') || has('org', 'inc') || has('airframe', 'inc') || has('live', 'inc');
+        var atcOnly = has('station', 'inc') || has('controllers', 'inc');
+        var subject;
+        if (has('ifatc', 'inc')) subject = 'IFATC sessions';
+        else if (has('live', 'inc')) subject = 'Live flights';
+        else if (has('live', 'exc')) subject = flightOnly ? 'Non-live flights' : 'Non-live flights and IFATC sessions';
+        else if (flightOnly) subject = 'Flights';
+        else if (atcOnly) subject = 'IFATC sessions';
+        else subject = 'Flights and IFATC sessions';
+
+        var parts = [];
+        if (sd && ed) parts.push(sd === ed ? 'on ' + v(niceDate(sd)) : 'from ' + v(niceDate(sd)) + ' to ' + v(niceDate(ed)));
+        else if (sd) parts.push('since ' + v(niceDate(sd)));
+        else if (ed) parts.push('until ' + v(niceDate(ed)));
+        [['aircraft', 'on'], ['airline', 'flown by'], ['station', 'as'], ['controllers', 'with']].forEach(function(p) {
+            var c = clause(p[0], p[1]); if (c) parts.push(c);
+        });
+        var ap = names.airport;
+        if (ap.inc.length) {
+            var apText = strict && ap.inc.length >= 2 ? 'between ' + list(ap.inc, 'af-inc', 'and')
+                       : strict ? 'within ' + list(ap.inc, 'af-inc', 'or')
+                       : 'touching ' + list(ap.inc, 'af-inc', 'or');
+            if (ap.exc.length) apText += ' but not ' + list(ap.exc, 'af-exc', 'or');
+            parts.push(apText);
+        } else if (ap.exc.length) parts.push('not touching ' + list(ap.exc, 'af-exc', 'or'));
+        [['org', 'with'], ['airframe', 'in'], ['remarks', 'with remark']].forEach(function(p) {
+            var c = clause(p[0], p[1]); if (c) parts.push(c);
+        });
+        html = subject + (parts.length ? ' ' + parts.join(', ') : '') + '.';
+    }
+    if (sentenceEl) sentenceEl.innerHTML = html;
+
+    var countEl = document.getElementById('af-count'), clearEl = document.getElementById('af-clear');
+    if (countEl) { countEl.textContent = filterCount; countEl.hidden = !filterCount; }
+    if (clearEl) clearEl.hidden = !filterCount;
 
     const sidebarToggle = document.getElementById('sidebar-toggle');
     if (sidebarToggle) {
