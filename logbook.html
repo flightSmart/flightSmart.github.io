@@ -115,7 +115,7 @@
         }
         td.livery-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tail-crop img { position: absolute; max-width: none; visibility: hidden; }
-        /* Soft shadow under the tail in light mode (keeps white tails from vanishing) */
+        /* Light mode: a soft shadow under every tail (keeps white tails from vanishing on the light background) */
         [data-theme="light"] .tail-crop img { filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.5)); }
 
         /* ── GLOBAL RESET ── */
@@ -3027,49 +3027,34 @@ function tailCrop(f) {
     if (!f.type || !f.livery || f.livery === 'Standard') return '';
     var src = '/images/fleet/' + fleetSlug(f.type) + '/' + fleetSlug(f.livery) + '.webp';
     return '<span class="tail-crop"><img src="' + src + '" alt="" loading="lazy" decoding="async"' +
-           (TAIL_WHOLE[fleetSlug(f.type)] ? ' data-whole="1"' : '') +
            ' onload="fitTail(this)" onerror="this.parentNode.remove()"></span>';
 }
 
 // Finds the tail in a fleet picture and zooms the <img> so just the tail fills its box.
 // Searches the right quarter / top 60% of the picture for where the paint starts, so tall fins
 // (C130, F16) aren't cut off and small ones (C172, TBM) aren't lost in empty space.
-// The crop stops where the fuselage starts: the first row, going down from the fin tip, where paint
-// reaches the left edge of the search area. Aircraft listed in TAIL_WHOLE skip that and keep the
-// whole tail area, down to TAIL_WHOLE_Y1 (for the XCub: fin, fuselage end and tailwheel).
 // Each picture is measured once; repeats of the same aircraft + livery reuse the result.
 var TAIL_WIN = { x0: 0.72, x1: 0.97, y1: 0.60 };
-var TAIL_WHOLE = { 'xcub': true };      // fleetSlug(aircraft type)
-var TAIL_WHOLE_Y1 = 0.63;
 var tailFits = {};
 function measureTail(img) {
     var nw = img.naturalWidth, nh = img.naturalHeight;
-    var whole = img.getAttribute('data-whole') === '1';
-    var Y1 = whole ? TAIL_WHOLE_Y1 : TAIL_WIN.y1;
-    var fit = { fx0: TAIL_WIN.x0, fy0: 0, fx1: TAIL_WIN.x1, fy1: Y1 };
+    var fit = { fx0: TAIL_WIN.x0, fy0: 0, fx1: TAIL_WIN.x1, fy1: TAIL_WIN.y1 };
     try {
         var W = 128, H = Math.max(1, Math.round(W * nh / nw));
         var c = document.createElement('canvas'); c.width = W; c.height = H;
         var ctx = c.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(img, 0, 0, W, H);
         var d = ctx.getImageData(0, 0, W, H).data;
-        var x0 = Math.floor(W * TAIL_WIN.x0), x1 = Math.ceil(W * TAIL_WIN.x1), y1 = Math.ceil(H * Y1);
-        var top = y1, right = x0, root = y1;
-        for (var y = 0; y < y1; y++) {
-            var left = -1;
+        var x0 = Math.floor(W * TAIL_WIN.x0), x1 = Math.ceil(W * TAIL_WIN.x1), y1 = Math.ceil(H * TAIL_WIN.y1);
+        var top = y1, right = x0;
+        for (var y = 0; y < y1; y++)
             for (var x = x0; x < x1; x++) {
                 if (d[(y * W + x) * 4 + 3] > 40) {
                     if (y < top) top = y;
                     if (x > right) right = x;
-                    if (left < 0) left = x;
                 }
             }
-            if (root === y1 && y > top && left >= 0 && left <= x0 + 1) root = y;   // paint reaches the left edge: fuselage
-        }
-        if (top < y1) {                                     // nothing found: use the whole search area
-            fit.fy0 = top / H; fit.fx1 = (right + 1) / W;
-            if (!whole) fit.fy1 = Math.min(y1, root + 1.5) / H;   // + a sliver of the fuselage top
-        }
+        if (top < y1) { fit.fy0 = top / H; fit.fx1 = (right + 1) / W; }   // nothing found: use the whole search area
     } catch (e) { }   // canvas not readable (e.g. page opened as a file): use the whole search area
     return fit;
 }
