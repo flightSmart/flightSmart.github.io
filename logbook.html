@@ -438,21 +438,7 @@
         }
 
         /* ── ACTIVE FILTERS (bottom of the filter sidebar) ── */
-        .af-head { display: flex; align-items: center; gap: 8px; min-height: 14px; }
-        .af-count {
-            display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-            min-width: 17px; height: 13px; padding: 0 5px; border-radius: 7px;
-            background: #64c399; color: #1e1e1e;
-            font-family: var(--font-mono); font-weight: 700; font-size: 9px; line-height: 1;
-        }
-        .af-count[hidden], .af-clear[hidden] { display: none; }
-        .af-clear {
-            margin-left: auto; padding: 0; background: none; border: none; cursor: pointer;
-            font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
-            text-decoration: underline; text-underline-offset: 2px;
-        }
-        .af-clear:hover { color: var(--text-main); }
-        .af-sentence { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--text-muted); }
+        .af-sentence { font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--text-muted); }
         .af-v { color: var(--text-main); }
         .af-v.af-inc { text-decoration-line: underline; text-decoration-color: var(--accent-green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
         .af-v.af-exc { text-decoration-line: line-through; text-decoration-color: var(--exc-brd); text-decoration-thickness: 1px; }
@@ -481,7 +467,8 @@
         .af-text { flex: 1; min-width: 0; padding: 6px 2px 6px 8px; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
         .af-main { font-family: var(--font-mono); font-weight: bold; font-size: 11px; line-height: 14px; color: var(--text-main);
                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .af-sub { font-family: var(--font-mono); font-size: 9.5px; line-height: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+        .af-sub { font-family: var(--font-mono); font-size: 9.5px; line-height: 12px; color: var(--text-muted);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .af-x { flex: none; width: 34px; padding: 0; background: none; border: none; cursor: pointer; color: var(--text-muted);
                 display: flex; align-items: center; justify-content: center; }
         .af-x:hover { color: var(--text-main); }
@@ -712,9 +699,6 @@
             border-bottom-color: rgba(250, 152, 34, 1.0);
         }
 
-        /* ── AIRPORT HOVER INFO ── */
-        #hover-airport-id { color: var(--accent-green) !important; font-size: 15px !important; }
-       
         #sidebar-routes {
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;     /* Firefox */
@@ -744,37 +728,6 @@
         .tag-dropdown::-webkit-scrollbar-thumb:hover {
             background: var(--border-main);
         }    
-
-        /* ── AIRPORT HOVER INFO ── */
-        #airport-hover-info {
-            /* Mirrored from .tag-chip */
-            padding: 4px 12px; 
-            margin: 0 12px 12px 12px; 
-            background-color: var(--bg-light);
-            border: 1px solid var(--accent-green); 
-            color: var(--accent-green); 
-            font-family: var(--font-mono);
-            font-size: 10px;
-            align-items: center; 
-            justify-content: space-between;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        #hover-airport-id { 
-            font-weight: bold; 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            /* Scaled down to match the chip text */
-            font-size: 10px; 
-        }
-
-        #hover-airport-count {
-            font-size: 9px; 
-            color: var(--text-muted); 
-            white-space: nowrap;
-        }
 
         /* ── ATC RADAR SWEEP ──
            A slow rotating beam over each ATC circle (see L.RadarSweep in the script). */
@@ -1524,19 +1477,10 @@
     </div>
 
     <div id="active-filters-section" style="padding: 12px 10px; flex: 0 1 auto; max-height: 40%; overflow-y: auto; border-top: 1px solid var(--border-faint); transition: max-height 0.2s ease;">
-        <div class="af-head">
-            <span class="filter-label">Active Filters</span>
-            <span class="af-count" id="af-count" hidden></span>
-            <button type="button" class="af-clear" id="af-clear" onclick="resetFilters()" hidden>Clear all</button>
-        </div>
         <div class="af-sentence" id="af-sentence">Showing all flights and IFATC sessions.</div>
         <div id="active-filters-list"></div>
     </div>
 
-        <div id="airport-hover-info" style="display: none;">
-            <span id="hover-airport-id"></span>
-            <span id="hover-airport-count"></span>
-        </div>
 </div>
 
 
@@ -2330,7 +2274,7 @@ window.renderAllActiveFilters = function() {
         }
         var text = document.createElement('div'); text.className = 'af-text';
         var m = document.createElement('span'); m.className = 'af-main'; m.textContent = name; m.title = name; text.appendChild(m);
-        if (sub) { var sb = document.createElement('span'); sb.className = 'af-sub'; sb.textContent = sub; text.appendChild(sb); }
+        if (sub) { var sb = document.createElement('span'); sb.className = 'af-sub'; sb.textContent = sub; sb.title = sub; text.appendChild(sb); }
         var x = document.createElement('button');
         x.type = 'button'; x.className = 'af-x'; x.title = 'Remove filter'; x.innerHTML = X_ICON;
         x.addEventListener('click', function(e) { e.stopPropagation(); onRemove(); });
@@ -2460,9 +2404,6 @@ window.renderAllActiveFilters = function() {
     }
     if (sentenceEl) sentenceEl.innerHTML = html;
 
-    var countEl = document.getElementById('af-count'), clearEl = document.getElementById('af-clear');
-    if (countEl) { countEl.textContent = filterCount; countEl.hidden = !filterCount; }
-    if (clearEl) clearEl.hidden = !filterCount;
 
     const sidebarToggle = document.getElementById('sidebar-toggle');
     if (sidebarToggle) {
@@ -4836,12 +4777,6 @@ Promise.all([
                             marker.flightCount = cnt; 
                             airportMarkers.push(marker); 
 
-                            marker.on('mouseover', function() {
-                                document.getElementById('hover-airport-id').innerText = id;
-                                document.getElementById('hover-airport-count').innerText = cnt + ' RTES';
-                                document.getElementById('airport-hover-info').style.display = 'block';
-                            });
-                            marker.on('mouseout', function() { document.getElementById('airport-hover-info').style.display = 'none'; });
                             marker.on('click', function() { tagInputs.airport.addTag(id, 'include'); });
                             drawnLayers.addLayer(marker);
                         });
