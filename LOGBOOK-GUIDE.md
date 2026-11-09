@@ -26,7 +26,7 @@ Both repos need the same files. Whenever you change something, change it in **bo
 1. **Original Google Sheet(s) are the database.** The page downloads two published CSV versions of it: your flights (<u>Infinite Flight Logbook</u>) and your ATC sessions (<u>IFATC Logbook</u>). Nothing about your flights is stored on GitHub. Add a row to the sheet and it shows up on the site the next time the page is opened (Google can take a few minutes to update the published CSV). The "daydreamers" tab in <u>Infinite Flight Logbook</u> is not read.
 2. **The page looks up airports and runways** to know where to draw things. It first loads a small file of just airports you have flown to (`data/airports-flown.csv`) so the map appears quickly. Then it quietly downloads the full world list in the background.
 3. **The LOG button** sends a new flight to a small Google Apps Script (`Code.gs`) that lives inside your <u>Infinite Flight Logbook</u> Google Sheet. That script **only ever adds one new row** to the "Logbook" tab and emails you a confirmation. It never edits or deletes anything.
-4. **Pictures** (airline logos and Infinite Flight aircraft pictures) are plain image files in the repo's `images` folder.
+4. **Pictures** (Infinite Flight aircraft pictures) are plain image files in the repo's `images/fleet` folder. Each one is used twice: cropped to just the tail next to the livery name in the routes table, and in full in a flight's details.
 
 ---
 
@@ -38,7 +38,6 @@ Either `flightsmart/flightsmart.github.io/` or `flightsmart/flightsmart/`.
 ```
 flightsmart.github.io/
 ├── logbook.html
-├── Infinite Flight Aircraft Livery List.csv
 ├── fleet_images.py
 ├── airports_flown.py
 ├── fleet_report.txt
@@ -49,7 +48,6 @@ flightsmart.github.io/
 └── images/
     ├── favicon_logbook.png
     ├── pfp.png
-    ├── logos/
     └── fleet/
 ```
 
@@ -58,7 +56,6 @@ flightsmart.github.io/
 | File or folder | What it's for | Where it comes from |
 |---|---|---|
 | `logbook.html` | The whole website (HTML, CSS and JavaScript in one file) | You edit it |
-| `Infinite Flight Aircraft Livery List.csv` | Livery colours, and which logo to show for each one | You edit it |
 | `fleet_images.py` | Downloads the aircraft pictures into `images/fleet/` * | Script |
 | `airports_flown.py` | Makes the two small files in `data/` * | Script |
 | `fleet_report.txt` | List of aircraft the picture script couldn't match (optional) | Made by `fleet_images.py` |
@@ -67,8 +64,7 @@ flightsmart.github.io/
 | `data/runways-flown.csv` | The runways at those airports | Made by `airports_flown.py` |
 | `images/favicon_logbook.png` | The little icon in the browser tab | You add it |
 | `images/pfp.png` | Small profile picture in the page header | You add it |
-| `images/logos/` | Folder: Airline logos shown in the routes table. Each file is named as in the livery list CSV | You add them |
-| `images/fleet/` | Folder: Infinite Flight aircraft pictures, stored as `<aircraft-type>/<livery>.webp`, e.g. `fleet/787-9/british-airways.webp` | Made by `fleet_images.py` |
+| `images/fleet/` | Folder: Infinite Flight aircraft pictures (the tail in the routes table and the picture in flight details), stored as `<aircraft-type>/<livery>.webp`, e.g. `fleet/787-9/british-airways.webp` | Made by `fleet_images.py` |
 
 *Note: the two python files are helper scripts not needed for the website to run. They are only in the flightsmart.github.io/ repository.
 **Not in the repo, but needed:**
@@ -84,19 +80,7 @@ flightsmart.github.io/
 | Missing | Result |
 |---|---|
 | `data/` files | Still works, just slower (downloads the full ~5 MB world list first). |
-| `images/fleet/…` picture | No fleet picture for that flight |
-| A logo in `images/logos/` | The livery name is shown as text instead. |
-| `Infinite Flight Aircraft Livery List.csv` | No color swatches or logos, just livery names. |
-
-### The livery list CSV (columns the page reads)
-
-| Column | What it does |
-|---|---|
-| `Infinite Flight Livery Name` | Must match the livery name in your sheet exactly. |
-| `Color 1`, `Color 2`, `Color 3` | The little color swatch next to the livery in Light Mode, only used in GA / Military Liveries. It is also shown if the logo for an airline is not present. |
-| `Logo or Wordmark` (the typo `Logol or Wordmark` also works) | File name inside `images/logos/`. |
-| `Include Name` | `T` = logo **and** name, `F` = logo only. |
-| `Dark Logo` | How the logo looks in dark mode: `knockout` (default), `mono`, or `outline`. Optional there is `color`, `chip` but they are not used currently. Mono is better for logos that work as a silhouette. Knockout is better for logos that would not work as a silhoutte such as United or UPS.|
+| `images/fleet/…` picture | No tail in the routes table (just the livery name) and no picture in the flight details. |
 
 ---
 
@@ -156,7 +140,7 @@ python3 airports_flown.py
 - **At the end** it lists any airport codes in your sheet that the airport database doesn't know. Those flights can't be drawn. Usually it's a typo in the sheet or an old code (see *Fix an airport that won't draw* below).
 - **If you skip it,** nothing breaks. New airports just appear a few seconds later than the rest.
 
-**`fleet_images.py`** downloads Infinite Flight pictures for every aircraft + livery you've flown. Run it after flying new liveries:
+**`fleet_images.py`** downloads Infinite Flight pictures for every aircraft + livery you've flown. Run it after flying new liveries, because a flight without a picture shows no tail in the routes table:
 
 ```
 python3 fleet_images.py            # download whatever is missing
@@ -211,7 +195,7 @@ Double-clicking `logbook.html` **won't work properly**, because it looks for fil
   3. Click **FILE**.
   4. The receipt prints and ends with "FILED, GOOD DAY." and a confirmation email arrives.
   5. **NEW ENTRY** clears the card for another flight. Only **✕** closes the card.
-- **Live Orgs / airframes:** the small **○** dot on the card opens the settings window. Choosing an airframe fills in Aircraft and Livery automatically. These settings are stored in the Apps Script, not in the sheet.
+- **Live Orgs / airframes:** the small **○** dot on the card opens the settings window. Choosing an airframe fills in Aircraft and Livery automatically. Each org also has a **DARK** and a **LIGHT** colour (hex codes such as `#a5b8bd`), used for the LIVE row in a flight's details. These settings are stored in the Apps Script, not in the sheet.
 - **Safety:** the script refuses to write anything if:
   - the "Logbook" tab's header row (row 2, columns A–L) doesn't match what it expects;
   - the row it is about to fill isn't completely empty;
@@ -244,11 +228,14 @@ It's one long file in three parts: **CSS** (the look) at the top, **HTML** (the 
 | Airport/runway loading | `FLOWN_AIRPORTS_URL`, `FULL_AIRPORTS_URL`, `runways-flown` |
 | Aircraft picture file names | `fleetSlug` (must match `slug()` in `fleet_images.py`) |
 | Sidebar flight details (DEPART, ARRIVAL, TYPE…) | `details-row` |
+| LIVE row in flight details (org · airframe) | `live-chip` |
+| Livery tails in the routes table | `tailCrop`, `fitTail` (size: `.tail-crop`; search area: `TAIL_WIN`) |
+| Active filters sentence and chips | `renderAllActiveFilters` |
 
 **What's on the page** (map buttons, left to right):
 
 - **< ROUTES**: the routes table.
-- **v TIMELINE**: monthly bar chart. Click a month to filter by it. Hidden on phones.
+- **v TIMELINE**: monthly bar chart. Click a month to filter by it; shift-click another month to filter the whole range between them. Hidden on phones.
 - **Traffic patterns**: show or hide.
 - **ATC circles**: show or hide.
 - **ICAO labels**: show or hide.
@@ -258,7 +245,9 @@ It's one long file in three parts: **CSS** (the look) at the top, **HTML** (the 
 - **LOG**: opens the log form (section 5).
 - **FILTERS >**: the filter sidebar.
 
-Click a row in the table to open its details: airports, aircraft, livery, remarks and the Infinite Flight picture. **Escape** undoes your last filter, including a timeline month.
+Click a row in the table to open its details: airports, aircraft, livery, remarks and the Infinite Flight picture. Live org flights also get a LIVE row at the top (org · airframe on the org's colour); click it to filter by that org. **Escape** undoes your last filter, including a timeline month.
+
+The bottom of the **FILTERS** sidebar describes the active filters in a sentence (e.g. "Flights on 777-300ER, between KBOS and OTHH."), with a chip for each filter below it. Click **+ INC / − EXC** on a chip to swap include and exclude, **✕** to remove it, and **AND / OR** next to Airport to switch strict matching (same as the "Only show strict matches" checkbox).
 
 ---
 
@@ -271,7 +260,6 @@ Click a row in the table to open its details: airports, aircraft, livery, remark
   2. Look the airport up on [ourairports.com](https://ourairports.com).
   3. If it's a typo, fix it in the sheet.
   4. If the database uses a different code, add a line like `'OLD': 'NEW',` to **both** `codeAliases` in `logbook.html` and `CODE_ALIASES` in `airports_flown.py`.
-- **No aircraft picture for a flight:** run `fleet_images.py` and check its report (section 4b).
-- **A logo doesn't appear:** the file name in the livery list CSV must exactly match the file in `images/logos/`, including capital letters (GitHub is case-sensitive, your Mac is not).
+- **No aircraft picture or tail for a flight:** run `fleet_images.py` and check its report (section 4b).
 - **A library link dies one day (unpkg, cdnjs):** search the web for the library name and version (e.g. "leaflet 1.9.4 cdn") and swap the address near the top of `logbook.html`.
 - **OurAirports moves its files:** update the addresses in `logbook.html` (`FULL_AIRPORTS_URL`, `FULL_RUNWAYS_URL`) and in `airports_flown.py` (`AIRPORTS_CSV`, `RUNWAYS_CSV`).
