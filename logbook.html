@@ -631,6 +631,29 @@
         .fleet-sep { border-bottom: 1px solid var(--border-faint); margin: 1px 0; }
         .fleet-img { display: block; width: 82%; max-width: 340px; height: auto; margin: 14px auto 10px; }
 
+        /* LIVE row in the flight details: org (bold) · airframe (medium) on the org's colour, fading out to the right.
+           Each org's two colours come from the logbook settings (see applyOrgColors); these are the fallbacks. */
+        .live-chip {
+            --org-d: rgba(255, 255, 255, 0.16);
+            --org-l: rgba(0, 0, 0, 0.12);
+            --org-c: var(--org-d);
+            display: inline-block; vertical-align: top;
+            height: 19px; line-height: 19px;
+            padding: 0 32px 0 6px;
+            border-radius: 3px 0 0 1px;
+            background: linear-gradient(90deg, var(--org-c), transparent);
+            font-family: "Helvetica Neue", var(--font-sans); font-size: 10.5px; letter-spacing: 0;
+            color: var(--text-main);
+            white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+        }
+        [data-theme="light"] .live-chip { --org-c: var(--org-l); }
+        .live-chip[data-filter-key] { cursor: pointer; }
+        .live-chip[data-filter-key]:hover { color: rgba(250, 152, 34, 1.0); }
+        .live-org { font-weight: 700; }
+        .live-af, .live-sep { font-weight: 500; }
+        .live-sep { margin: 0 6px; }
+        .live-details { margin-top: -9px; }      /* the LIVE band sits close under the top edge */
+
         .filter-clickable {
             cursor: pointer;
             border-bottom: 1px dotted var(--text-muted);
@@ -1003,6 +1026,18 @@
         .lb-af { display: grid; grid-template-columns: 1fr 1.1fr 1fr 1.3fr 14px; column-gap: 6px; align-items: end; margin-bottom: 4px; }
         .lb-af:not(.lb-af-head) .lb-input { border-bottom: 1px dotted var(--border-main); }
         .lb-af-head { font-size: 8px; color: var(--text-muted); }
+        /* Settings use plain sans, not the handwriting */
+        .lb-card #lb-settings-view .lb-input { font-family: var(--font-sans); font-size: 10px; letter-spacing: 0; }
+        #lb-settings-view .lb-sig .lb-input { font-family: var(--lb-hand); font-size: 14px; }
+        .lb-org-colors { display: flex; gap: 14px; align-items: center; margin: 0 0 6px; font-size: 8px; color: var(--text-muted); }
+        .lb-org-colors label { display: flex; align-items: center; gap: 5px; }
+        .lb-card .lb-org-colors .lb-input { width: 62px; height: 18px; border-bottom: 1px dotted var(--border-main); text-transform: lowercase; }
+        .lb-color { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; padding: 0; border: 1px solid var(--border-main);
+                    border-radius: 0; background: none; cursor: pointer; flex: none; }
+        .lb-color::-webkit-color-swatch-wrapper { padding: 0; }
+        .lb-color::-webkit-color-swatch { border: none; border-radius: 0; }
+        .lb-color::-moz-color-swatch { border: none; border-radius: 0; }
+        .lb-color.lb-color-empty { opacity: 0.25; }
         .lb-x { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 9px; padding: 0; }
         .lb-x:hover { color: var(--exc-txt); }
 
@@ -2681,7 +2716,7 @@ function toggleLeftPanel() {
 // TIMELINE — monthly histogram under the map
 // Grey bars = all logged flights per month. While filters are on, the matching part of each
 // bar turns green (stacked at the bottom) and the trend line follows the filtered flights.
-// Clicking a month sets the Date Range filter to that month (click again to clear it).
+// Clicking a month sets the Date Range filter to that month (click again to clear it); shift-click another month for a range.
 // ═══════════════════════════════════════════════════════════
 var Timeline = (function() {
     // Axis starts a few empty months before the first logged flight (11 Dec 2017) as a lead-in.
@@ -2844,15 +2879,29 @@ var Timeline = (function() {
         return (i < 0 || i >= totals.length) ? -1 : i;
     }
 
+    function monthFirstDay(i) { var ym = idxToYM(i); return ym.y + '-' + pad2(ym.m + 1) + '-01'; }
+    function monthLastDay(i) { var ym = idxToYM(i); return ym.y + '-' + pad2(ym.m + 1) + '-' + pad2(new Date(ym.y, ym.m + 1, 0).getDate()); }
+
+    // The month a shift-click range starts from: the last month clicked, as long as the Date Range
+    // still shows what the timeline set (a range typed in the sidebar, or a cleared one, resets it).
+    var anchor = null;     // { i: month index, start: 'yyyy-mm-dd', end: 'yyyy-mm-dd' }
+
     // Clicking a month filters the map/table to that month; clicking the same month again clears it.
-    function toggleMonthFilter(i) {
+    // Shift-clicking a month sets the range from the anchor month to that month, both whole months
+    // (e.g. Aug 2021 then shift-click Jul 2022 -> 2021-08-01 to 2022-07-31).
+    function toggleMonthFilter(i, extend) {
         var sdEl = document.getElementById('start-date'), edEl = document.getElementById('end-date');
         if (!sdEl || !edEl) return;
-        var ym = idxToYM(i);
-        var first = ym.y + '-' + pad2(ym.m + 1) + '-01';
-        var last = ym.y + '-' + pad2(ym.m + 1) + '-' + pad2(new Date(ym.y, ym.m + 1, 0).getDate());
-        if (sdEl.value === first && edEl.value === last) { sdEl.value = ''; edEl.value = ''; }
-        else { sdEl.value = first; edEl.value = last; }
+        if (anchor && (sdEl.value !== anchor.start || edEl.value !== anchor.end)) anchor = null;
+        if (extend && anchor && anchor.i !== i) {
+            var lo = Math.min(anchor.i, i), hi = Math.max(anchor.i, i);
+            sdEl.value = monthFirstDay(lo); edEl.value = monthLastDay(hi);
+            anchor.start = sdEl.value; anchor.end = edEl.value;     // keep the anchor: shift-click again to move the other end
+        } else {
+            var first = monthFirstDay(i), last = monthLastDay(i);
+            if (!extend && sdEl.value === first && edEl.value === last) { sdEl.value = ''; edEl.value = ''; anchor = null; }
+            else { sdEl.value = first; edEl.value = last; anchor = { i: i, start: first, end: last }; }
+        }
         syncDateFilterHistory();
         if (window.renderAllActiveFilters) window.renderAllActiveFilters();
         if (window.applyFiltersGlobal) window.applyFiltersGlobal();
@@ -2865,9 +2914,11 @@ var Timeline = (function() {
         if (!panel) return;
         svg.addEventListener('mousemove', function(e) { setHover(indexFromEvent(e)); });
         svg.addEventListener('mouseleave', function() { setHover(-1); });
+        svg.addEventListener('mousedown', function(e) { if (e.shiftKey) e.preventDefault(); });   // no text selection on shift-click
         svg.addEventListener('click', function(e) {
             var i = indexFromEvent(e);
-            if (i >= 0 && i <= lastIdx && totals[i]) toggleMonthFilter(i);
+            // a range may start or end on an empty month; a single month needs flights
+            if (i >= 0 && i <= lastIdx && (totals[i] || e.shiftKey)) toggleMonthFilter(i, e.shiftKey);
         });
         if (window.ResizeObserver) new ResizeObserver(scheduleRender).observe(panel);
         else window.addEventListener('resize', scheduleRender);
@@ -3435,6 +3486,25 @@ var Logbook = (function() {
         settings = s || null;
         settingsVer++;
         try { localStorage.setItem('logbook-settings', JSON.stringify(settings)); } catch (e) {}
+        applyOrgColors();
+    }
+    // '#3D5560', '3d5560' or '#abc' -> '#3d5560'; anything else -> ''
+    function normHex(v) {
+        v = String(v || '').trim().toLowerCase().replace(/^#/, '');
+        if (/^[0-9a-f]{3}$/.test(v)) v = v.replace(/(.)/g, '$1$1');
+        return /^[0-9a-f]{6}$/.test(v) ? '#' + v : '';
+    }
+    // Each org's dark/light colour for the LIVE row in the flight details (.live-chip[data-org="..."])
+    function applyOrgColors() {
+        var el = document.getElementById('org-colors-style');
+        if (!el) { el = document.createElement('style'); el.id = 'org-colors-style'; document.head.appendChild(el); }
+        var orgs = (settings && Array.isArray(settings.orgs)) ? settings.orgs : [];
+        el.textContent = orgs.map(function(o) {
+            var d = normHex(o.dark), l = normHex(o.light);
+            if (!o.name || (!d && !l)) return '';
+            var key = String(o.name).toLowerCase().replace(/[\\"\n\r]/g, function(c) { return c === '\n' || c === '\r' ? ' ' : '\\' + c; });
+            return '.live-chip[data-org="' + key + '"] {' + (d ? ' --org-d: ' + d + ';' : '') + (l ? ' --org-l: ' + l + ';' : '') + ' }';
+        }).join('\n');
     }
     var lastFetch = 0;
     function loadSettings() {
@@ -3653,6 +3723,12 @@ var Logbook = (function() {
             div.className = 'lb-org';
             var html = '<div class="lb-org-head"><input class="lb-input" data-k="name" value="' + esc(o.name) + '" placeholder="Org name">' +
                        '<button type="button" class="lb-x" data-act="del-org" title="Remove org">✕</button></div>' +
+                       '<div class="lb-org-colors">' + ['dark', 'light'].map(function(k) {
+                           var v = normHex(o[k]);
+                           return '<label>' + k.toUpperCase() + ':<input type="color" class="lb-color' + (v ? '' : ' lb-color-empty') + '" data-pick="' + k +
+                                  '" value="' + (v || '#000000') + '" title="Pick the ' + k + ' mode colour" tabindex="-1">' +
+                                  '<input class="lb-input" data-k="' + k + '" value="' + esc(o[k] || '') + '" placeholder="#hex" maxlength="7" spellcheck="false"></label>';
+                       }).join('') + '</div>' +
                        '<div class="lb-af lb-af-head"><span>AIRFRAME</span><span>MANUFACTURER</span><span>TYPE</span><span>LIVERY</span><span></span></div>';
             o.airframes.forEach(function(a, ai) {
                 html += '<div class="lb-af" data-ai="' + ai + '">' +
@@ -3665,9 +3741,22 @@ var Logbook = (function() {
             html += '<button type="button" class="lb-btn lb-btn-small" data-act="add-af" style="margin-top: 4px;">+ AIRFRAME</button>';
             div.innerHTML = html;
             div.addEventListener('input', function(e) {
+                var pick = e.target.getAttribute('data-pick');
+                if (pick) {           // colour picker -> hex box
+                    o[pick] = e.target.value;
+                    e.target.classList.remove('lb-color-empty');
+                    e.target.parentNode.querySelector('[data-k="' + pick + '"]').value = e.target.value;
+                    return;
+                }
                 var k = e.target.getAttribute('data-k'); if (!k) return;
                 var row = e.target.closest('.lb-af');
                 if (row) o.airframes[+row.getAttribute('data-ai')][k] = e.target.value;
+                else if (k === 'dark' || k === 'light') {   // hex box -> colour picker
+                    o[k] = e.target.value;
+                    var v = normHex(e.target.value), sw = e.target.parentNode.querySelector('[data-pick="' + k + '"]');
+                    sw.value = v || '#000000';
+                    sw.classList.toggle('lb-color-empty', !v);
+                }
                 else o.name = e.target.value;
             });
             div.addEventListener('click', function(e) {
@@ -3690,7 +3779,7 @@ var Logbook = (function() {
         if (on) {
             var d = data();
             draft = {
-                orgs: d.orgs.map(function(o) { return { name: o.name, airframes: o.airframes.map(function(a) {
+                orgs: d.orgs.map(function(o) { return { name: o.name, dark: o.dark || '', light: o.light || '', airframes: o.airframes.map(function(a) {
                     return { id: a.id, manufacturer: a.manufacturer || '', type: a.type || '', livery: a.livery || '' }; }) }; })
             };
             fillDatalists(); renderOrgs();
@@ -3702,11 +3791,15 @@ var Logbook = (function() {
         var st = $('lb-set-status'), sig = $('lb-set-sig');
         var clean = {
             orgs: draft.orgs.map(function(o) {
-                return { name: o.name.trim(), airframes: o.airframes.map(function(a) {
+                return { name: o.name.trim(), dark: normHex(o.dark), light: normHex(o.light), airframes: o.airframes.map(function(a) {
                     return { id: a.id.trim(), manufacturer: a.manufacturer.trim(), type: a.type.trim(), livery: a.livery.trim() }; })
                     .filter(function(a) { return a.id; }) };
             }).filter(function(o) { return o.name; })
         };
+        var badHex = Array.prototype.find.call($('lb-orgs-editor').querySelectorAll('.lb-org-colors .lb-input'), function(el) {
+            return el.value.trim() && !normHex(el.value);
+        });
+        if (badHex) { st.innerHTML = '<span class="lb-fail">CHECK: COLOUR (#RRGGBB)</span>'; badHex.focus(); return; }
         if (!sig.value) { st.innerHTML = '<span class="lb-fail">CHECK: SIGNATURE</span>'; sig.focus(); return; }
         st.innerHTML = '<span class="lb-step lb-busy">SAVING</span>';
         api({ action: 'saveSettings', password: sig.value, settings: clean }).then(function(res) {
@@ -3776,12 +3869,13 @@ var Logbook = (function() {
         $('lb-set-back').addEventListener('click', function() { showSettings(false); });
         $('lb-set-save').addEventListener('click', saveSettings);
         $('lb-add-org').addEventListener('click', function() {
-            draft.orgs.push({ name: '', airframes: [{ id: '', manufacturer: '', type: '', livery: '' }] });
+            draft.orgs.push({ name: '', dark: '', light: '', airframes: [{ id: '', manufacturer: '', type: '', livery: '' }] });
             renderOrgs();
             var heads = $('lb-orgs-editor').querySelectorAll('.lb-org-head input');
             heads[heads.length - 1].focus();
         });
         els.date.value = todayISO();
+        try { var cachedSettings = JSON.parse(localStorage.getItem('logbook-settings') || 'null'); if (cachedSettings) applySettings(cachedSettings); } catch (e) {}
         if (LOGBOOK_API_URL) setTimeout(loadSettings, 4000);
     }
 
@@ -4133,6 +4227,17 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 return '<div class="fleet-slot" style="grid-column: span 4;" hidden data-src="/images/fleet/' + fleetSlug(f.type) + '/' +
                        fleetSlug(f.livery) + '.webp" data-alt="' + escapeHtml(f.livery + ' ' + f.type) + '"></div>';
             }
+            // LIVE row (Live org flights only): org · airframe on the org's colour. Clicking it filters by that org.
+            function liveRow(f) {
+                if (!f.org && !f.airframe) return '';
+                var chip = f.org
+                    ? '<span class="live-chip" data-org="' + escapeHtml(f.org.toLowerCase()) + '" data-filter-key="org" data-filter-value="' +
+                      escapeHtml(f.org) + '" title="Click to filter by ' + escapeHtml(f.org) + '"><span class="live-org">' + escapeHtml(f.org) + '</span>' +
+                      (f.airframe ? '<span class="live-sep">·</span><span class="live-af">' + escapeHtml(f.airframe) + '</span>' : '') + '</span>'
+                    : '<span class="live-chip"><span class="live-af">' + escapeHtml(f.airframe) + '</span></span>';
+                return '<span style="color: var(--text-muted);">LIVE</span><span style="grid-column: span 3; min-width: 0;">' + chip + '</span>' +
+                       '<span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>';
+            }
             // Full airport name on a second line under the code · city (only when the city was shown above)
             function fullNameRow(ap) {
                 if (!ap || !ap.municipality || !ap.name) return '';
@@ -4157,9 +4262,9 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                 `;
             } else {
                 html += `
-                    <div style="font-size: 10px; line-height: 1.8; color: var(--text-main);">
+                    <div class="${(item.org || item.airframe) ? 'live-details' : ''}" style="font-size: 10px; line-height: 1.8; color: var(--text-main);">
                         <div style="display: grid; grid-template-columns: 56px 1fr 52px 1fr; gap: 2px 4px;">
-                            <span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
+                            ${liveRow(item)}<span style="color: var(--text-muted);">DATE</span><span style="grid-column: span 3;">${escapeHtml(item.date)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">DEPART</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}${fullNameRow(depAp)}</span>
                             <span style="color: var(--text-muted);">ARRIVAL</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}${fullNameRow(arrAp)}</span>
@@ -4183,7 +4288,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
     if (!container._filterClickBound) {
         container._filterClickBound = true;
         container.addEventListener('click', function(e) {
-            var target = e.target.closest('.filter-clickable');
+            var target = e.target.closest('.filter-clickable, .live-chip[data-filter-key]');
             if (!target) return;
             e.stopPropagation();
             var key = target.getAttribute('data-filter-key');
