@@ -658,28 +658,31 @@
         .fleet-sep { border-bottom: 1px solid var(--border-faint); margin: 1px 0; }
         .fleet-img { display: block; width: 82%; max-width: 340px; height: auto; margin: 14px auto 10px; }
 
-        /* LIVE row in the flight details: org (bold) · airframe (medium) on the org's colour, fading out to the right.
-           Each org's two colours come from the logbook settings (see applyOrgColors); these are the fallbacks. */
+        /* LIVE row in the flight details: org (bold) · airframe (medium) on a grainy pill in the org's colour.
+           Each org's colour and text colour come from the logbook settings (liveBadgeCss / applyOrgColors);
+           orgs without a colour use this grey. */
         .live-chip {
-            --org-d: rgba(255, 255, 255, 0.16);
-            --org-l: rgba(0, 0, 0, 0.12);
-            --org-c: var(--org-d);
-            display: inline-block; vertical-align: top;
-            height: 19px; line-height: 19px;
-            padding: 0 32px 0 6px;
-            border-radius: 3px 0 0 1px;
-            background: linear-gradient(90deg, var(--org-c), transparent);
-            font-family: "Helvetica Neue", var(--font-sans); font-size: 10.5px; letter-spacing: 0;
-            color: var(--text-main);
-            white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+            --live-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.5' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.3 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+            display: inline-block; vertical-align: middle;
+            padding: 3px 9px;              /* 19px tall, the same size as the earlier LIVE badge */
+            border-radius: 24px;
+            font-family: "Helvetica Neue", var(--font-sans); font-size: 10.5px; line-height: 13px; letter-spacing: 0;
+            color: #ffffff;
+            background-color: #5c5c5c;
+            background-image: var(--live-grain),
+                radial-gradient(circle at 10% 15%, #686868 0%, transparent 30%),
+                radial-gradient(circle at 60% 10%, #626262 0%, transparent 27%),
+                radial-gradient(circle at 90% 90%, #505050 0%, transparent 33%),
+                radial-gradient(circle at 35% 100%, #555555 0%, transparent 30%);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 1.5px 6px 0px rgba(0, 0, 0, 0.31);
+            white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; box-sizing: border-box;
         }
-        [data-theme="light"] .live-chip { --org-c: var(--org-l); }
         .live-chip[data-filter-key] { cursor: pointer; }
-        .live-chip[data-filter-key]:hover { color: rgba(250, 152, 34, 1.0); }
+        .live-chip[data-filter-key]:hover { filter: brightness(1.12); }
         .live-org { font-weight: 700; }
         .live-af, .live-sep { font-weight: 500; }
-        .live-sep { margin: 0 6px; }
-        .live-details { margin-top: -9px; }      /* the LIVE band sits close under the top edge */
+        .live-sep { margin: 0 5px; }
+        .live-details { margin-top: -9px; }      /* the LIVE row sits close under the top edge */
 
         .filter-clickable {
             cursor: pointer;
@@ -1022,7 +1025,7 @@
         /* Settings use plain sans, not the handwriting */
         .lb-card #lb-settings-view .lb-input { font-family: var(--font-sans); font-size: 10px; letter-spacing: 0; }
         #lb-settings-view .lb-sig .lb-input { font-family: var(--lb-hand); font-size: 14px; }
-        .lb-org-colors { display: flex; gap: 14px; align-items: center; margin: 0 0 6px; font-size: 8px; color: var(--text-muted); }
+        .lb-org-colors { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 2px 0 8px; font-size: 8px; color: var(--text-muted); }
         .lb-org-colors label { display: flex; align-items: center; gap: 5px; }
         .lb-card .lb-org-colors .lb-input { width: 62px; height: 18px; border-bottom: 1px dotted var(--border-main); text-transform: lowercase; }
         .lb-color { -webkit-appearance: none; appearance: none; width: 12px; height: 12px; padding: 0; border: 1px solid var(--border-main);
@@ -1031,6 +1034,12 @@
         .lb-color::-webkit-color-swatch { border: none; border-radius: 0; }
         .lb-color::-moz-color-swatch { border: none; border-radius: 0; }
         .lb-color.lb-color-empty { opacity: 0.25; }
+        .lb-seg { display: inline-flex; }
+        .lb-seg button { padding: 1px 6px; font-family: var(--font-mono); font-size: 8px; color: var(--text-muted); cursor: pointer;
+                         background: none; border: 1px solid var(--border-main); }
+        .lb-seg button + button { border-left: none; }
+        .lb-seg button.on { color: var(--text-main); background: rgba(127, 127, 127, 0.18); }
+        .lb-org-preview { flex-basis: 100%; padding: 4px 0 2px; }
         .lb-x { background: none; border: none; color: var(--text-muted); cursor: pointer; font-family: var(--font-mono); font-size: 9px; padding: 0; }
         .lb-x:hover { color: var(--exc-txt); }
 
@@ -3586,16 +3595,53 @@ var Logbook = (function() {
         if (/^[0-9a-f]{3}$/.test(v)) v = v.replace(/(.)/g, '$1$1');
         return /^[0-9a-f]{6}$/.test(v) ? '#' + v : '';
     }
-    // Each org's dark/light colour for the LIVE row in the flight details (.live-chip[data-org="..."])
+    // The LIVE badge's colours from one base colour: the base, four slightly lighter / darker blobs
+    // (x1.13, x1.07, x0.87, x0.92 per channel, as in the design: #740202 -> #830202 #7c0202 #650202 #6b0202)
+    // and white or near-black text. Returns CSS declarations.
+    // Where the blobs sit comes from the org name, so each org has its own pattern and always the same one.
+    // The two lighter blobs stay near the top and the two darker ones near the bottom (light from above).
+    function blobLayout(name) {
+        var h = 2166136261;                                         // FNV-1a hash of the name -> seed
+        String(name || '').toLowerCase().split('').forEach(function(c) { h = Math.imul(h ^ c.charCodeAt(0), 16777619); });
+        function rnd() {                                            // mulberry32
+            h = (h + 0x6D2B79F5) | 0;
+            var t = Math.imul(h ^ (h >>> 15), 1 | h);
+            t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        }
+        function r(a, b) { return Math.round(a + rnd() * (b - a)); }
+        return [
+            { x: r(0, 45),   y: r(0, 25),  size: r(26, 34) },        // lighter
+            { x: r(50, 100), y: r(0, 20),  size: r(23, 31) },        // lighter
+            { x: r(55, 100), y: r(80, 100), size: r(29, 37) },       // darker
+            { x: r(0, 50),   y: r(85, 100), size: r(26, 34) }        // darker
+        ];
+    }
+    function liveBadgeCss(color, text, name) {
+        var hex = normHex(color);
+        if (!hex) return text === 'dark' ? 'color: #1a1a1a;' : '';
+        var rgb = [1, 3, 5].map(function(i) { return parseInt(hex.substr(i, 2), 16); });
+        function shade(f) {
+            return '#' + rgb.map(function(c) { return ('0' + Math.max(0, Math.min(255, Math.round(c * f))).toString(16)).slice(-2); }).join('');
+        }
+        var b = blobLayout(name), shades = [1.13, 1.07, 0.87, 0.92];
+        return 'color: ' + (text === 'dark' ? '#1a1a1a' : '#ffffff') + '; background-color: ' + hex + '; ' +
+               'background-image: var(--live-grain), ' + b.map(function(p, i) {
+                   return 'radial-gradient(circle at ' + p.x + '% ' + p.y + '%, ' + shade(shades[i]) + ' 0%, transparent ' + p.size + '%)';
+               }).join(', ') + ';';
+    }
+    window.liveBadgeCss = liveBadgeCss;
+    function orgColor(o) { return normHex(o.color) || normHex(o.dark); }   // (older settings had dark/light colours)
+    // Each org's colour for the LIVE row in the flight details (.live-chip[data-org="..."])
     function applyOrgColors() {
         var el = document.getElementById('org-colors-style');
         if (!el) { el = document.createElement('style'); el.id = 'org-colors-style'; document.head.appendChild(el); }
         var orgs = (settings && Array.isArray(settings.orgs)) ? settings.orgs : [];
         el.textContent = orgs.map(function(o) {
-            var d = normHex(o.dark), l = normHex(o.light);
-            if (!o.name || (!d && !l)) return '';
+            var css = liveBadgeCss(orgColor(o), o.text, o.name);
+            if (!o.name || !css) return '';
             var key = String(o.name).toLowerCase().replace(/[\\"\n\r]/g, function(c) { return c === '\n' || c === '\r' ? ' ' : '\\' + c; });
-            return '.live-chip[data-org="' + key + '"] {' + (d ? ' --org-d: ' + d + ';' : '') + (l ? ' --org-l: ' + l + ';' : '') + ' }';
+            return '.live-chip[data-org="' + key + '"] { ' + css + ' }';
         }).join('\n');
     }
     var lastFetch = 0;
@@ -3815,12 +3861,14 @@ var Logbook = (function() {
             div.className = 'lb-org';
             var html = '<div class="lb-org-head"><input class="lb-input" data-k="name" value="' + esc(o.name) + '" placeholder="Org name">' +
                        '<button type="button" class="lb-x" data-act="del-org" title="Remove org">✕</button></div>' +
-                       '<div class="lb-org-colors">' + ['dark', 'light'].map(function(k) {
-                           var v = normHex(o[k]);
-                           return '<label>' + k.toUpperCase() + ':<input type="color" class="lb-color' + (v ? '' : ' lb-color-empty') + '" data-pick="' + k +
-                                  '" value="' + (v || '#000000') + '" title="Pick the ' + k + ' mode colour" tabindex="-1">' +
-                                  '<input class="lb-input" data-k="' + k + '" value="' + esc(o[k] || '') + '" placeholder="#hex" maxlength="7" spellcheck="false"></label>';
-                       }).join('') + '</div>' +
+                       '<div class="lb-org-colors">' +
+                           '<label>COLOR:<input type="color" class="lb-color' + (normHex(o.color) ? '' : ' lb-color-empty') + '" data-pick="color" value="' +
+                           (normHex(o.color) || '#000000') + '" title="Pick the colour" tabindex="-1">' +
+                           '<input class="lb-input lb-hex" data-k="color" value="' + esc(o.color || '') + '" placeholder="#hex" maxlength="7" spellcheck="false"></label>' +
+                           '<label>TEXT:<span class="lb-seg"><button type="button" data-text="light"' + (o.text !== 'dark' ? ' class="on"' : '') + '>LIGHT</button>' +
+                           '<button type="button" data-text="dark"' + (o.text === 'dark' ? ' class="on"' : '') + '>DARK</button></span></label>' +
+                           '<div class="lb-org-preview"></div>' +
+                       '</div>' +
                        '<div class="lb-af lb-af-head"><span>AIRFRAME</span><span>MANUFACTURER</span><span>TYPE</span><span>LIVERY</span><span></span></div>';
             o.airframes.forEach(function(a, ai) {
                 html += '<div class="lb-af" data-ai="' + ai + '">' +
@@ -3832,24 +3880,40 @@ var Logbook = (function() {
             });
             html += '<button type="button" class="lb-btn lb-btn-small" data-act="add-af" style="margin-top: 4px;">+ AIRFRAME</button>';
             div.innerHTML = html;
+            // Preview of the LIVE badge: org name · first airframe
+            function preview() {
+                var af = (o.airframes.find(function(a) { return a.id && a.id.trim(); }) || {}).id || 'IF-XXXX';
+                div.querySelector('.lb-org-preview').innerHTML =
+                    '<span class="live-chip" style="' + esc(liveBadgeCss(o.color, o.text, o.name.trim())) + '"><span class="live-org">' + esc(o.name.trim() || 'Org name') +
+                    '</span><span class="live-sep">·</span><span class="live-af">' + esc(af) + '</span></span>';
+            }
+            preview();
+            div.querySelector('.lb-seg').addEventListener('click', function(e) {
+                var b = e.target.closest('button[data-text]'); if (!b) return;
+                o.text = b.getAttribute('data-text');
+                Array.prototype.forEach.call(this.children, function(x) { x.classList.toggle('on', x === b); });
+                preview();
+            });
             div.addEventListener('input', function(e) {
                 var pick = e.target.getAttribute('data-pick');
                 if (pick) {           // colour picker -> hex box
                     o[pick] = e.target.value;
                     e.target.classList.remove('lb-color-empty');
                     e.target.parentNode.querySelector('[data-k="' + pick + '"]').value = e.target.value;
+                    preview();
                     return;
                 }
                 var k = e.target.getAttribute('data-k'); if (!k) return;
                 var row = e.target.closest('.lb-af');
                 if (row) o.airframes[+row.getAttribute('data-ai')][k] = e.target.value;
-                else if (k === 'dark' || k === 'light') {   // hex box -> colour picker
+                else if (k === 'color') {   // hex box -> colour picker
                     o[k] = e.target.value;
                     var v = normHex(e.target.value), sw = e.target.parentNode.querySelector('[data-pick="' + k + '"]');
                     sw.value = v || '#000000';
                     sw.classList.toggle('lb-color-empty', !v);
                 }
                 else o.name = e.target.value;
+                preview();
             });
             div.addEventListener('click', function(e) {
                 var act = e.target.getAttribute('data-act'); if (!act) return;
@@ -3871,7 +3935,7 @@ var Logbook = (function() {
         if (on) {
             var d = data();
             draft = {
-                orgs: d.orgs.map(function(o) { return { name: o.name, dark: o.dark || '', light: o.light || '', airframes: o.airframes.map(function(a) {
+                orgs: d.orgs.map(function(o) { return { name: o.name, color: orgColor(o), text: o.text === 'dark' ? 'dark' : 'light', airframes: o.airframes.map(function(a) {
                     return { id: a.id, manufacturer: a.manufacturer || '', type: a.type || '', livery: a.livery || '' }; }) }; })
             };
             fillDatalists(); renderOrgs();
@@ -3883,12 +3947,12 @@ var Logbook = (function() {
         var st = $('lb-set-status'), sig = $('lb-set-sig');
         var clean = {
             orgs: draft.orgs.map(function(o) {
-                return { name: o.name.trim(), dark: normHex(o.dark), light: normHex(o.light), airframes: o.airframes.map(function(a) {
+                return { name: o.name.trim(), color: normHex(o.color), text: o.text === 'dark' ? 'dark' : 'light', airframes: o.airframes.map(function(a) {
                     return { id: a.id.trim(), manufacturer: a.manufacturer.trim(), type: a.type.trim(), livery: a.livery.trim() }; })
                     .filter(function(a) { return a.id; }) };
             }).filter(function(o) { return o.name; })
         };
-        var badHex = Array.prototype.find.call($('lb-orgs-editor').querySelectorAll('.lb-org-colors .lb-input'), function(el) {
+        var badHex = Array.prototype.find.call($('lb-orgs-editor').querySelectorAll('.lb-org-colors .lb-hex'), function(el) {
             return el.value.trim() && !normHex(el.value);
         });
         if (badHex) { st.innerHTML = '<span class="lb-fail">CHECK: COLOUR (#RRGGBB)</span>'; badHex.focus(); return; }
@@ -3961,7 +4025,7 @@ var Logbook = (function() {
         $('lb-set-back').addEventListener('click', function() { showSettings(false); });
         $('lb-set-save').addEventListener('click', saveSettings);
         $('lb-add-org').addEventListener('click', function() {
-            draft.orgs.push({ name: '', dark: '', light: '', airframes: [{ id: '', manufacturer: '', type: '', livery: '' }] });
+            draft.orgs.push({ name: '', color: '', text: 'light', airframes: [{ id: '', manufacturer: '', type: '', livery: '' }] });
             renderOrgs();
             var heads = $('lb-orgs-editor').querySelectorAll('.lb-org-head input');
             heads[heads.length - 1].focus();
@@ -4308,8 +4372,8 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
                             <span style="color: var(--text-muted);">DEPART</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.departure)}" title="Click to filter by ${escapeHtml(item.departure)}">${escapeHtml(depLabel)}${fullNameRow(depAp)}</span>
                             <span style="color: var(--text-muted);">ARRIVAL</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden;" data-filter-key="airport" data-filter-value="${escapeHtml(item.arrival)}" title="Click to filter by ${escapeHtml(item.arrival)}">${escapeHtml(arrLabel)}${fullNameRow(arrAp)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
-                            <span style="color: var(--text-muted);">TYPE</span><span class="filter-clickable" data-filter-key="aircraft" data-filter-value="spc:${escapeHtml(formatAircraft(item.aircraft))}" title="Click to filter by ${escapeHtml(formatAircraft(item.aircraft))}">${escapeHtml(formatAircraft(item.aircraft))}</span>
-                            <span style="color: var(--text-muted);">LIVERY</span><span class="filter-clickable" data-filter-key="airline" data-filter-value="${escapeHtml(item.livery)}" title="Click to filter by ${escapeHtml(item.livery)}">${escapeHtml(item.livery, 18)}</span>
+                            <span style="color: var(--text-muted);">TYPE</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-filter-key="aircraft" data-filter-value="spc:${escapeHtml(formatAircraft(item.aircraft))}" title="Click to filter by ${escapeHtml(formatAircraft(item.aircraft))}">${escapeHtml(item.aircraft || 'Unknown')}</span>
+                            <span style="color: var(--text-muted);">LIVERY</span><span class="filter-clickable" style="grid-column: span 3; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-filter-key="airline" data-filter-value="${escapeHtml(item.livery)}" title="Click to filter by ${escapeHtml(item.livery)}">${escapeHtml(item.livery)}</span>
                             <span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>
                             <span style="color: var(--text-muted);">TIME</span><span>${escapeHtml(item.duration || 'N/A')}</span>
                             <span style="color: var(--text-muted);">LDGS</span><span>${escapeHtml(item.ldgs || 'N/A')}</span>
