@@ -106,26 +106,17 @@
             color: var(--text-main);
         }
 
-        /* Render airline logos as solid white in dark mode */
-        /* Airline logos: knockout in dark mode by default, per-livery override via the "Dark Logo" CSV column */
-        .airline-logo            { filter: url(#logo-knockout); }
-        .airline-logo.logo-mono  { filter: brightness(0) invert(1); }
-        .airline-logo.logo-color { filter: none; }
-        .airline-logo.logo-chip  { filter: none; background: #ecece9; padding: 1px 3px; border-radius: 2px; }
-        .airline-logo.logo-outline { filter: url(#logo-outline); }
-
-        
-        [data-theme="light"] .airline-logo { filter: none; background: none; padding: 0; }
-        
-
-        [data-theme="light"] .airline-logo {
-            filter: none;
+        /* Livery tail in the routes table: the tail of the images/fleet/ picture, fitted by fitTail() once it loads */
+        .tail-crop {
+            position: relative; display: inline-block; flex: none;
+            width: 30px; height: 20px;
+            overflow: hidden; vertical-align: middle;
+            margin: -3px 10px -3px 0;   /* only adds ~2px to the row height */
         }
-
-        /* Hide GA livery color swatches in dark mode only */
-        [data-theme="dark"] .livery-color-box {
-            display: none !important;
-        }
+        td.livery-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tail-crop img { position: absolute; max-width: none; visibility: hidden; }
+        /* White / pale tails get a soft shadow underneath so they don't vanish on the light background */
+        [data-theme="light"] .tail-crop img.tail-pale { filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.5)); }
 
         /* ── GLOBAL RESET ── */
         *, *::before, *::after { 
@@ -438,21 +429,7 @@
         }
 
         /* ── ACTIVE FILTERS (bottom of the filter sidebar) ── */
-        .af-head { display: flex; align-items: center; gap: 8px; min-height: 14px; }
-        .af-count {
-            display: inline-flex; align-items: center; justify-content: center; box-sizing: border-box;
-            min-width: 17px; height: 13px; padding: 0 5px; border-radius: 7px;
-            background: #64c399; color: #1e1e1e;
-            font-family: var(--font-mono); font-weight: 700; font-size: 9px; line-height: 1;
-        }
-        .af-count[hidden], .af-clear[hidden] { display: none; }
-        .af-clear {
-            margin-left: auto; padding: 0; background: none; border: none; cursor: pointer;
-            font-family: var(--font-mono); font-size: 10px; color: var(--text-muted);
-            text-decoration: underline; text-underline-offset: 2px;
-        }
-        .af-clear:hover { color: var(--text-main); }
-        .af-sentence { margin-top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--text-muted); }
+        .af-sentence { font-family: var(--font-mono); font-size: 11px; line-height: 16px; color: var(--text-muted); }
         .af-v { color: var(--text-main); }
         .af-v.af-inc { text-decoration-line: underline; text-decoration-color: var(--accent-green); text-decoration-thickness: 1px; text-underline-offset: 3px; }
         .af-v.af-exc { text-decoration-line: line-through; text-decoration-color: var(--exc-brd); text-decoration-thickness: 1px; }
@@ -481,7 +458,8 @@
         .af-text { flex: 1; min-width: 0; padding: 6px 2px 6px 8px; display: flex; flex-direction: column; justify-content: center; gap: 1px; }
         .af-main { font-family: var(--font-mono); font-weight: bold; font-size: 11px; line-height: 14px; color: var(--text-main);
                    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .af-sub { font-family: var(--font-mono); font-size: 9.5px; line-height: 12px; color: var(--text-muted); overflow-wrap: anywhere; }
+        .af-sub { font-family: var(--font-mono); font-size: 9.5px; line-height: 12px; color: var(--text-muted);
+                  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .af-x { flex: none; width: 34px; padding: 0; background: none; border: none; cursor: pointer; color: var(--text-muted);
                 display: flex; align-items: center; justify-content: center; }
         .af-x:hover { color: var(--text-main); }
@@ -712,9 +690,6 @@
             border-bottom-color: rgba(250, 152, 34, 1.0);
         }
 
-        /* ── AIRPORT HOVER INFO ── */
-        #hover-airport-id { color: var(--accent-green) !important; font-size: 15px !important; }
-       
         #sidebar-routes {
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;     /* Firefox */
@@ -744,37 +719,6 @@
         .tag-dropdown::-webkit-scrollbar-thumb:hover {
             background: var(--border-main);
         }    
-
-        /* ── AIRPORT HOVER INFO ── */
-        #airport-hover-info {
-            /* Mirrored from .tag-chip */
-            padding: 4px 12px; 
-            margin: 0 12px 12px 12px; 
-            background-color: var(--bg-light);
-            border: 1px solid var(--accent-green); 
-            color: var(--accent-green); 
-            font-family: var(--font-mono);
-            font-size: 10px;
-            align-items: center; 
-            justify-content: space-between;
-            gap: 6px;
-            flex-shrink: 0;
-        }
-
-        #hover-airport-id { 
-            font-weight: bold; 
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            /* Scaled down to match the chip text */
-            font-size: 10px; 
-        }
-
-        #hover-airport-count {
-            font-size: 9px; 
-            color: var(--text-muted); 
-            white-space: nowrap;
-        }
 
         /* ── ATC RADAR SWEEP ──
            A slow rotating beam over each ATC circle (see L.RadarSweep in the script). */
@@ -1524,19 +1468,10 @@
     </div>
 
     <div id="active-filters-section" style="padding: 12px 10px; flex: 0 1 auto; max-height: 40%; overflow-y: auto; border-top: 1px solid var(--border-faint); transition: max-height 0.2s ease;">
-        <div class="af-head">
-            <span class="filter-label">Active Filters</span>
-            <span class="af-count" id="af-count" hidden></span>
-            <button type="button" class="af-clear" id="af-clear" onclick="resetFilters()" hidden>Clear all</button>
-        </div>
         <div class="af-sentence" id="af-sentence">Showing all flights and IFATC sessions.</div>
         <div id="active-filters-list"></div>
     </div>
 
-        <div id="airport-hover-info" style="display: none;">
-            <span id="hover-airport-id"></span>
-            <span id="hover-airport-count"></span>
-        </div>
 </div>
 
 
@@ -1831,7 +1766,6 @@ var airportDotStyle = {
 
 };
     
-window.liveryColorMap = {};
 
 
 const modeIcons = {
@@ -2330,7 +2264,7 @@ window.renderAllActiveFilters = function() {
         }
         var text = document.createElement('div'); text.className = 'af-text';
         var m = document.createElement('span'); m.className = 'af-main'; m.textContent = name; m.title = name; text.appendChild(m);
-        if (sub) { var sb = document.createElement('span'); sb.className = 'af-sub'; sb.textContent = sub; text.appendChild(sb); }
+        if (sub) { var sb = document.createElement('span'); sb.className = 'af-sub'; sb.textContent = sub; sb.title = sub; text.appendChild(sb); }
         var x = document.createElement('button');
         x.type = 'button'; x.className = 'af-x'; x.title = 'Remove filter'; x.innerHTML = X_ICON;
         x.addEventListener('click', function(e) { e.stopPropagation(); onRemove(); });
@@ -2460,9 +2394,6 @@ window.renderAllActiveFilters = function() {
     }
     if (sentenceEl) sentenceEl.innerHTML = html;
 
-    var countEl = document.getElementById('af-count'), clearEl = document.getElementById('af-clear');
-    if (countEl) { countEl.textContent = filterCount; countEl.hidden = !filterCount; }
-    if (clearEl) clearEl.hidden = !filterCount;
 
     const sidebarToggle = document.getElementById('sidebar-toggle');
     if (sidebarToggle) {
@@ -3088,6 +3019,63 @@ var PINNED_ORGS = ['daydreamers', 'vela'];   // always listed first, in this ord
 function fleetSlug(text) {
     return String(text).normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
         .replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+// Livery cell in the routes table: a small crop of the tail from the flight's images/fleet/ picture.
+// No picture (new livery, or missing file) -> the box is removed and just the name shows.
+function tailCrop(f) {
+    if (!f.type || !f.livery || f.livery === 'Standard') return '';
+    var src = '/images/fleet/' + fleetSlug(f.type) + '/' + fleetSlug(f.livery) + '.webp';
+    return '<span class="tail-crop"><img src="' + src + '" alt="" loading="lazy" decoding="async"' +
+           ' onload="fitTail(this)" onerror="this.parentNode.remove()"></span>';
+}
+
+// Finds the tail in a fleet picture and zooms the <img> so just the tail fills its box.
+// Searches the right quarter / top 60% of the picture for where the paint starts, so tall fins
+// (C130, F16) aren't cut off and small ones (C172, TBM) aren't lost in empty space.
+// Also marks mostly-white tails (.tail-pale) for the light-mode shadow.
+// Each picture is measured once; repeats of the same aircraft + livery reuse the result.
+var TAIL_WIN = { x0: 0.72, x1: 0.97, y1: 0.60 };
+var tailFits = {};
+function measureTail(img) {
+    var nw = img.naturalWidth, nh = img.naturalHeight;
+    var fit = { fx0: TAIL_WIN.x0, fy0: 0, fx1: TAIL_WIN.x1, fy1: TAIL_WIN.y1, pale: false };
+    try {
+        var W = 128, H = Math.max(1, Math.round(W * nh / nw));
+        var c = document.createElement('canvas'); c.width = W; c.height = H;
+        var ctx = c.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, W, H);
+        var d = ctx.getImageData(0, 0, W, H).data;
+        var x0 = Math.floor(W * TAIL_WIN.x0), x1 = Math.ceil(W * TAIL_WIN.x1), y1 = Math.ceil(H * TAIL_WIN.y1);
+        var top = y1, right = x0, painted = 0, light = 0;
+        for (var y = 0; y < y1; y++)
+            for (var x = x0; x < x1; x++) {
+                var k = (y * W + x) * 4;
+                if (d[k + 3] > 40) {
+                    if (y < top) top = y;
+                    if (x > right) right = x;
+                    painted++;
+                    if (0.2126 * d[k] + 0.7152 * d[k + 1] + 0.0722 * d[k + 2] > 185) light++;
+                }
+            }
+        if (top < y1) { fit.fy0 = top / H; fit.fx1 = (right + 1) / W; }   // nothing found: use the whole search area
+        fit.pale = painted > 0 && light / painted > 0.6;
+    } catch (e) { }   // canvas not readable (e.g. page opened as a file): use the whole search area
+    return fit;
+}
+function fitTail(img) {
+    var nw = img.naturalWidth, nh = img.naturalHeight;
+    if (!nw || !nh) return;
+    var fit = tailFits[img.src] || (tailFits[img.src] = measureTail(img));
+    var box = img.parentNode;
+    var bw = box.offsetWidth || 30, bh = box.offsetHeight || 20;
+    var cw = (fit.fx1 - fit.fx0) * nw, ch = (fit.fy1 - fit.fy0) * nh;
+    var s = Math.min(bw / cw, bh / ch);                                  // fit the tail inside the box
+    img.style.width = (nw * s) + 'px';
+    img.style.left  = ((bw - cw * s) / 2 - fit.fx0 * nw * s) + 'px';     // centred
+    img.style.top   = (bh - fit.fy1 * nh * s) + 'px';                    // sitting on the box's bottom edge
+    if (fit.pale) img.classList.add('tail-pale');
+    img.style.visibility = 'visible';
 }
 
 // Loads the picture for an opened flight. The slot only appears once the picture has arrived;
@@ -4263,62 +4251,9 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
 
 
 
-        var c1 = 'transparent', c2 = 'transparent', c3 = 'transparent';
-        var logoUrl = null;
-        var includeName = true; // Default to true if not specified
-        var darkLogoMode = 'knockout';
-        
-        if (window.liveryColorMap && window.liveryColorMap[item.livery]) {
-            var lData = window.liveryColorMap[item.livery];
-            
-            // Backward compatibility just in case
-            if (Array.isArray(lData)) {
-                c1 = lData[0] || 'transparent';
-                c2 = lData[1] || 'transparent';
-                c3 = lData[2] || 'transparent';
-            } else {
-                var colors = lData.colors || [];
-                c1 = colors[0] || 'transparent';
-                c2 = colors[1] || 'transparent';
-                c3 = colors[2] || 'transparent';
-                
-                if (lData.logo && lData.logo.trim() !== '') {
-                logoUrl = '/images/logos/' + encodeURIComponent(lData.logo.trim());
-                }
-                if (lData.includeName) {
-                    includeName = (lData.includeName.trim().toUpperCase() === 'T');
-                }
-                if (lData.darkLogo && lData.darkLogo.trim() !== '') {
-                    darkLogoMode = lData.darkLogo.trim().toLowerCase();
-                }
-            }
-        }
-        
-        var liveryContent = '';
-        if (item.isATC) {
-            liveryContent = '';
-        } else if (logoUrl) {
-            // If we have a logo, render the image
-            var imgStyle = 'height: 14px; max-width: 90px; vertical-align: middle; object-fit: contain; ' + (includeName ? 'margin-right: 6px;' : '');
-            // If a logo file is missing: drop it when the name is already shown, otherwise show the livery name as text
-            var errAttr = includeName ? 'this.remove()' : 'this.replaceWith(this.dataset.name)';
-            var imgTag = '<img class="airline-logo logo-' + darkLogoMode + '" src="' + logoUrl + '" loading="lazy" decoding="async" data-name="' + escapeHtml(truncateText(item.livery, 22)) + '" onerror="' + errAttr + '" style="' + imgStyle + '">';      
+        var liveryContent = item.isATC ? '' : tailCrop(item) + escapeHtml(truncateText(item.livery, 22));
 
-            if (includeName) {
-                liveryContent = imgTag + escapeHtml(truncateText(item.livery, 22));
-            } else {
-                liveryContent = imgTag; // Skip the name if 'F'
-            }
-        } else {
-            // Fallback to standard color boxes
-            var colorBox = '';
-            if (c1 !== 'transparent') {
-                colorBox = `<span class="livery-color-box" style="display:inline-block; width:12px; height:10px; margin-right:6px; vertical-align:-1px; border:1px solid var(--border-main); background: linear-gradient(to right, ${c1} 0%, ${c1} 50%, ${c2} 50%, ${c2} 80%, ${c3} 80%, ${c3} 100%);"></span>`;
-            }
-            liveryContent = colorBox + escapeHtml(truncateText(item.livery, 22));
-        }
-
-        html += '<td style="letter-spacing: -0.5px;' + atcCellStyle + '" title="' + escapeHtml(item.livery || '') + '">' + liveryContent + '</td>';
+        html += '<td class="livery-cell" style="letter-spacing: -0.5px;' + atcCellStyle + '" title="' + escapeHtml(item.livery || '') + '">' + liveryContent + '</td>';
         
         
         
@@ -4836,12 +4771,6 @@ Promise.all([
                             marker.flightCount = cnt; 
                             airportMarkers.push(marker); 
 
-                            marker.on('mouseover', function() {
-                                document.getElementById('hover-airport-id').innerText = id;
-                                document.getElementById('hover-airport-count').innerText = cnt + ' RTES';
-                                document.getElementById('airport-hover-info').style.display = 'block';
-                            });
-                            marker.on('mouseout', function() { document.getElementById('airport-hover-info').style.display = 'none'; });
                             marker.on('click', function() { tagInputs.airport.addTag(id, 'include'); });
                             drawnLayers.addLayer(marker);
                         });
@@ -5126,42 +5055,10 @@ Promise.all([
                 }
             };
 
-            Papa.parse('/Infinite Flight Aircraft Livery List.csv', {
-                download: true,
-                header: true,
-                complete: function(liveryResults) {
-                    liveryResults.data.forEach(function(row) {
-                        var name = row["Infinite Flight Livery Name"];
-                        if (name) {
-                            // Grabbing the logo filename (supporting the typo in the header)
-                            var logoFile = row["Logol or Wordmark"] || row["Logo or Wordmark"];
-                            
-                            window.liveryColorMap[name.trim()] = {
-                                colors: [
-                                    row["Color 1"], 
-                                    row["Color 2"], 
-                                    row["Color 3"]
-                                ],
-                                logo: logoFile,
-                                includeName: row["Include Name"],
-                                darkLogo: row["Dark Logo"]
-                            };
-                        }
-                    });
-                    
-                    window.renderAllActiveFilters();
-                    renderMap(flights);
-                    renderVisibleRoutes(flights);
-                    Timeline.update(flights, flights);
-                },
-                error: function(err) {
-                    console.error('Could not load livery colors:', err);
-                    window.renderAllActiveFilters();
-                    renderMap(flights);
-                    renderVisibleRoutes(flights);
-                    Timeline.update(flights, flights);
-                }
-            });
+            window.renderAllActiveFilters();
+            renderMap(flights);
+            renderVisibleRoutes(flights);
+            Timeline.update(flights, flights);
 
     }
 });
@@ -5176,35 +5073,6 @@ map.on('zoomend', function() {
 
 </script>
 
-<!-- once, anywhere in <body> -->
-<svg width="0" height="0" style="position:absolute">
- <filter id="logo-knockout" color-interpolation-filters="sRGB">
-  <feColorMatrix type="matrix" values="
-   0 0 0 0 0.878  0 0 0 0 0.882  0 0 0 0 0.886
-   -0.638 -2.146 -0.217 2.25 0"/>
- </filter>
-
-
- <filter id="logo-outline" color-interpolation-filters="sRGB" x="0" y="0" width="100%" height="100%">
-  <feMorphology in="SourceAlpha" operator="dilate" radius="0.5" result="ad"/>
-  <feMorphology in="SourceAlpha" operator="erode"  radius="0.5" result="ae"/>
-  <feComposite in="ad" in2="ae" operator="arithmetic" k1="0" k2="1" k3="-1" k4="0" result="edgeA"/>
-  <feFlood flood-color="#000" result="blk"/>
-  <feMerge result="flat"><feMergeNode in="blk"/><feMergeNode in="SourceGraphic"/></feMerge>
-  <feColorMatrix in="flat" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="cr"/>
-  <feColorMatrix in="flat" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 1 0 0 0" result="cg"/>
-  <feColorMatrix in="flat" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 1 0 0" result="cb"/>
-  <feMorphology in="cr" operator="dilate" radius="0.5" result="rd"/><feMorphology in="cr" operator="erode" radius="0.5" result="re"/>
-  <feComposite in="rd" in2="re" operator="arithmetic" k2="1" k3="-1" result="er"/>
-  <feMorphology in="cg" operator="dilate" radius="0.5" result="gd"/><feMorphology in="cg" operator="erode" radius="0.5" result="ge"/>
-  <feComposite in="gd" in2="ge" operator="arithmetic" k2="1" k3="-1" result="eg"/>
-  <feMorphology in="cb" operator="dilate" radius="0.5" result="bd"/><feMorphology in="cb" operator="erode" radius="0.5" result="be"/>
-  <feComposite in="bd" in2="be" operator="arithmetic" k2="1" k3="-1" result="eb"/>
-  <feMerge result="all"><feMergeNode in="edgeA"/><feMergeNode in="er"/><feMergeNode in="eg"/><feMergeNode in="eb"/></feMerge>
-  <feColorMatrix in="all" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 8 -0.8" result="mask"/>
-  <feComposite in="SourceGraphic" in2="mask" operator="in"/>
- </filter>    
-</svg>
 
             
 </body>
