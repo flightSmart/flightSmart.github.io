@@ -109,9 +109,9 @@
         /* Livery tail in the routes table: the tail of the images/fleet/ picture, fitted by fitTail() once it loads */
         .tail-crop {
             position: relative; display: inline-block; flex: none;
-            width: 30px; height: 20px;
+            width: 24px; height: 16px;
             overflow: hidden; vertical-align: middle;
-            margin: -3px 10px -3px 0;   /* only adds ~2px to the row height */
+            margin: -2px 8px -2px 0;    /* doesn't make the row taller */
         }
         td.livery-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .tail-crop img { position: absolute; max-width: none; visibility: hidden; }
@@ -3063,7 +3063,7 @@ function fitTail(img) {
     if (!nw || !nh) return;
     var fit = tailFits[img.src] || (tailFits[img.src] = measureTail(img));
     var box = img.parentNode;
-    var bw = box.offsetWidth || 30, bh = box.offsetHeight || 20;
+    var bw = box.offsetWidth || 24, bh = box.offsetHeight || 16;
     var cw = (fit.fx1 - fit.fx0) * nw, ch = (fit.fy1 - fit.fy0) * nh;
     var s = Math.min(bw / cw, bh / ch);                                  // fit the tail inside the box
     img.style.width = (nw * s) + 'px';
