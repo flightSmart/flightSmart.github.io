@@ -682,6 +682,15 @@
         .live-org { font-weight: 700; }
         .live-af, .live-sep { font-weight: 500; }
         .live-sep { margin: 0 5px; }
+        /* "· IF-STMQ" after the badge: the airframe, bold, in the normal text colour. Click to filter by it. */
+        .live-reg { display: inline-block; vertical-align: middle; margin-left: 8px;
+                    font-family: "Helvetica Neue", var(--font-sans); font-size: 10.5px; line-height: 13px; font-weight: 700;
+                    letter-spacing: 0; color: var(--text-main); white-space: nowrap; }
+        .live-reg[data-filter-key] { cursor: pointer; }
+        .live-reg[data-filter-key]:hover { color: rgba(250, 152, 34, 1.0); }
+        .live-reg .live-dot { margin-right: 8px; }
+        .live-reg:first-child { margin-left: 0; }
+        .live-reg:first-child .live-dot { display: none; }
         .live-details { margin-top: -9px; }      /* the LIVE row sits close under the top edge */
 
         .filter-clickable {
@@ -1565,7 +1574,7 @@ var mapBaseLayer = L.tileLayer(_initTheme === 'light' ? lightTileUrl : darkTileU
 
 
 
-var googleSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?output=csv";
+var googleSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?gid=1016795298&single=true&output=csv";
 // YOUR ATC CSV URL HERE
 var atcSheetUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRU1VT5H_li0QNytw6EDCNINd4jlyLuAT1CJiwyy7-EdjwqClCdPMseakuTPbJgQJ3yUDCQ-YBQ4TIz/pub?output=csv";
 
@@ -3885,7 +3894,7 @@ var Logbook = (function() {
                 var af = (o.airframes.find(function(a) { return a.id && a.id.trim(); }) || {}).id || 'IF-XXXX';
                 div.querySelector('.lb-org-preview').innerHTML =
                     '<span class="live-chip" style="' + esc(liveBadgeCss(o.color, o.text, o.name.trim())) + '"><span class="live-org">' + esc(o.name.trim() || 'Org name') +
-                    '</span><span class="live-sep">·</span><span class="live-af">' + esc(af) + '</span></span>';
+                    '</span></span><span class="live-reg"><span class="live-dot">·</span>' + esc(af) + '</span>';
             }
             preview();
             div.querySelector('.lb-seg').addEventListener('click', function(e) {
@@ -4333,11 +4342,15 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
             // LIVE row (Live org flights only): org · airframe on the org's colour. Clicking it filters by that org.
             function liveRow(f) {
                 if (!f.org && !f.airframe) return '';
-                var chip = f.org
+                // [Org badge] · REG: the badge filters by the org, the reg by the airframe
+                var chip = (f.org
                     ? '<span class="live-chip" data-org="' + escapeHtml(f.org.toLowerCase()) + '" data-filter-key="org" data-filter-value="' +
-                      escapeHtml(f.org) + '" title="Click to filter by ' + escapeHtml(f.org) + '"><span class="live-org">' + escapeHtml(f.org) + '</span>' +
-                      (f.airframe ? '<span class="live-sep">·</span><span class="live-af">' + escapeHtml(f.airframe) + '</span>' : '') + '</span>'
-                    : '<span class="live-chip"><span class="live-af">' + escapeHtml(f.airframe) + '</span></span>';
+                      escapeHtml(f.org) + '" title="Click to filter by ' + escapeHtml(f.org) + '"><span class="live-org">' + escapeHtml(f.org) + '</span></span>'
+                    : '') +
+                    (f.airframe
+                    ? '<span class="live-reg" data-filter-key="airframe" data-filter-value="' + escapeHtml(f.airframe) + '" title="Click to filter by ' +
+                      escapeHtml(f.airframe) + '"><span class="live-dot">·</span>' + escapeHtml(f.airframe) + '</span>'
+                    : '');
                 return '<span style="color: var(--text-muted);">LIVE</span><span style="grid-column: span 3; min-width: 0;">' + chip + '</span>' +
                        '<span style="grid-column: span 4; border-bottom: 1px solid var(--border-faint); margin: 1px 0;"></span>';
             }
@@ -4391,7 +4404,7 @@ var html = '<table><thead><tr><th style="width: 65px;">Date</th><th style="width
     if (!container._filterClickBound) {
         container._filterClickBound = true;
         container.addEventListener('click', function(e) {
-            var target = e.target.closest('.filter-clickable, .live-chip[data-filter-key]');
+            var target = e.target.closest('.filter-clickable, .live-chip[data-filter-key], .live-reg[data-filter-key]');
             if (!target) return;
             e.stopPropagation();
             var key = target.getAttribute('data-filter-key');
@@ -4503,9 +4516,15 @@ Promise.all([
                 org:       (row[9]||'').trim(),
                 airframe:  (row[10]||'').trim(),
                 isLive:    !!((row[9]||'').trim() || (row[10]||'').trim()),
-                remarks:   (row[11]||'').trim()
+                remarks:   publicRemarks((row[11]||'').trim()),
             };
     }
+
+    // !private or #private (any capitals) hides itself and everything after it, so a remark that starts
+    // with it is hidden completely, and "TP at KBOS, !private my note" shows just "TP at KBOS" (the LOG
+    // form puts "TP at" first, so patterns still draw). Same rule as the Public tab's formula in the
+    // Google Sheet, which keeps the private text out of the published CSV; this is the backup.
+    function publicRemarks(t) { return String(t || '').replace(/[\s,;]*[!#]private\b[\s\S]*$/i, '').trim(); }
 
     // Process Flights (skip the sheet's first 2 header rows: logo row + column-title row)
     flightSheetResults.data.slice(2).forEach(function(row){
@@ -4542,7 +4561,7 @@ Promise.all([
                 arrival:   codeAliases[rawAp] || rawAp,
                 ops:       (row[4]||'').trim(),
                 controllers: (row[6]||'').trim(),
-                remarks:   remarksCombined.join(", ") // Joins them with a comma and space
+                remarks:   publicRemarks(remarksCombined.join(", ")) // Joins them with a comma and space ('' if !private)
             });
         }
     });
@@ -4885,16 +4904,17 @@ Promise.all([
                         // mentioned elsewhere in the remarks is used when there's only one pattern.
                         var tpTargets = [], seenTp = {};
                         var tpRe = /\bTP\s+at\s+([A-Z0-9]{3,4})\b(?:\s*(?:,|;)?\s*(?:RWY|RW|RUNWAY)\s*0?(\d{1,2}[LRC]?)\b)?/gi, tpM;
-                        while (f.remarks && (tpM = tpRe.exec(f.remarks))) {
+                        var tpText = f.remarks || '';
+                        while (tpText && (tpM = tpRe.exec(tpText))) {
                             var tpCode = tpM[1].toUpperCase();
                             if (seenTp[tpCode] || !airportData[tpCode]) continue;
                             seenTp[tpCode] = true;
                             tpTargets.push({ ap: airportData[tpCode], rwy: tpM[2] ? tpM[2].toUpperCase() : null });
                         }
-                        var hasTpRemark = /\bTP\s+at\s+[A-Z0-9]{3,4}\b/i.test(f.remarks || '');
+                        var hasTpRemark = /\bTP\s+at\s+[A-Z0-9]{3,4}\b/i.test(tpText);
                         if (!tpTargets.length && (hasTpRemark || f.departure === f.arrival)) tpTargets.push({ ap: dep, rwy: null });
                         if (tpTargets.length === 1 && !tpTargets[0].rwy) {
-                            var rwyMatch = f.remarks ? f.remarks.match(/\b(?:RWY|RW|RUNWAY)\s*0?(\d{1,2}[LRC]?)\b/i) : null;
+                            var rwyMatch = tpText ? tpText.match(/\b(?:RWY|RW|RUNWAY)\s*0?(\d{1,2}[LRC]?)\b/i) : null;
                             tpTargets[0].rwy = rwyMatch ? rwyMatch[1].toUpperCase() : null;
                         }
 
