@@ -23,7 +23,7 @@ Both repos need the same files. Whenever you change something, change it in **bo
 
 ## 1. How it works, in one minute
 
-1. **Original Google Sheet(s) are the database.** The page downloads two published CSV versions of it: your flights (<u>Infinite Flight Logbook</u>) and your ATC sessions (<u>IFATC Logbook</u>). Nothing about your flights is stored on GitHub. Add a row to the sheet and it shows up on the site the next time the page is opened (Google can take a few minutes to update the published CSV). The "daydreamers" tab in <u>Infinite Flight Logbook</u> is not read.
+1. **Original Google Sheet(s) are the database.** The page downloads two published CSV versions of it: your flights (<u>Infinite Flight Logbook</u>) and your ATC sessions (<u>IFATC Logbook</u>). Nothing about your flights is stored on GitHub. Add a row to the sheet and it shows up on the site the next time the page is opened (Google can take a few minutes to update the published CSV). The flights come from the **Public** tab of <u>Infinite Flight Logbook</u>: a formula copy of the "Logbook" tab with private remarks removed (see *About the sheet* in section 3). The "Logbook" and "daydreamers" tabs themselves are not published or read.
 2. **The page looks up airports and runways** to know where to draw things. It first loads a small file of just airports you have flown to (`data/airports-flown.csv`) so the map appears quickly. Then it quietly downloads the full world list in the background.
 3. **The LOG button** sends a new flight to a small Google Apps Script (`Code.gs`) that lives inside your <u>Infinite Flight Logbook</u> Google Sheet. That script **only ever adds one new row** to the "Logbook" tab and emails you a confirmation. It never edits or deletes anything.
 4. **Pictures** (Infinite Flight aircraft pictures) are plain image files in the repo's `images/fleet` folder. Each one is used twice: cropped to just the tail next to the livery name in the routes table, and in full in a flight's details.
@@ -67,6 +67,7 @@ flightsmart.github.io/
 | `images/fleet/` | Folder: Infinite Flight aircraft pictures (the tail in the routes table and the picture in flight details), stored as `<aircraft-type>/<livery>.webp`, e.g. `fleet/787-9/british-airways.webp` | Made by `fleet_images.py` |
 
 *Note: the two python files are helper scripts not needed for the website to run. They are only in the flightsmart.github.io/ repository.
+
 **Not in the repo, but needed:**
 
 - **`Code.gs`** lives inside the Google Sheet: open the sheet, then **Extensions → Apps Script**. Keep a copy somewhere safe too.
@@ -74,6 +75,7 @@ flightsmart.github.io/
   - `LOGBOOK_PASSWORD`: the "signature" you type in the LOG form.
   - `NOTIFY_EMAIL`: where confirmation emails go.
   - `LOGBOOK_SETTINGS`: your Live Orgs and airframes list. It is written automatically when you use the ○ settings window, so don't edit it by hand.
+- **The Public tab** in <u>Infinite Flight Logbook</u> (see *About the sheet* in section 3). It's the only tab that's published.
 
 **What happens if something is missing:**
 
@@ -90,7 +92,7 @@ If one of these ever disappears, this is the list to check.
 
 | What | Used for | Link |
 |---|---|---|
-| Google Sheet: <u>Infinite Flight Logbook</u> (published CSV*) | All your flights | [flights CSV](https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?output=csv) |
+| Google Sheet: <u>Infinite Flight Logbook</u>, **Public** tab (published CSV*) | All your flights | [flights CSV](https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?output=csv) |
 | Google Sheet: <u>IFATC Logbook</u> (published CSV*) | ATC circles and sessions | [ATC CSV](https://docs.google.com/spreadsheets/d/e/2PACX-1vRU1VT5H_li0QNytw6EDCNINd4jlyLuAT1CJiwyy7-EdjwqClCdPMseakuTPbJgQJ3yUDCQ-YBQ4TIz/pub?output=csv) |
 | Google Apps Script web app | The LOG button (adds a row and sends the email) | [script.google.com](https://script.google.com) (your projects). The web app address is `LOGBOOK_API_URL` in `logbook.html`. |
 | OurAirports data | Airport positions/names, runways (traffic patterns) | [ourairports.com/data](https://ourairports.com/data/) · [airports.csv](https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv) · [runways.csv](https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/runways.csv) |
@@ -102,7 +104,17 @@ If one of these ever disappears, this is the list to check.
 | Caveat font | Handwriting in the LOG form and remarks | Built into `logbook.html` itself, so no download is needed. [Caveat](https://fonts.google.com/specimen/Caveat) |
 
 
-**\* About the sheet:** both CSVs come from **File → Share → Publish to web** in Google Sheets. If you ever un-publish the sheet, the site goes empty. The page expects these layouts:
+**\* About the sheet:** both CSVs come from **File → Share → Publish to web** in Google Sheets. If you ever un-publish the sheet, the site goes empty.
+
+For <u>Infinite Flight Logbook</u>, only the **Public** tab is published (in Publish to web, **Published content & settings** lists just "Public", with *Automatically republish* on). Its cell **A1** holds this formula, which copies the "Logbook" tab and cuts every remark off at `!private` / `#private`:
+
+```
+={ARRAYFORMULA(TO_TEXT(Logbook!A:K)), ARRAYFORMULA(REGEXREPLACE(Logbook!L:L&"", "(?is)[\s,;]*[!#]private\b.*$", ""))}
+```
+
+The Public tab updates by itself whenever a row is added to "Logbook" (by you or the LOG button), so there's nothing to maintain. Don't type in it. Its link is used in three places: `googleSheetUrl` in `logbook.html`, and `LOGBOOK_CSV` in `airports_flown.py` and `fleet_images.py`.
+
+The page expects these layouts:
 
 - **Flights:** the first 2 rows are headers. Columns A–L are Date, Flight Time, Aircraft Manufacturer, Aircraft Type, Airline / Livery, Depart, Dest, Ldgs, Unique Session?, Organization, Airframe, Remarks.
 - **ATC:** the first row is a header. Columns are Date, Duration, Station, Airport, Ops, Reports, Additional Controllers, Remarks…
@@ -195,7 +207,8 @@ Double-clicking `logbook.html` **won't work properly**, because it looks for fil
   3. Click **FILE**.
   4. The receipt prints and ends with "FILED, GOOD DAY." and a confirmation email arrives.
   5. **NEW ENTRY** clears the card for another flight. Only **✕** closes the card.
-- **Live Orgs / airframes:** the small **○** dot on the card opens the settings window. Choosing an airframe fills in Aircraft and Livery automatically. Each org also has a **DARK** and a **LIGHT** colour (hex codes such as `#a5b8bd`), used for the LIVE row in a flight's details. These settings are stored in the Apps Script, not in the sheet.
+- **Live Orgs / airframes:** the small **○** dot on the card opens the settings window. Choosing an airframe fills in Aircraft and Livery automatically. Each org also has a **COLOR** (a hex code such as `#740202`) and **TEXT: LIGHT / DARK**, used for its badge in a flight's LIVE row; a preview shows how the badge will look. These settings are stored in the Apps Script, not in the sheet.
+- **Private remarks:** put `!private` (or `#private`) in the remarks and that tag, plus everything after it, never appears on the website or in the published CSV. Start the remarks with it to hide them completely. "TP at XXXX" written before it still shows and still draws the pattern. The full text stays in your "Logbook" tab.
 - **Safety:** the script refuses to write anything if:
   - the "Logbook" tab's header row (row 2, columns A–L) doesn't match what it expects;
   - the row it is about to fill isn't completely empty;
@@ -228,7 +241,8 @@ It's one long file in three parts: **CSS** (the look) at the top, **HTML** (the 
 | Airport/runway loading | `FLOWN_AIRPORTS_URL`, `FULL_AIRPORTS_URL`, `runways-flown` |
 | Aircraft picture file names | `fleetSlug` (must match `slug()` in `fleet_images.py`) |
 | Sidebar flight details (DEPART, ARRIVAL, TYPE…) | `details-row` |
-| LIVE row in flight details (org · airframe) | `live-chip` |
+| LIVE row in flight details (org badge · airframe) | `live-chip`, `live-reg`, `liveBadgeCss` |
+| Private remarks rule | `publicRemarks` (keep it the same as the Public tab formula) |
 | Livery tails in the routes table | `tailCrop`, `fitTail` (size: `.tail-crop`; search area: `TAIL_WIN`) |
 | Active filters sentence and chips | `renderAllActiveFilters` |
 
@@ -245,7 +259,7 @@ It's one long file in three parts: **CSS** (the look) at the top, **HTML** (the 
 - **LOG**: opens the log form (section 5).
 - **FILTERS >**: the filter sidebar.
 
-Click a row in the table to open its details: airports, aircraft, livery, remarks and the Infinite Flight picture. Live org flights also get a LIVE row at the top (org · airframe on the org's colour); click it to filter by that org. **Escape** undoes your last filter, including a timeline month.
+Click a row in the table to open its details: airports, aircraft, livery, remarks and the Infinite Flight picture. Live org flights also get a LIVE row at the top: the org's badge in its colour, then "· airframe". Click the badge to filter by that org, or the airframe to filter by that airframe. Remarks tagged `!private` don't show (section 5). **Escape** undoes your last filter, including a timeline month.
 
 The bottom of the **FILTERS** sidebar describes the active filters in a sentence (e.g. "Flights on 777-300ER, between KBOS and OTHH."), with a chip for each filter below it. Click **+ INC / − EXC** on a chip to swap include and exclude, **✕** to remove it, and **AND / OR** next to Airport to switch strict matching (same as the "Only show strict matches" checkbox).
 
@@ -254,6 +268,7 @@ The bottom of the **FILTERS** sidebar describes the active filters in a sentence
 ## 7. Fix-it list
 
 - **Site shows nothing / stuck loading:** open the two sheet CSV links in section 3. If they don't download, the sheet was un-published (File → Share → Publish to web).
+- **Dates or times show as plain numbers, or a private remark shows up:** check the Public tab. Its A1 formula must match the one in section 3, and only that tab should be published.
 - **My change isn't showing:** wait a minute after pushing, then hard-refresh with Cmd + Shift + R. Old copies love to hang around.
 - **Fix an airport that won't draw:**
   1. Run `python3 airports_flown.py` and read its "not in the database" list.
