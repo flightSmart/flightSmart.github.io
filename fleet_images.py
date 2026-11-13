@@ -21,8 +21,7 @@ Only needs Python 3. Nothing to install.
 
 import argparse, csv, difflib, html.parser, io, os, re, shutil, ssl, subprocess, sys, tempfile, time, unicodedata, urllib.error, urllib.parse, urllib.request
 
-LOGBOOK_CSV = ('https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF'
-               '/pub?output=csv')
+LOGBOOK_CSV = ('https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?gid=1016795298&single=true&output=csv')
 FLEET = 'https://infiniteflight.com/fleet'
 
 # Aircraft -> the Infinite Flight fleet page, when they don't match on their own
