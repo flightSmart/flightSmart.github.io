@@ -16,8 +16,7 @@ Only needs Python 3. Nothing to install.
 
 import csv, io, os, shutil, ssl, subprocess, sys, tempfile, urllib.error, urllib.request
 
-LOGBOOK_CSV = ('https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF'
-               '/pub?output=csv')
+LOGBOOK_CSV = ('https://docs.google.com/spreadsheets/d/e/2PACX-1vRlxVfQ2tN8yza3eILYJ-KO9A3h5w_IygXl0fgKAmLNWyovhQkGbfO_u15d3NDf6pOaPn8guj1qVIoF/pub?gid=1016795298&single=true&output=csv')
 ATC_CSV = ('https://docs.google.com/spreadsheets/d/e/2PACX-1vRU1VT5H_li0QNytw6EDCNINd4jlyLuAT1CJiwyy7-EdjwqClCdPMseakuTPbJgQJ3yUDCQ-YBQ4TIz'
            '/pub?output=csv')
 AIRPORTS_CSV = 'https://raw.githubusercontent.com/davidmegginson/ourairports-data/main/airports.csv'
